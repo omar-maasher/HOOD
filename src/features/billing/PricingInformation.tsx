@@ -2,7 +2,37 @@ import { useTranslations } from 'next-intl';
 
 import { PricingCard } from '@/features/billing/PricingCard';
 import { PricingFeature } from '@/features/billing/PricingFeature';
-import { PricingPlanList } from '@/utils/AppConfig';
+import { PricingPlanList, PLAN_ID } from '@/utils/AppConfig';
+
+const planFeatures: Record<string, string[]> = {
+  [PLAN_ID.FREE]: [
+    '3 قنوات (واتساب، انستقرام، ماسنجر)',
+    '150 محادثة',
+    '300 رسالة AI',
+    '1 حملة (حتى 150 مستلم)',
+    'CRM حتى 200 عميل',
+    'نظام حجوزات مفعّل',
+  ],
+  [PLAN_ID.PREMIUM]: [
+    '3 قنوات',
+    '2,000 محادثة',
+    '2,000 رسالة AI',
+    '2 حملات (حتى 2,000 مستلم)',
+    'CRM حتى 5,000 عميل',
+    'تقارير متقدمة',
+    'أتمتة أساسية',
+  ],
+  [PLAN_ID.ENTERPRISE]: [
+    '3 قنوات',
+    '7,000 محادثة',
+    '7,000 رسالة AI',
+    '5 حملات (حتى 7,000 مستلم)',
+    'CRM غير محدود',
+    'أتمتة متقدمة',
+    'Webhooks',
+    'تقارير احترافية',
+  ],
+};
 
 export const PricingInformation = (props: {
   buttonList: Record<string, React.ReactNode>;
@@ -19,31 +49,11 @@ export const PricingInformation = (props: {
           interval={plan.interval}
           button={props.buttonList[plan.id]}
         >
-          <PricingFeature>
-            {t('feature_team_member', {
-              number: plan.features.teamMember,
-            })}
-          </PricingFeature>
-
-          <PricingFeature>
-            {t('feature_website', {
-              number: plan.features.website,
-            })}
-          </PricingFeature>
-
-          <PricingFeature>
-            {t('feature_storage', {
-              number: plan.features.storage,
-            })}
-          </PricingFeature>
-
-          <PricingFeature>
-            {t('feature_transfer', {
-              number: plan.features.transfer,
-            })}
-          </PricingFeature>
-
-          <PricingFeature>{t('feature_email_support')}</PricingFeature>
+          {planFeatures[plan.id]?.map((feature, idx) => (
+            <PricingFeature key={idx}>
+              {feature}
+            </PricingFeature>
+          ))}
         </PricingCard>
       ))}
     </div>

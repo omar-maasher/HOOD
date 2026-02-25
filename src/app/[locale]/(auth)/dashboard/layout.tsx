@@ -2,7 +2,7 @@ import { useTranslations } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 
 import { DashboardHeader } from '@/features/dashboard/DashboardHeader';
-
+import { Home, Users, Settings, Puzzle, Sparkles, Store, ShoppingBag, MessageSquare, Calendar, Crown } from 'lucide-react';
 export async function generateMetadata(props: { params: { locale: string } }) {
   const t = await getTranslations({
     locale: props.params.locale,
@@ -20,24 +20,67 @@ export default function DashboardLayout(props: { children: React.ReactNode }) {
 
   return (
     <>
-      <div className="shadow-md">
-        <div className="mx-auto flex max-w-screen-xl items-center justify-between px-3 py-4">
+      <div className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
+        <div className="mx-auto flex h-16 max-w-screen-2xl items-center justify-between px-4 sm:px-8">
           <DashboardHeader
             menu={[
               {
                 href: '/dashboard',
                 label: t('home'),
-              },
-              // PRO: Link to the /dashboard/todos page
-              {
-                href: '/dashboard/organization-profile/organization-members',
-                label: t('members'),
+                icon: <Home className="size-4" />,
               },
               {
-                href: '/dashboard/organization-profile',
-                label: t('settings'),
+                href: '/dashboard/products',
+                label: 'المنتجات',
+                icon: <ShoppingBag className="size-4" />,
               },
-              // PRO: Link to the /dashboard/billing page
+              {
+                href: '/dashboard/leads',
+                label: 'العملاء',
+                icon: <MessageSquare className="size-4" />,
+              },
+              {
+                href: '/dashboard/bookings',
+                label: 'الحجوزات',
+                icon: <Calendar className="size-4" />,
+              },
+              {
+                href: '#',
+                label: 'الإعدادات',
+                icon: <Settings className="size-4" />,
+                children: [
+                  {
+                    href: '/dashboard/subscription',
+                    label: 'الاشتراك',
+                    icon: <Crown className="size-4" />,
+                  },
+                  {
+                    href: '/dashboard/business',
+                    label: 'بيانات النشاط',
+                    icon: <Store className="size-4" />,
+                  },
+                  {
+                    href: '/dashboard/ai-settings',
+                    label: 'الذكاء الاصطناعي',
+                    icon: <Sparkles className="size-4" />,
+                  },
+                  {
+                    href: '/dashboard/integrations',
+                    label: t('integrations'),
+                    icon: <Puzzle className="size-4" />,
+                  },
+                  {
+                    href: '/dashboard/organization-profile/organization-members',
+                    label: t('members'),
+                    icon: <Users className="size-4" />,
+                  },
+                  {
+                    href: '/dashboard/organization-profile',
+                    label: 'إعدادات المنظمة',
+                    icon: <Settings className="size-4" />,
+                  },
+                ],
+              },
             ]}
           />
         </div>

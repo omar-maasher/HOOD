@@ -6,15 +6,15 @@ const localePrefix: LocalePrefix = 'as-needed';
 
 // FIXME: Update this configuration file based on your project information
 export const AppConfig = {
-  name: 'SaaS Template',
+  name: 'hoodtrading',
   locales: [
     {
       id: 'en',
       name: 'English',
     },
-    { id: 'fr', name: 'Français' },
+    { id: 'ar', name: 'العربية' },
   ],
-  defaultLocale: 'en',
+  defaultLocale: 'ar',
   localePrefix,
 };
 
@@ -43,7 +43,7 @@ export const PricingPlanList: Record<string, PricingPlan> = {
   },
   [PLAN_ID.PREMIUM]: {
     id: PLAN_ID.PREMIUM,
-    price: 79,
+    price: 39,
     interval: BILLING_INTERVAL.MONTH,
     testPriceId: 'price_premium_test', // Use for testing
     // FIXME: Update the price ID, you can create it after running `npm run stripe:setup-price`
@@ -58,7 +58,7 @@ export const PricingPlanList: Record<string, PricingPlan> = {
   },
   [PLAN_ID.ENTERPRISE]: {
     id: PLAN_ID.ENTERPRISE,
-    price: 199,
+    price: 69,
     interval: BILLING_INTERVAL.MONTH,
     testPriceId: 'price_enterprise_test', // Use for testing
     // FIXME: Update the price ID, you can create it after running `npm run stripe:setup-price`

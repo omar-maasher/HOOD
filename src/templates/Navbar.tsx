@@ -33,23 +33,19 @@ export const Navbar = () => {
         )}
       >
         <li>
-          <Link href="/sign-up">{t('product')}</Link>
+          <Link href="/#features" className="scroll-smooth font-medium">{t('features')}</Link>
         </li>
-
         <li>
-          <Link href="/sign-up">{t('docs')}</Link>
+          <Link href="/#challenges" className="scroll-smooth font-medium">{t('challenges')}</Link>
         </li>
-
         <li>
-          <Link href="/sign-up">{t('blog')}</Link>
+          <Link href="/#services" className="scroll-smooth font-medium">{t('services')}</Link>
         </li>
-
         <li>
-          <Link href="/sign-up">{t('community')}</Link>
+          <Link href="/#bonuses" className="scroll-smooth font-medium">{t('bonuses')}</Link>
         </li>
-
         <li>
-          <Link href="/sign-up">{t('company')}</Link>
+          <Link href="/#pricing" className="scroll-smooth font-medium">{t('pricing')}</Link>
         </li>
       </CenteredMenu>
     </Section>
