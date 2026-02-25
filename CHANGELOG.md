@@ -1,3 +1,10 @@
+## [1.0.5](https://github.com/omar-maasher/HOOD/compare/v1.0.4...v1.0.5) (2026-02-25)
+
+
+### Bug Fixes
+
+* make Stripe env vars optional ([61cca6d](https://github.com/omar-maasher/HOOD/commit/61cca6d15a3568b70ee5e53d8d43029d2b62653e))
+
 ## [1.0.4](https://github.com/omar-maasher/HOOD/compare/v1.0.3...v1.0.4) (2026-02-25)
 
 
