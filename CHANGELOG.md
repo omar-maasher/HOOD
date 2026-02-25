@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/omar-maasher/HOOD/compare/v1.0.1...v1.0.2) (2026-02-25)
+
+
+### Bug Fixes
+
+* force Arabic as default, disable browser locale detection ([f279521](https://github.com/omar-maasher/HOOD/commit/f279521c16d2772713fa27cc8542ebfdcbe9974e))
+
 ## [1.0.1](https://github.com/omar-maasher/HOOD/compare/v1.0.0...v1.0.1) (2026-02-25)
 
 
