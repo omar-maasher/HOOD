@@ -15,7 +15,12 @@ export async function generateMetadata(props: { params: { locale: string } }) {
 }
 
 export default async function AiSettingsPage() {
-  const settings = await getAiSettings();
+  let settings = null;
+  try {
+    settings = await getAiSettings();
+  } catch (error) {
+    console.error('AI Settings page error:', error);
+  }
 
   return <AiSettingsClient settings={settings} />;
 }

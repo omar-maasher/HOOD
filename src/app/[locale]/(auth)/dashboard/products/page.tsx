@@ -14,6 +14,11 @@ export async function generateMetadata(props: { params: { locale: string } }) {
 }
 
 export default async function ProductsPage() {
-  const products = await getProducts();
+  let products: any[] = [];
+  try {
+    products = await getProducts();
+  } catch (error) {
+    console.error('Products page error:', error);
+  }
   return <ProductsClient initialProducts={products} />;
 }

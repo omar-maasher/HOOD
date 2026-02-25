@@ -1,4 +1,3 @@
-
 import LeadsClient from './LeadsClient';
 import { getLeads } from './actions';
 
@@ -9,6 +8,11 @@ export async function generateMetadata() {
 }
 
 export default async function LeadsPage() {
-  const leads = await getLeads();
+  let leads: any[] = [];
+  try {
+    leads = await getLeads();
+  } catch (error) {
+    console.error('Leads page error:', error);
+  }
   return <LeadsClient initialLeads={leads} />;
 }

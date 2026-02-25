@@ -15,7 +15,12 @@ export async function generateMetadata(props: { params: { locale: string } }) {
 }
 
 export default async function BusinessPage() {
-  const profile = await getBusinessProfile();
+  let profile = null;
+  try {
+    profile = await getBusinessProfile();
+  } catch (error) {
+    console.error('Business page error:', error);
+  }
 
   return <BusinessClient profile={profile} />;
 }
