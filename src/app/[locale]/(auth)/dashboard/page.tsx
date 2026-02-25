@@ -22,17 +22,21 @@ const DashboardIndexPage = async () => {
   let leadsCount = 0;
   let bookingsCount = 0;
   let isAiActive = false;
-  if (orgId) {
-    const leadsResult = await db.select({ count: count() }).from(leadSchema).where(eq(leadSchema.organizationId, orgId));
-    leadsCount = leadsResult[0]?.count || 0;
+  try {
+    if (orgId) {
+      const leadsResult = await db.select({ count: count() }).from(leadSchema).where(eq(leadSchema.organizationId, orgId));
+      leadsCount = leadsResult[0]?.count || 0;
 
-    const bookingsResult = await db.select({ count: count() }).from(bookingSchema).where(eq(bookingSchema.organizationId, orgId));
-    bookingsCount = bookingsResult[0]?.count || 0;
+      const bookingsResult = await db.select({ count: count() }).from(bookingSchema).where(eq(bookingSchema.organizationId, orgId));
+      bookingsCount = bookingsResult[0]?.count || 0;
 
-    const aiResult = await db.select().from(aiSettingsSchema).where(eq(aiSettingsSchema.organizationId, orgId));
-    if (aiResult.length > 0 && aiResult[0]?.isActive === 'true') {
-      isAiActive = true;
+      const aiResult = await db.select().from(aiSettingsSchema).where(eq(aiSettingsSchema.organizationId, orgId));
+      if (aiResult.length > 0 && aiResult[0]?.isActive === 'true') {
+        isAiActive = true;
+      }
     }
+  } catch (error) {
+    console.error('Dashboard DB error:', error);
   }
 
   const stats = [
