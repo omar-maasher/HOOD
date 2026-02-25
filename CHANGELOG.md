@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/omar-maasher/HOOD/compare/v1.0.0...v1.0.1) (2026-02-25)
+
+
+### Bug Fixes
+
+* global-error locale crash and TS errors ([2aac775](https://github.com/omar-maasher/HOOD/commit/2aac775d92d3c90d51685e9dd28263abac4c3b1a))
+
 # 1.0.0 (2026-02-25)
 
 
