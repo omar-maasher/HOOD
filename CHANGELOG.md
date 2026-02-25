@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/omar-maasher/HOOD/compare/v1.0.2...v1.0.3) (2026-02-25)
+
+
+### Bug Fixes
+
+* put Arabic first in locales array ([047d7f6](https://github.com/omar-maasher/HOOD/commit/047d7f62616534240126b078032a7425f56c1230))
+
 ## [1.0.2](https://github.com/omar-maasher/HOOD/compare/v1.0.1...v1.0.2) (2026-02-25)
 
 
