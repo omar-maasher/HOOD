@@ -1,12 +1,10 @@
 import {
-  ArrowLeft,
   ArrowRight,
   Bot,
   Briefcase,
   CalendarCheck,
   CheckCircle2,
   Clock,
-  Globe,
   Headphones,
   MessageSquare,
   Phone,
@@ -19,7 +17,6 @@ import {
   Target,
   TrendingUp,
   Users,
-  XCircle,
   Zap,
 } from 'lucide-react';
 import Link from 'next/link';

@@ -15,7 +15,7 @@ export async function getLeads() {
     .where(eq(leadSchema.organizationId, orgId))
     .orderBy(desc(leadSchema.createdAt));
 
-  return leads.map(l => ({
+  return leads.map((l: any) => ({
     ...l,
     createdAt: l.createdAt.toISOString(),
     updatedAt: l.updatedAt.toISOString(),

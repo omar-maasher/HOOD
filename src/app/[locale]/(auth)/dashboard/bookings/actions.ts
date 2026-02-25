@@ -15,7 +15,7 @@ export async function getBookings() {
     .where(eq(bookingSchema.organizationId, orgId))
     .orderBy(desc(bookingSchema.bookingDate));
 
-  return bookings.map(b => ({
+  return bookings.map((b: any) => ({
     ...b,
     cart: b.cart || [],
     bookingDate: b.bookingDate.toISOString(),
