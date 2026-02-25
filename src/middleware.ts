@@ -28,6 +28,14 @@ export default function middleware(
   request: NextRequest,
   event: NextFetchEvent,
 ) {
+  // Force Arabic locale unless explicitly visiting /en path
+  const { pathname } = request.nextUrl;
+  const isEnglishPath = pathname.startsWith('/en') || pathname.startsWith('/en/');
+  
+  if (!isEnglishPath) {
+    request.cookies.set('NEXT_LOCALE', 'ar');
+  }
+
   if (
     request.nextUrl.pathname.includes('/sign-in')
     || request.nextUrl.pathname.includes('/sign-up')
@@ -36,12 +44,11 @@ export default function middleware(
     return clerkMiddleware(async (auth, req) => {
       if (isProtectedRoute(req)) {
         const locale
-          = req.nextUrl.pathname.match(/(\/.*)\/dashboard/)?.at(1) ?? '';
+          = req.nextUrl.pathname.match(/(\/.*)?\/dashboard/)?.at(1) ?? '';
 
         const signInUrl = new URL(`${locale}/sign-in`, req.url);
 
         await auth.protect({
-          // `unauthenticatedUrl` is needed to avoid error: "Unable to find `next-intl` locale because the middleware didn't run on this request"
           unauthenticatedUrl: signInUrl.toString(),
         });
       }
