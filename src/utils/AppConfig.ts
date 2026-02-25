@@ -8,11 +8,8 @@ const localePrefix: LocalePrefix = 'as-needed';
 export const AppConfig = {
   name: 'hoodtrading',
   locales: [
-    {
-      id: 'en',
-      name: 'English',
-    },
     { id: 'ar', name: 'العربية' },
+    { id: 'en', name: 'English' },
   ],
   defaultLocale: 'ar',
   localePrefix,
