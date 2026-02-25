@@ -1,3 +1,10 @@
+## [1.0.4](https://github.com/omar-maasher/HOOD/compare/v1.0.3...v1.0.4) (2026-02-25)
+
+
+### Bug Fixes
+
+* add error handling to all dashboard pages ([da350de](https://github.com/omar-maasher/HOOD/commit/da350de3d562c4c13caa1d93535a4b40a809862c))
+
 ## [1.0.3](https://github.com/omar-maasher/HOOD/compare/v1.0.2...v1.0.3) (2026-02-25)
 
 
