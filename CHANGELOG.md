@@ -1,3 +1,10 @@
+## [1.3.2](https://github.com/omar-maasher/HOOD/compare/v1.3.1...v1.3.2) (2026-02-26)
+
+
+### Bug Fixes
+
+* **meta:** correct fb long token integration insert logic ([035a5c9](https://github.com/omar-maasher/HOOD/commit/035a5c9d4504d0fdbcf7378e9f12f4ed8042dd20))
+
 ## [1.3.1](https://github.com/omar-maasher/HOOD/compare/v1.3.0...v1.3.1) (2026-02-26)
 
 
