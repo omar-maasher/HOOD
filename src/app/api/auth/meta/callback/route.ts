@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { exchangeCodeForToken, getLongLivedToken } from '@/libs/Meta';
 import { db } from '@/libs/DB';
 import { integrationSchema } from '@/models/Schema';
+import { eq, and } from 'drizzle-orm';
 export const GET = async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
@@ -31,17 +32,33 @@ export const GET = async (request: Request) => {
     // For now, we just save the main token for the organization
     // We'll tag it as 'facebook' which can then be used to list pages/instagram/etc.
     
-    await db.insert(integrationSchema).values({
-      organizationId: orgId,
-      type: 'facebook_root',
-      accessToken: accessToken,
-      status: 'active',
-    }).onConflictDoUpdate({
-      target: [integrationSchema.organizationId, integrationSchema.type],
-      set: { accessToken, updatedAt: new Date() }
+    // Check if the integration already exists
+    const existingIntegration = await db.query.integrationSchema.findFirst({
+      where: (integrations, { eq, and }) => and(
+        eq(integrations.organizationId, orgId),
+        eq(integrations.type, 'facebook_root')
+      )
     });
 
-    return NextResponse.redirect(new URL('/dashboard/integrations?success=connected', request.url));
+    if (existingIntegration) {
+      await db.update(integrationSchema)
+        .set({ accessToken, updatedAt: new Date() })
+        .where(
+          and(
+            eq(integrationSchema.organizationId, orgId),
+            eq(integrationSchema.type, 'facebook_root')
+          )
+        );
+    } else {
+      await db.insert(integrationSchema).values({
+        organizationId: orgId,
+        type: 'facebook_root',
+        accessToken: accessToken,
+        status: 'active',
+      });
+    }
+
+    return NextResponse.redirect(new URL(`/dashboard/integrations?success=connected`, request.url));
   } catch (error) {
     console.error('Meta Callback Error:', error);
     return NextResponse.redirect(new URL('/dashboard/integrations?error=server_error', request.url));
