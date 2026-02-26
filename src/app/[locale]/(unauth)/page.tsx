@@ -1,15 +1,12 @@
 import {
   ArrowRight,
   Bot,
-  Zap,
   Globe2,
-  BarChart,
   MessageCircle,
   Clock,
   CheckCircle2,
   ShieldCheck,
   TrendingUp,
-  Workflow,
   Sparkles,
   Users,
   Calendar
