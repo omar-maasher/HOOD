@@ -20,8 +20,6 @@ const isProtectedRoute = createRouteMatcher([
   '/:locale/dashboard(.*)',
   '/onboarding(.*)',
   '/:locale/onboarding(.*)',
-  '/api(.*)',
-  '/:locale/api(.*)',
 ]);
 
 export default function middleware(
@@ -69,8 +67,16 @@ export default function middleware(
         return NextResponse.redirect(orgSelection);
       }
 
+      if (req.nextUrl.pathname.startsWith('/api')) {
+        return NextResponse.next();
+      }
+
       return intlMiddleware(req);
     })(request, event);
+  }
+
+  if (request.nextUrl.pathname.startsWith('/api')) {
+    return NextResponse.next();
   }
 
   return intlMiddleware(request);
