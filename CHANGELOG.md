@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/omar-maasher/HOOD/compare/v1.1.1...v1.2.0) (2026-02-26)
+
+
+### Features
+
+* setup n8n webhook forwarding and meta send API ([a786dd5](https://github.com/omar-maasher/HOOD/commit/a786dd5d03d18c64efdd795033b811a69a5867a8))
+
 ## [1.1.1](https://github.com/omar-maasher/HOOD/compare/v1.1.0...v1.1.1) (2026-02-26)
 
 
