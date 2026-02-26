@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/omar-maasher/HOOD/compare/v1.1.0...v1.1.1) (2026-02-26)
+
+
+### Bug Fixes
+
+* unused icon imports breaking vercel build ([cc75ccb](https://github.com/omar-maasher/HOOD/commit/cc75ccb7d421af187609cfe7f005f52f6b671cd8))
+
 # [1.1.0](https://github.com/omar-maasher/HOOD/compare/v1.0.8...v1.1.0) (2026-02-26)
 
 
