@@ -38,6 +38,7 @@ export default function middleware(
     request.nextUrl.pathname.includes('/sign-in')
     || request.nextUrl.pathname.includes('/sign-up')
     || isProtectedRoute(request)
+    || request.nextUrl.pathname.startsWith('/api')
   ) {
     return clerkMiddleware(async (auth, req) => {
       if (isProtectedRoute(req)) {
