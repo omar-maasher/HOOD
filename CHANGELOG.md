@@ -1,3 +1,10 @@
+## [1.3.4](https://github.com/omar-maasher/HOOD/compare/v1.3.3...v1.3.4) (2026-02-26)
+
+
+### Bug Fixes
+
+* re-apply api bypass in middleware ([35010b6](https://github.com/omar-maasher/HOOD/commit/35010b6db8b4b0c8839e812d8d06061f1db71e87))
+
 ## [1.3.3](https://github.com/omar-maasher/HOOD/compare/v1.3.2...v1.3.3) (2026-02-26)
 
 
