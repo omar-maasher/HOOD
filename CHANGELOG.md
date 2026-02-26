@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/omar-maasher/HOOD/compare/v1.2.0...v1.3.0) (2026-02-26)
+
+
+### Features
+
+* enrich webhook payload with organization AI settings ([dd53a73](https://github.com/omar-maasher/HOOD/commit/dd53a73ec2ffc4e781c89fbe6ff6058da3c2ba46))
+
 # [1.2.0](https://github.com/omar-maasher/HOOD/compare/v1.1.1...v1.2.0) (2026-02-26)
 
 
