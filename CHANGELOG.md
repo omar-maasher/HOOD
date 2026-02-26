@@ -1,3 +1,10 @@
+## [1.0.6](https://github.com/omar-maasher/HOOD/compare/v1.0.5...v1.0.6) (2026-02-26)
+
+
+### Bug Fixes
+
+* prevent Server Components crash on subscription and my-account pages ([17afd8c](https://github.com/omar-maasher/HOOD/commit/17afd8c8602161324193b8059733ff812b873166))
+
 ## [1.0.5](https://github.com/omar-maasher/HOOD/compare/v1.0.4...v1.0.5) (2026-02-25)
 
 
