@@ -1,3 +1,12 @@
+## [1.0.7](https://github.com/omar-maasher/HOOD/compare/v1.0.6...v1.0.7) (2026-02-26)
+
+
+### Bug Fixes
+
+* add UserProfile to empty my-account page ([238cbdc](https://github.com/omar-maasher/HOOD/commit/238cbdc4c5cf7b15cd3bdf4bbbfe8fde6d251057))
+* rewrite subscription page with error handling for Vercel ([038e731](https://github.com/omar-maasher/HOOD/commit/038e731383b66d94e7a513b1f968bad8b88c38d8))
+* use correct pg Pool import path ([98e6db9](https://github.com/omar-maasher/HOOD/commit/98e6db94faf6b196f534e26b026b07b3a489fa4f))
+
 ## [1.0.6](https://github.com/omar-maasher/HOOD/compare/v1.0.5...v1.0.6) (2026-02-26)
 
 
