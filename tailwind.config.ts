@@ -6,6 +6,9 @@ const config = {
   content: ['./src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['var(--font-cairo)', 'sans-serif'],
+      },
       colors: {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',

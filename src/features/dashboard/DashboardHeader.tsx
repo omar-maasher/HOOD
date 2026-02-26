@@ -7,6 +7,7 @@ import { useLocale } from 'next-intl';
 import { ActiveLink } from '@/components/ActiveLink';
 import { LocaleSwitcher } from '@/components/LocaleSwitcher';
 import { ToggleMenuButton } from '@/components/ToggleMenuButton';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -92,8 +93,8 @@ export const DashboardHeader = (props: {
 
               return (
                 <li key={item.href}>
-                  <ActiveLink 
-                    href={item.href} 
+                  <ActiveLink
+                    href={item.href}
                     className="flex items-center gap-2 rounded-md px-3 py-2 text-muted-foreground transition-all hover:bg-accent hover:text-accent-foreground data-[active=true]:bg-primary/10 data-[active=true]:text-primary"
                   >
                     {item.icon}
@@ -140,7 +141,9 @@ export const DashboardHeader = (props: {
             </div>
           </li>
 
-          {/* PRO: Dark mode toggle button */}
+          <li>
+            <ThemeToggle />
+          </li>
 
           <li data-fade>
             <LocaleSwitcher />

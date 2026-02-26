@@ -4,6 +4,16 @@ import type { Metadata } from 'next';
 import { NextIntlClientProvider, useMessages } from 'next-intl';
 import { unstable_setRequestLocale } from 'next-intl/server';
 
+import { Cairo } from 'next/font/google';
+
+import { ThemeProvider } from '@/components/ThemeProvider';
+
+const cairo = Cairo({
+  subsets: ['arabic', 'latin'],
+  variable: '--font-cairo',
+  display: 'swap',
+});
+
 import { DemoBadge } from '@/components/DemoBadge';
 import { AllLocales } from '@/utils/AppConfig';
 
@@ -51,20 +61,27 @@ export default function RootLayout(props: {
   // The `suppressHydrationWarning` attribute in <body> is used to prevent hydration errors caused by Sentry Overlay,
   // which dynamically adds a `style` attribute to the body tag.
   return (
-    <html 
-      lang={props.params.locale} 
-      dir={props.params.locale === 'ar' ? 'rtl' : 'ltr'} 
+    <html
+      lang={props.params.locale}
+      dir={props.params.locale === 'ar' ? 'rtl' : 'ltr'}
       suppressHydrationWarning
     >
-      <body className="bg-background text-foreground antialiased overflow-x-hidden" suppressHydrationWarning>
+      <body className={`${cairo.variable} font-sans bg-background text-foreground antialiased overflow-x-hidden`} suppressHydrationWarning>
         {/* PRO: Dark mode support for Shadcn UI */}
         <NextIntlClientProvider
           locale={props.params.locale}
           messages={messages}
         >
-          {props.children}
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {props.children}
 
-          <DemoBadge />
+            <DemoBadge />
+          </ThemeProvider>
         </NextIntlClientProvider>
       </body>
     </html>

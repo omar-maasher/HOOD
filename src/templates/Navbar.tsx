@@ -5,6 +5,7 @@ import { LocaleSwitcher } from '@/components/LocaleSwitcher';
 import { buttonVariants } from '@/components/ui/buttonVariants';
 import { CenteredMenu } from '@/features/landing/CenteredMenu';
 import { Section } from '@/features/landing/Section';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 import { Logo } from './Logo';
 
@@ -17,7 +18,9 @@ export const Navbar = () => {
         logo={<Logo />}
         rightMenu={(
           <>
-            {/* PRO: Dark mode toggle button */}
+            <li>
+              <ThemeToggle />
+            </li>
             <li data-fade>
               <LocaleSwitcher />
             </li>
