@@ -33,3 +33,32 @@ export const getLongLivedToken = async (shortLivedToken: string) => {
   const response = await fetch(url);
   return response.json();
 };
+
+export const sendInstagramMessage = async (
+  instagramAccountId: string, 
+  recipientId: string, 
+  text: string, 
+  accessToken: string
+) => {
+  const url = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${instagramAccountId}/messages`;
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      recipient: { id: recipientId },
+      message: { text: text },
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    console.error('Failed to send Instagram message:', errorData);
+    throw new Error('Meta API error: ' + JSON.stringify(errorData));
+  }
+
+  return response.json();
+};

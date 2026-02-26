@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { 
   Save, Bot, Plus, Trash2, 
   ShieldQuestion, Check, 
-  AlertTriangle, User, Settings2
+  AlertTriangle, User, Settings2,
+  Clock, MessageCircle, ShieldAlert
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +24,9 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
     tone: settings?.tone || 'friendly',
     escalationRules: settings?.escalationRules || '',
     faqs: settings?.faqs || [] as { question: string; answer: string }[],
+    welcomeMessage: settings?.welcomeMessage || 'أهلاً بك {name}! كيف يمكنني مساعدتك؟ (طلب / سعر / دعم / حجز / تواصل بشري)',
+    workingHours: settings?.workingHours || { enabled: false, start: '09:00', end: '17:00', outOfHoursMessage: 'عذراً، نحن خارج أوقات العمل حالياً. سنقوم بالرد عليك في أقرب وقت. (مواعيد العمل: {start} إلى {end})' },
+    antiSpam: settings?.antiSpam || { enabled: true, maxMessagesPerWindow: 3, windowMinutes: 5, warningMessage: 'تم استلام طلبك، يرجى الانتظار قليلاً لتجنب تكرار الرسائل الثمينة.' },
   });
 
   const [currentFaq, setCurrentFaq] = useState({ question: '', answer: '' });
@@ -137,6 +141,27 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
           >
             <Settings2 className="size-5" />
             القواعد المتقدمة
+          </button>
+          <button 
+            onClick={() => setActiveTab('welcome')}
+            className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-all ${activeTab === 'welcome' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-[1.02]' : 'hover:bg-muted text-muted-foreground'}`}
+          >
+            <MessageCircle className="size-5" />
+            رسالة الترحيب
+          </button>
+          <button 
+            onClick={() => setActiveTab('hours')}
+            className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-all ${activeTab === 'hours' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-[1.02]' : 'hover:bg-muted text-muted-foreground'}`}
+          >
+            <Clock className="size-5" />
+            ساعات العمل
+          </button>
+          <button 
+            onClick={() => setActiveTab('spam')}
+            className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-all ${activeTab === 'spam' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-[1.02]' : 'hover:bg-muted text-muted-foreground'}`}
+          >
+            <ShieldAlert className="size-5" />
+            منع الإزعاج
           </button>
         </div>
 
@@ -308,6 +333,173 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
                       />
                     </div>
                   </div>
+                </div>
+              )}
+
+              {/* Tab: Welcome Message */}
+              {activeTab === 'welcome' && (
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col gap-8">
+                  <div className="flex items-center gap-3 border-b pb-6">
+                    <div className="size-12 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-600">
+                      <MessageCircle className="size-7" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold">رسالة الترحيب الأولى</h3>
+                      <p className="text-sm text-muted-foreground">تخصيص رد الترحيب للمستخدمين الجدد</p>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-6 text-start">
+                    <div className="grid gap-2">
+                       <Label className="text-base font-bold flex items-center gap-2">
+                        محتوى رسالة الترحيب
+                      </Label>
+                      <p className="text-xs text-muted-foreground mb-2">استخدم {`{name}`} لجلب اسم العميل (إن أمكن). وضع الخيارات التوجيهية للعميل.</p>
+                      <textarea
+                        rows={4}
+                        placeholder="أهلاً بك {name}! كيف يمكنني مساعدتك؟ (طلب / سعر / دعم / حجز / تواصل بشري)"
+                        className="flex w-full rounded-2xl border-none bg-muted/30 px-4 py-3 text-sm shadow-inner focus:ring-2 focus:ring-primary outline-none"
+                        value={formData.welcomeMessage}
+                        onChange={e => setFormData({ ...formData, welcomeMessage: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Tab: Working Hours */}
+              {activeTab === 'hours' && (
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col gap-8">
+                  <div className="flex items-center gap-3 border-b pb-6">
+                    <div className="size-12 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-600">
+                      <Clock className="size-7" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold">مواعيد الدوام وخارج العمل</h3>
+                      <p className="text-sm text-muted-foreground">ضبط الرد التلقائي وإدارة التوقعات خارج أوقات العمل</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 p-4 border rounded-2xl bg-muted/10">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ 
+                        ...formData, 
+                        workingHours: { ...formData.workingHours, enabled: !formData.workingHours.enabled } 
+                      })}
+                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${formData.workingHours.enabled ? 'bg-primary' : 'bg-gray-300'}`}
+                    >
+                      <span className={`inline-block size-4 transform rounded-full bg-white transition-transform ${formData.workingHours.enabled ? 'translate-x-1 rtl:-translate-x-6' : 'translate-x-6 rtl:-translate-x-1'}`} />
+                    </button>
+                    <div className="flex flex-col text-start">
+                      <span className="font-bold text-sm">تفعيل نظام أوقات العمل</span>
+                      <span className="text-xs text-muted-foreground">خارج العمل: رد آلي محترم وتأجيل المتابعة</span>
+                    </div>
+                  </div>
+
+                  {formData.workingHours.enabled && (
+                    <div className="grid gap-6 text-start">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                           <Label className="text-sm font-bold">وقت بدء العمل</Label>
+                           <Input 
+                             type="time" 
+                             value={formData.workingHours.start} 
+                             onChange={e => setFormData({ ...formData, workingHours: { ...formData.workingHours, start: e.target.value } })}
+                             className="rounded-xl border-none bg-muted/30 shadow-sm"
+                           />
+                        </div>
+                        <div className="grid gap-2">
+                           <Label className="text-sm font-bold">وقت انتهاء العمل</Label>
+                           <Input 
+                             type="time" 
+                             value={formData.workingHours.end} 
+                             onChange={e => setFormData({ ...formData, workingHours: { ...formData.workingHours, end: e.target.value } })}
+                             className="rounded-xl border-none bg-muted/30 shadow-sm"
+                           />
+                        </div>
+                      </div>
+
+                      <div className="grid gap-2">
+                         <Label className="text-base font-bold">رسالة خارج وقت العمل</Label>
+                        <p className="text-xs text-muted-foreground mb-2">استخدم {`{start}`} و {`{end}`} لعرض الأوقات تلقائياً.</p>
+                        <textarea
+                          rows={3}
+                          className="flex w-full rounded-2xl border-none bg-muted/30 px-4 py-3 text-sm shadow-inner focus:ring-2 focus:ring-primary outline-none"
+                          value={formData.workingHours.outOfHoursMessage}
+                          onChange={e => setFormData({ ...formData, workingHours: { ...formData.workingHours, outOfHoursMessage: e.target.value } })}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+               {/* Tab: Anti-spam */}
+              {activeTab === 'spam' && (
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col gap-8">
+                  <div className="flex items-center gap-3 border-b pb-6">
+                    <div className="size-12 rounded-2xl bg-red-500/10 flex items-center justify-center text-red-600">
+                      <ShieldAlert className="size-7" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold">قواعد حماية من الإزعاج (Anti-Spam)</h3>
+                      <p className="text-sm text-muted-foreground">منع الزبائن من التكرار وإرهاق حصة الذكاء الاصطناعي</p>
+                    </div>
+                  </div>
+
+                   <div className="flex items-center gap-4 p-4 border rounded-2xl bg-muted/10">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ 
+                        ...formData, 
+                        antiSpam: { ...formData.antiSpam, enabled: !formData.antiSpam.enabled } 
+                      })}
+                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${formData.antiSpam.enabled ? 'bg-primary' : 'bg-gray-300'}`}
+                    >
+                      <span className={`inline-block size-4 transform rounded-full bg-white transition-transform ${formData.antiSpam.enabled ? 'translate-x-1 rtl:-translate-x-6' : 'translate-x-6 rtl:-translate-x-1'}`} />
+                    </button>
+                    <div className="flex flex-col text-start">
+                      <span className="font-bold text-sm">تفعيل التدريع وإيقاف الإزعاج</span>
+                    </div>
+                  </div>
+
+                  {formData.antiSpam.enabled && (
+                    <div className="grid gap-6 text-start bg-muted/10 rounded-2xl p-6 border border-dashed">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                           <Label className="text-sm font-bold">أقصى عدد رسائل (ردود آلية)</Label>
+                           <Input 
+                             type="number" 
+                             min="1"
+                             value={formData.antiSpam.maxMessagesPerWindow} 
+                             onChange={e => setFormData({ ...formData, antiSpam: { ...formData.antiSpam, maxMessagesPerWindow: parseInt(e.target.value) || 3 } })}
+                             className="rounded-xl border-none bg-background shadow-sm"
+                           />
+                        </div>
+                        <div className="grid gap-2">
+                           <Label className="text-sm font-bold">المدة الزمنية (بالدقائق)</Label>
+                           <Input 
+                             type="number" 
+                             min="1"
+                             value={formData.antiSpam.windowMinutes} 
+                             onChange={e => setFormData({ ...formData, antiSpam: { ...formData.antiSpam, windowMinutes: parseInt(e.target.value) || 5 } })}
+                             className="rounded-xl border-none bg-background shadow-sm"
+                           />
+                        </div>
+                      </div>
+
+                       <div className="grid gap-2 mt-2">
+                         <Label className="text-sm font-bold">الرد الحازم عند تجاوز الحد (تكرار الرسائل)</Label>
+                        <textarea
+                          rows={2}
+                          className="flex w-full rounded-2xl border-none bg-background px-4 py-3 text-sm shadow-inner focus:ring-2 focus:ring-primary outline-none"
+                          value={formData.antiSpam.warningMessage}
+                          onChange={e => setFormData({ ...formData, antiSpam: { ...formData.antiSpam, warningMessage: e.target.value } })}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

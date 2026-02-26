@@ -25,6 +25,8 @@ export const organizationSchema = pgTable(
   'organization',
   {
     id: text('id').primaryKey(),
+    planId: text('plan_id'),
+    metaAccessToken: text('meta_access_token'),
     stripeCustomerId: text('stripe_customer_id'),
     stripeSubscriptionId: text('stripe_subscription_id'),
     stripeSubscriptionPriceId: text('stripe_subscription_price_id'),
@@ -169,6 +171,9 @@ export const aiSettingsSchema = pgTable('ai_settings', {
   tone: text('tone'),
   escalationRules: text('escalation_rules'),
   faqs: jsonb('faqs').$type<{ question: string; answer: string }[]>(),
+  welcomeMessage: text('welcome_message').default('أهلاً بك {name}! كيف يمكنني مساعدتك؟ (طلب / سعر / دعم / حجز / تواصل بشري)'),
+  workingHours: jsonb('working_hours').$type<{ enabled: boolean; start: string; end: string; outOfHoursMessage: string }>(),
+  antiSpam: jsonb('anti_spam').$type<{ enabled: boolean; maxMessagesPerWindow: number; windowMinutes: number; warningMessage: string }>(),
   updatedAt: timestamp('updated_at', { mode: 'date' })
     .defaultNow()
     .$onUpdate(() => new Date())

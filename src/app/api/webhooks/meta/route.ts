@@ -18,25 +18,28 @@ export const POST = async (request: Request) => {
 
   console.log('Received Meta Webhook:', JSON.stringify(body, null, 2));
 
-  // Handle different object types: 'page' (Messenger/IG), 'whatsapp_business_account'
-  if (body.object === 'page') {
-    // Handle Messenger/Instagram messages
-    body.entry?.forEach((entry: any) => {
-      const messaging = entry.messaging?.[0];
-      if (messaging) {
-        console.log('New Message from:', messaging.sender.id, 'Content:', messaging.message?.text);
-        // Here you would trigger your AI processing logic
-      }
-    });
-  } else if (body.object === 'whatsapp_business_account') {
-    // Handle WhatsApp messages
-    body.entry?.forEach((entry: any) => {
-      const changes = entry.changes?.[0];
-      if (changes?.value?.messages) {
-        console.log('New WhatsApp Message from:', changes.value.messages[0].from);
-      }
-    });
+  // Forward the entire payload to n8n webhook
+  const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL;
+  
+  if (n8nWebhookUrl) {
+    try {
+      console.log('Forwarding payload to n8n...');
+      // We do not await this, we just fire and forget so Meta gets a 200 OK immediately
+      fetch(n8nWebhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      }).catch(err => console.error('Error forwarding to n8n (async block):', err));
+      
+    } catch (error) {
+      console.error('Error initiating forward to n8n:', error);
+    }
+  } else {
+    console.log('No N8N_WEBHOOK_URL configured, skipping forward.');
   }
 
+  // Acknowledge receipt to Meta immediately
   return new NextResponse('OK', { status: 200 });
 };
