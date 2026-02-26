@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/omar-maasher/HOOD/compare/v1.0.8...v1.1.0) (2026-02-26)
+
+
+### Features
+
+* complete UI redesign, setup dark mode with Cairo font, fix database timeout and add dashboard bento layout ([062d4ab](https://github.com/omar-maasher/HOOD/commit/062d4ab8619c20d75a4225ef9200b37f100793f3))
+
 ## [1.0.8](https://github.com/omar-maasher/HOOD/compare/v1.0.7...v1.0.8) (2026-02-26)
 
 
