@@ -1,3 +1,10 @@
+## [1.0.8](https://github.com/omar-maasher/HOOD/compare/v1.0.7...v1.0.8) (2026-02-26)
+
+
+### Bug Fixes
+
+* resolve pg import, empty my-account page, add error boundary ([2725cdb](https://github.com/omar-maasher/HOOD/commit/2725cdb9775901cc61b5b851924cddf14ac3e115))
+
 ## [1.0.7](https://github.com/omar-maasher/HOOD/compare/v1.0.6...v1.0.7) (2026-02-26)
 
 
