@@ -67,6 +67,7 @@ export default function middleware(
         return NextResponse.redirect(orgSelection);
       }
 
+      // Bypass next-intl for API routes
       if (req.nextUrl.pathname.startsWith('/api')) {
         return NextResponse.next();
       }
@@ -75,6 +76,7 @@ export default function middleware(
     })(request, event);
   }
 
+  // Bypass next-intl for API routes
   if (request.nextUrl.pathname.startsWith('/api')) {
     return NextResponse.next();
   }
