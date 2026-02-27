@@ -5,6 +5,8 @@ import { db } from '@/libs/DB';
 import { integrationSchema } from '@/models/Schema';
 import { eq } from 'drizzle-orm';
 
+import { DisconnectButton } from './DisconnectButton';
+
 export default async function IntegrationsPage() {
   const { orgId } = await auth();
   let integrations: any[] = [];
@@ -103,9 +105,7 @@ export default async function IntegrationsPage() {
               <div className="mt-8 pt-6 border-t border-dashed">
                 {isConnected ? (
                   <div className="flex items-center justify-between">
-                    <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl font-bold">
-                      إلغاء الربط
-                    </Button>
+                    <DisconnectButton channelKey={channel.key} />
                     <Button variant="outline" size="sm" className="rounded-xl font-bold">
                       إعدادات
                     </Button>
