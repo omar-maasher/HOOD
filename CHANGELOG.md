@@ -1,3 +1,11 @@
+# 1.0.0 (2026-02-27)
+
+
+### Bug Fixes
+
+* remove unused Link import to resolve build error ([62b0ded](https://github.com/omar-maasher/HOOD/commit/62b0dedcb7aa6f66f8f96d520876062117445f40))
+* resolve CORS and RSC fetch errors in Meta integration ([c167dc3](https://github.com/omar-maasher/HOOD/commit/c167dc3ae31293b40770d7a00f77bc3a9ca21a1f))
+
 ## [1.4.1](https://github.com/omar-maasher/HOOD/compare/v1.4.0...v1.4.1) (2026-02-27)
 
 
