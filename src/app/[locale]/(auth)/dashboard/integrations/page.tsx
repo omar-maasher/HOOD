@@ -1,5 +1,5 @@
 import { Instagram, Link as LinkIcon, MessageSquare, Phone, Info } from 'lucide-react';
-import Link from 'next/link';
+
 import { Button } from '@/components/ui/button';
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/libs/DB';
@@ -112,13 +112,13 @@ export default async function IntegrationsPage() {
                     </Button>
                   </div>
                 ) : (
-                  <Link 
+                  <a 
                     href={channel.key === 'whatsapp' ? '#' : '/api/auth/meta'} 
                     className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-4 font-bold text-white transition-all hover:bg-primary/90 shadow-lg shadow-primary/20 active:scale-[0.98]"
                   >
                     <LinkIcon className="size-4" />
                     ربط الحساب
-                  </Link>
+                  </a>
                 )}
               </div>
             </div>
