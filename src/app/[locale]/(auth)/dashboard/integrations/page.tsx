@@ -8,11 +8,18 @@ import { eq } from 'drizzle-orm';
 
 export default async function IntegrationsPage() {
   const { orgId } = await auth();
+  let integrations: any[] = [];
   
-  // Fetch real integrations for this organization
-  const integrations = orgId ? await db.query.integrationSchema.findMany({
-    where: eq(integrationSchema.organizationId, orgId),
-  }) : [];
+  try {
+    // Fetch real integrations for this organization
+    if (orgId) {
+      integrations = await db.query.integrationSchema.findMany({
+        where: eq(integrationSchema.organizationId, orgId),
+      });
+    }
+  } catch (error) {
+    console.error('Error fetching integrations:', error);
+  }
 
   // Currently we save the token as 'facebook_root' when connecting Meta
   const isMetaConnected = integrations.some(i => i.type === 'facebook_root' && i.status === 'active');
