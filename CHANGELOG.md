@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/omar-maasher/HOOD/compare/v1.5.0...v1.6.0) (2026-02-27)
+
+
+### Features
+
+* **integrations:** add working disconnect button and api endpoint ([1eb4e56](https://github.com/omar-maasher/HOOD/commit/1eb4e567811585de2555a6e5e24de44b27e32bcd))
+
 # [1.5.0](https://github.com/omar-maasher/HOOD/compare/v1.4.0...v1.5.0) (2026-02-27)
 
 
