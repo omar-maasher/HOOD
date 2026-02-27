@@ -1,0 +1,321 @@
+{
+  "Index": {
+    "meta_title": "hoodtrading - The perfect template to build and scale your business with ease.",
+    "meta_description": "A landing page template for your business, built with React, TypeScript, Shadcn UI, and Tailwind CSS."
+  },
+  "Navbar": {
+    "sign_in": "Sign In",
+    "sign_up": "Sign Up",
+    "product": "Product",
+    "pricing": "Pricing",
+    "features": "Features",
+    "services": "Services",
+    "challenges": "Challenges",
+    "bonuses": "Bonuses",
+    "docs": "Docs",
+    "blog": "Blog",
+    "community": "Community",
+    "company": "Company"
+  },
+  "Hero": {
+    "follow_twitter": "Follow @Ixartz on Twitter",
+    "title": "The perfect <important>template</important> to build and scale your business with ease.",
+    "description": "A landing page template for your business, built with React, TypeScript, Shadcn UI, and Tailwind CSS.",
+    "primary_button": "Get Next.js SaaS Starter Kit",
+    "secondary_button": "Star on GitHub"
+  },
+  "Sponsors": {
+    "title": "Sponsored by"
+  },
+  "Features": {
+    "section_subtitle": "Features",
+    "section_title": "Unlock the Full Potential of hoodtrading",
+    "section_description": "A landing page template for your business, built with React, TypeScript, Shadcn UI, and Tailwind CSS.",
+    "feature1_title": "Node.js",
+    "feature2_title": "React",
+    "feature3_title": "Tailwind CSS",
+    "feature4_title": "TypeScript",
+    "feature5_title": "Shadcn UI",
+    "feature6_title": "ESLint",
+    "feature_description": "A free and open-source landing page template for your SaaS business, built with React, TypeScript, Shadcn UI, and Tailwind CSS."
+  },
+  "Pricing": {
+    "section_subtitle": "Features",
+    "section_title": "Unlock the Full Potential of hoodtrading",
+    "section_description": "A landing page template for your business, built with React, TypeScript, Shadcn UI, and Tailwind CSS.",
+    "button_text": "Get Started"
+  },
+  "PricingPlan": {
+    "free_plan_name": "Free",
+    "premium_plan_name": "Premium",
+    "enterprise_plan_name": "Enterprise",
+    "free_plan_description": "For individuals",
+    "premium_plan_description": "For small teams",
+    "enterprise_plan_description": "For industry leaders",
+    "feature_team_member": "{number} Team Members",
+    "feature_website": "{number} Websites",
+    "feature_storage": "{number} GB Storage",
+    "feature_transfer": "{number} TB Transfer",
+    "feature_email_support": "Email Support",
+    "plan_interval_month": "month",
+    "plan_interval_year": "year",
+    "next_renew_date": "Your subscription renews on {date}"
+  },
+  "FAQ": {
+    "question": "Lorem ipsum dolor sit amet, consectetur adipiscing elit?",
+    "answer": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam aliquam enim dui, id consequat turpis ullamcorper ac. Mauris id quam dolor. Nullam eu egestas turpis. Proin risus elit, sollicitudin in mi a, accumsan euismod turpis. In euismod mi sed diam tristique hendrerit."
+  },
+  "CTA": {
+    "title": "You are ready?",
+    "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+    "button_text": "Get Next.js SaaS Starter Kit"
+  },
+  "Footer": {
+    "product": "Product",
+    "docs": "Docs",
+    "blog": "Blog",
+    "community": "Community",
+    "company": "Company",
+    "terms_of_service": "Terms Of Service",
+    "privacy_policy": "Privacy Policy",
+    "footer_text": "© {year} {name}. Made with <author></author>."
+  },
+  "ProtectFallback": {
+    "not_enough_permission": "You do not have the permissions to perform this action"
+  },
+  "SignIn": {
+    "meta_title": "Sign in",
+    "meta_description": "Seamlessly sign in to your account with our user-friendly login process."
+  },
+  "SignUp": {
+    "meta_title": "Sign up",
+    "meta_description": "Effortlessly create an account through our intuitive sign-up process."
+  },
+  "DashboardLayout": {
+    "home": "Home",
+    "todos": "Todos",
+    "integrations": "Integrations",
+    "members": "Members",
+    "billing": "Billing",
+    "settings": "Settings",
+    "ai_settings": "AI Settings",
+    "products": "Products"
+  },
+  "Products": {
+    "title": "Product Management",
+    "subtitle": "Add and update your product information to train the AI to respond accurately.",
+    "add_button": "Add Product",
+    "empty_state": "No products yet. Start by adding your first product!",
+    "name": "Product Name",
+    "price": "Price",
+    "category": "Category",
+    "status": "Status",
+    "actions": "Actions",
+    "save": "Save Product",
+    "placeholder_name": "e.g. Monthly Subscription, Product X, ...",
+    "placeholder_description": "Detailed description that helps the AI understand the product..."
+  },
+  "Dashboard": {
+    "meta_title": "hoodtrading Dashboard",
+    "meta_description": "A landing page template for your business, built with Next.js, TypeScript, Shadcn UI, and Tailwind CSS."
+  },
+  "DashboardIndex": {
+    "title_bar": "Dashboard",
+    "title_bar_description": "Welcome to your dashboard",
+    "message_state_title": "Let's get started",
+    "message_state_description": "You can customize this page by editing the file at <code>dashboard/page.tsx</code>",
+    "message_state_button": "Star on GitHub",
+    "message_state_alternative": "Need advanced features? Next.js 16 & React 19, Multi-tenancy & Teams, Roles & Permissions, Shadcn UI,\nEnd-to-End Typesafety with oRPC, Stripe Payment, Light / Dark mode. Try <url></url>.",
+    "max_message": "Or, need a Self-hosted auth stack (Better Auth)? Try <url></url>."
+  },
+  "UserProfile": {
+    "title_bar": "User Profile",
+    "title_bar_description": "View and manage your user profile"
+  },
+  "OrganizationProfile": {
+    "title_bar": "Business Management",
+    "title_bar_description": "Manage your business profile"
+  },
+  "Billing": {
+    "title_bar": "Billing",
+    "title_bar_description": "Manage your billing and subscription",
+    "current_section_title": "Current Plan",
+    "current_section_description": "Adjust your payment plan to best suit your requirements",
+    "manage_subscription_button": "Manage Subscription"
+  },
+  "BillingOptions": {
+    "current_plan": "Current Plan",
+    "upgrade_plan": "Get Started"
+  },
+  "CheckoutConfirmation": {
+    "title_bar": "Payment Confirmation",
+    "message_state_title": "Payment successful",
+    "message_state_description": "Your payment has been successfully processed. Thank you for your purchase!",
+    "message_state_button": "Go back to Billing"
+  },
+  "DataTable": {
+    "no_results": "No results."
+  },
+  "Todos": {
+    "title_bar": "Todo List",
+    "title_bar_description": "View and manage your todo list",
+    "add_todo_button": "New todo"
+  },
+  "TodoTableColumns": {
+    "open_menu": "Open menu",
+    "edit": "Edit",
+    "delete": "Delete",
+    "title_header": "Title",
+    "message_header": "Message",
+    "created_at_header": "Created at"
+  },
+  "AddTodo": {
+    "title_bar": "Add Todo",
+    "add_todo_section_title": "Create a new todo",
+    "add_todo_section_description": "Fill in the form below to create a new todo"
+  },
+  "EditTodo": {
+    "title_bar": "Edit todo",
+    "edit_todo_section_title": "Modify todo",
+    "edit_todo_section_description": "Fill in the form below to edit the todo"
+  },
+  "TodoForm": {
+    "title_label": "Title",
+    "title_description": "Enter a descriptive title for your todo.",
+    "message_title": "Message",
+    "message_description": "Enter a detailed message for your todo.",
+    "submit_button": "Submit"
+  },
+  "Landing": {
+    "Hero": {
+      "badge": "Hood Trading | The Ultimate Solution for Your Business",
+      "title1": "Smart Bots Tailored",
+      "title2": "to Grow Your Business",
+      "desc": "Grow your business now with an integrated smart assistant that provides solutions to save you from routine tasks. Guarantee your success and save time and money with ",
+      "cta": "Get Your Smart Assistant Now",
+      "guarantee": "If you don't see noticeable improvement within the first 30 days, we'll refund your money in full."
+    },
+    "Features": {
+      "title": "What is hood trading?",
+      "desc": "It is an integrated smart system that saves you costs and time by automating basic operations using a simple formula:",
+      "cs": "Customer Support",
+      "lead": "Lead Generation",
+      "booking": "Appointment Booking"
+    },
+    "Challenges": {
+      "title": "Can support bots really provide tangible solutions?",
+      "desc": "There are many challenges our smartly designed bots can help you overcome:",
+      "c1_title": "24/7 Support",
+      "c1_desc": "Interact with customers and provide continuous support without needing staff round the clock.",
+      "c2_title": "Fast Data Management",
+      "c2_desc": "Manage and analyze massive amounts of data faster and more accurately than humans.",
+      "c3_title": "Customized Experiences",
+      "c3_desc": "Enhance customer experience by providing tailored interactions based on behavior.",
+      "c4_title": "Process Automation",
+      "c4_desc": "Automate routine processes to reduce operational costs and improve efficiency.",
+      "c5_title": "Decision Support",
+      "c5_desc": "Provide informed recommendations using predictive analytics.",
+      "c6_title": "Multilingual Support",
+      "c6_desc": "Interact in multilingual environments to support all your global customers.",
+      "footer": "hood trading is an innovative system to solve these challenges and more!"
+    },
+    "Details": {
+      "title": "What do we offer in detail?",
+      "s1_title": "#1 Customer Support",
+      "s1_l1": "Instant and accurate answers by building a custom FAQ database.",
+      "s1_l2": "Transfer complex requests directly to your human team for intervention.",
+      "s1_ex": "💡 Example:",
+      "s1_ex_desc": "Customers call to inquire about shipments. The bot handles these routine inquiries and provides tracking status instantly!",
+      "s2_title": "#2 Lead Generation",
+      "s2_l1": "Collect customer data (name, email, phone) through seamless automated chats.",
+      "s2_l2": "Categorize leads based on their interest level to qualify them for sales.",
+      "s2_l3": "Weekly reports showing quality and quantity accurately.",
+      "s2_ex": "💡 Example (Clothing Store):",
+      "s2_ex_desc": "When a customer asks about discounts, the bot collects their email for exclusive offers, adds them to the mailing list, and routes them to sales automatically.",
+      "s3_title": "#3 Automated Booking",
+      "s3_l1": "Connect the bot to your calendar to schedule calls and meetings automatically.",
+      "s3_l2": "Instant notifications for the customer and the team.",
+      "s3_l3": "Easy modification or cancellation directly through chat.",
+      "s3_ex": "💡 Example (Medical Clinic):",
+      "s3_ex_desc": "A patient contacts via WhatsApp, the bot asks about the service, shows available slots, confirms the booking, and updates the doctor's schedule automatically!"
+    },
+    "Bonuses": {
+      "title": "That's not all! You'll also get valuable bonuses",
+      "desc": "To ensure you get the highest value and best results from our system",
+      "b1_title": "Retargeting Campaign",
+      "b1_desc": "Build campaigns for customers who interacted but didn't complete a purchase or booking.",
+      "b2_title": "24/7 Tech Support (1 Month)",
+      "b2_desc": "Our team is with you around the clock in the first month for any technical issues.",
+      "b3_title": "Free Training Session",
+      "b3_desc": "Train your team on using the bot and analyzing its data to improve performance.",
+      "b4_title": "Free Strategic Guide",
+      "b4_desc": "A guide detailing how to utilize conversational AI to multiply sales.",
+      "footer": "The bot is fully designed and set up within 3-5 business days only!"
+    },
+    "Pricing": {
+      "title": "Flexible Plans and Pricing for All Your Needs",
+      "desc": "Choose the most suitable plan for your business growth with hood trading, no hidden costs.",
+      "p1_title": "Starter",
+      "p1_desc": "Perfect for startups to begin automation",
+      "p1_price": "$29",
+      "p1_month": "/month",
+      "p1_l1": "Support 1 channel (WhatsApp or Instagram)",
+      "p1_l2": "Up to 1,000 AI-powered messages",
+      "p1_l3": "Add up to 50 products/services",
+      "p1_l4": "Email technical support",
+      "p1_btn": "Start with Starter",
+      "p2_badge": "Most Popular 🚀",
+      "p2_title": "Pro",
+      "p2_desc": "For growing businesses and stores",
+      "p2_price": "$79",
+      "p2_month": "/month",
+      "p2_l1": "Support all channels (WhatsApp, IG, Messenger)",
+      "p2_l2": "Up to 10,000 smart messages per month",
+      "p2_l3": "Unlimited products and services",
+      "p2_l4": "Automated calendar booking",
+      "p2_l5": "24/7 priority live support",
+      "p2_btn": "Choose Pro Plan",
+      "p3_title": "Enterprise",
+      "p3_desc": "For agencies and large companies with custom needs",
+      "p3_price": "Custom",
+      "p3_l1": "All Pro plan features",
+      "p3_l2": "Unlimited messages and channels",
+      "p3_l3": "Direct API integration with your ERP/CRM",
+      "p3_l4": "Dedicated account manager & field training",
+      "p3_btn": "Contact Sales"
+    },
+    "Audience": {
+      "title": "Is hood trading right for you?",
+      "pro_title": "This system is perfect if you:",
+      "pro_l1": "Seek to provide fast and accurate support 24/7.",
+      "pro_l2": "Need to reduce routine workloads to boost staff productivity.",
+      "pro_l3": "Are looking for a smart data analysis tool to aid your decisions.",
+      "pro_l4": "Want to lead your market by adopting efficient modern technologies.",
+      "con_title": "Not suitable if you:",
+      "con_l1": "Do not believe in automation and think humans alone are the solution.",
+      "con_l2": "Have a severely limited budget that doesn't cover tech investments.",
+      "con_l3": "Want complete manual control and reject automation entirely.",
+      "con_l4": "Operate in a highly traditional market that rejects new technology."
+    },
+    "Categories": {
+      "title": "Who Benefits Most from This Service",
+      "c1_title": "Small & Medium Businesses",
+      "c1_desc": "Save time and effort by automating operations and improving efficiency.",
+      "c2_title": "Startups & Entrepreneurs",
+      "c2_desc": "Organize operations without needing to hire a large team early on.",
+      "c3_title": "E-Commerce Stores",
+      "c3_desc": "Manage orders, inquiries, and sales with absolute smoothness.",
+      "c4_title": "Digital Marketing Agencies",
+      "c4_desc": "Reduce follow-up burdens, collect leads, and access continuous analysis.",
+      "c5_title": "Remote Teams",
+      "c5_desc": "Automate daily communications and make teamwork more flexible.",
+      "c6_title": "Manual System Dependents",
+      "c6_desc": "Minimize human errors and increase accuracy significantly."
+    },
+    "CTA": {
+      "title": "Comprehensive Success Guarantee",
+      "desc": "If our chatbot does not save you noticeable time or improve customer interaction within the first 30 days, <strongText>we will refund your entire payment</strongText> and provide a new bot development plan for free!",
+      "btn": "Get Your Smart Assistant Now"
+    }
+  }
+}
