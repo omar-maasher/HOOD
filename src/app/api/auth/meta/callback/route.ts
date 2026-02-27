@@ -34,9 +34,9 @@ export const GET = async (request: Request) => {
     
     // Check if the integration already exists
     const existingIntegration = await db.query.integrationSchema.findFirst({
-      where: (integrations, { eq, and }) => and(
-        eq(integrations.organizationId, orgId),
-        eq(integrations.type, 'facebook_root')
+      where: and(
+        eq(integrationSchema.organizationId, orgId),
+        eq(integrationSchema.type, 'facebook_root')
       )
     });
 
