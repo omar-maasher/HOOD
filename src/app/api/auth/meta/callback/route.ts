@@ -58,6 +58,63 @@ export const GET = async (request: Request) => {
       });
     }
 
+    // --- NEW: AUTO FETCH PAGES AND INSTAGRAM ACCOUNT ---
+    try {
+      const pagesRes = await fetch(`https://graph.facebook.com/v21.0/me/accounts?access_token=${accessToken}`);
+      if (pagesRes.ok) {
+        const pagesData = await pagesRes.json();
+        
+        // Loop through all pages to see if they have an Instagram Business account connected
+        for (const page of pagesData.data || []) {
+          const pageToken = page.access_token;
+          const pageId = page.id;
+          
+          const igRes = await fetch(`https://graph.facebook.com/v21.0/${pageId}?fields=instagram_business_account&access_token=${pageToken}`);
+          if (igRes.ok) {
+            const igData = await igRes.json();
+            
+            // If the page has an Instagram account connected
+            if (igData.instagram_business_account) {
+              const igAccountId = igData.instagram_business_account.id;
+              
+              // We found an Instagram account! Save it as an 'instagram' integration using the PAGE token.
+              const existingIg = await db.query.integrationSchema.findFirst({
+                where: and(
+                  eq(integrationSchema.organizationId, orgId),
+                  eq(integrationSchema.type, 'instagram')
+                )
+              });
+
+              if (existingIg) {
+                await db.update(integrationSchema)
+                  .set({ accessToken: pageToken, providerId: igAccountId, updatedAt: new Date() })
+                  .where(
+                    and(
+                      eq(integrationSchema.organizationId, orgId),
+                      eq(integrationSchema.type, 'instagram')
+                    )
+                  );
+              } else {
+                await db.insert(integrationSchema).values({
+                  organizationId: orgId,
+                  type: 'instagram',
+                  providerId: igAccountId,
+                  accessToken: pageToken, // THIS IS THE CRITICAL PAGE TOKEN n8n NEEDS!
+                  status: 'active',
+                });
+              }
+              
+              // Only auto-connect the first found one for now
+              break; 
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Auto-connect Instagram Error:', e);
+    }
+    // --------------------------------------------------
+
     return NextResponse.redirect(new URL(`/dashboard/integrations?success=connected`, request.url));
   } catch (error) {
     console.error('Meta Callback Error:', error);

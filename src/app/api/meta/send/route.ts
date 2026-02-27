@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { sendInstagramMessage } from '@/libs/Meta';
 import { db } from '@/libs/DB';
-import { organizationSchema } from '@/models/Schema';
-import { eq } from 'drizzle-orm';
+import { integrationSchema } from '@/models/Schema';
+import { eq, and } from 'drizzle-orm';
 
 export const POST = async (request: Request) => {
   try {
@@ -16,38 +16,36 @@ export const POST = async (request: Request) => {
     }
 
     const body = await request.json();
-    const { platform, orgId, recipientId, message, accountId } = body;
+    const { platform, orgId, recipientId, message } = body;
 
     if (!platform || !orgId || !recipientId || !message) {
       return NextResponse.json({ error: 'Missing required fields: platform, orgId, recipientId, message' }, { status: 400 });
     }
 
-    // 2. Fetch the Organization to get the Meta Access Tokens
-    const orgData = await db.query.organizationSchema.findFirst({
-      where: eq(organizationSchema.id, orgId),
+    // 2. Fetch the specific integration (Page Token) for Instagram
+    const instagramIntegration = await db.query.integrationSchema.findFirst({
+      where: and(
+        eq(integrationSchema.organizationId, orgId),
+        eq(integrationSchema.type, 'instagram')
+      ),
     });
-
-    if (!orgData) {
-      return NextResponse.json({ error: 'Organization not found' }, { status: 404 });
-    }
 
     let responseData;
 
     // 3. Send message using the appropriate platform method
     if (platform === 'instagram') {
-      const accessToken = orgData.metaAccessToken; // Or whatever column stores the page token
-      // Fallback to Env token if not in DB for testing
-      const token = accessToken || process.env.META_ACCESS_TOKEN;
+      if (!instagramIntegration) {
+        return NextResponse.json({ error: 'No Instagram integration found for this organization.' }, { status: 404 });
+      }
+
+      const token = instagramIntegration.accessToken;
+      const accountIdFromDB = instagramIntegration.providerId; // Instagram Business Account ID
       
-      if (!token) {
-        return NextResponse.json({ error: 'No Meta access token found for this organization.' }, { status: 400 });
+      if (!token || !accountIdFromDB) {
+        return NextResponse.json({ error: 'Instagram integration is missing token or account ID.' }, { status: 400 });
       }
 
-      if (!accountId) {
-        return NextResponse.json({ error: 'accountId (Instagram Account ID) is required for Instagram messages' }, { status: 400 });
-      }
-
-      responseData = await sendInstagramMessage(accountId, recipientId, message, token);
+      responseData = await sendInstagramMessage(accountIdFromDB, recipientId, message, token);
     } 
     /* 
     else if (platform === 'whatsapp') {
