@@ -1,3 +1,15 @@
+## [1.4.1](https://github.com/omar-maasher/HOOD/compare/v1.4.0...v1.4.1) (2026-02-27)
+
+
+### Bug Fixes
+
+* **integrations:** use standard anchor tag for meta oauth redirect to prevent cors issues ([7c3606d](https://github.com/omar-maasher/HOOD/commit/7c3606d1ee402e42c0f9ee18c82136664867df69))
+* **integrations:** use standard anchor tag for meta oauth redirect to prevent cors issues ([1533a92](https://github.com/omar-maasher/HOOD/commit/1533a92b5ece041d5fbdf8972cb901e865b089b8))
+* **integrations:** wrap db query in try-catch to prevent page crash ([0ed641d](https://github.com/omar-maasher/HOOD/commit/0ed641d4de2a53bf1cb037d05bb6f663b4cf0986))
+* remove unused Link import to resolve build error ([62b0ded](https://github.com/omar-maasher/HOOD/commit/62b0dedcb7aa6f66f8f96d520876062117445f40))
+* resolve CORS and RSC fetch errors in Meta integration ([c167dc3](https://github.com/omar-maasher/HOOD/commit/c167dc3ae31293b40770d7a00f77bc3a9ca21a1f))
+* resolve merge conflict in package.json ([8c52e94](https://github.com/omar-maasher/HOOD/commit/8c52e942dc40b8ee86a4929d0195e1c6f4d73361))
+
 <<<<<<< HEAD
 =======
 # 1.0.0 (2026-02-27)
