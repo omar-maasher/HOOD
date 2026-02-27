@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/omar-maasher/HOOD/compare/v1.3.4...v1.4.0) (2026-02-27)
+
+
+### Features
+
+* make integrations page dynamic and show real db status ([b134e4f](https://github.com/omar-maasher/HOOD/commit/b134e4f446d4efdc0e230e561bef75c232f7688c))
+
 ## [1.3.4](https://github.com/omar-maasher/HOOD/compare/v1.3.3...v1.3.4) (2026-02-26)
 
 
