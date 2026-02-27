@@ -1,28 +1,28 @@
-'use client';
-
 import { Instagram, Link as LinkIcon, MessageSquare, Phone, Info } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { auth } from '@clerk/nextjs/server';
+import { db } from '@/libs/DB';
+import { integrationSchema } from '@/models/Schema';
+import { eq } from 'drizzle-orm';
 
-type ChannelKey = 'instagram' | 'messenger' | 'whatsapp';
+export default async function IntegrationsPage() {
+  const { orgId } = await auth();
+  
+  // Fetch real integrations for this organization
+  const integrations = orgId ? await db.query.integrationSchema.findMany({
+    where: eq(integrationSchema.organizationId, orgId),
+  }) : [];
 
-export default function IntegrationsPage() {
+  // Currently we save the token as 'facebook_root' when connecting Meta
+  const isMetaConnected = integrations.some(i => i.type === 'facebook_root' && i.status === 'active');
 
-  // Hardcoded status for preview, but would fetch from backend normally
-  const channels: Array<{
-    key: ChannelKey;
-    name: string;
-    description: string;
-    status: 'connected' | 'not_connected';
-    icon: any;
-    color: string;
-    bg: string;
-  }> = [
+  const channels = [
     {
       key: 'instagram',
       name: 'إنستجرام (Instagram)',
       description: 'الرد الآلي على الرسائل المباشرة والتعليقات والقصص.',
-      status: 'not_connected',
+      status: isMetaConnected ? 'connected' : 'not_connected',
       icon: Instagram,
       color: 'text-pink-600',
       bg: 'bg-pink-50',
@@ -31,7 +31,7 @@ export default function IntegrationsPage() {
       key: 'messenger',
       name: 'ماسنجر (Messenger)',
       description: 'إدارة رسائل صفحة الفيسبوك الخاصة بك تلقائياً.',
-      status: 'not_connected',
+      status: isMetaConnected ? 'connected' : 'not_connected',
       icon: MessageSquare,
       color: 'text-blue-600',
       bg: 'bg-blue-50',
@@ -40,7 +40,7 @@ export default function IntegrationsPage() {
       key: 'whatsapp',
       name: 'واتساب (WhatsApp)',
       description: 'ربط واجهة Cloud API للردود السريعة وحملات التسويق.',
-      status: 'connected',
+      status: integrations.some(i => i.type === 'whatsapp') ? 'connected' : 'not_connected',
       icon: Phone,
       color: 'text-emerald-600',
       bg: 'bg-emerald-50',
@@ -106,7 +106,7 @@ export default function IntegrationsPage() {
                   </div>
                 ) : (
                   <Link 
-                    href="/api/auth/meta" 
+                    href={channel.key === 'whatsapp' ? '#' : '/api/auth/meta'} 
                     className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-4 font-bold text-white transition-all hover:bg-primary/90 shadow-lg shadow-primary/20 active:scale-[0.98]"
                   >
                     <LinkIcon className="size-4" />
