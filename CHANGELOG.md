@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/omar-maasher/HOOD/compare/v1.4.0...v1.4.1) (2026-02-27)
+
+
+### Bug Fixes
+
+* **integrations:** wrap db query in try-catch to prevent page crash ([0ed641d](https://github.com/omar-maasher/HOOD/commit/0ed641d4de2a53bf1cb037d05bb6f663b4cf0986))
+
 # [1.4.0](https://github.com/omar-maasher/HOOD/compare/v1.3.4...v1.4.0) (2026-02-27)
 
 
