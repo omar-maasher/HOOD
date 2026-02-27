@@ -1,5 +1,8 @@
 import { Instagram, Link as LinkIcon, MessageSquare, Phone, Info } from 'lucide-react';
+<<<<<<< HEAD
 
+=======
+>>>>>>> 72d3da9fe59d70b9579f2eee21be98280f3a4fca
 import { Button } from '@/components/ui/button';
 import { auth } from '@clerk/nextjs/server';
 import { db } from '@/libs/DB';
