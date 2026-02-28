@@ -38,6 +38,32 @@ export const POST = async (request: Request) => {
     platform = 'whatsapp';
   }
 
+  // --- FILTER OUT ECHOES & SYSTEM EVENTS TO PREVENT INFINITE LOOPS ---
+  const messagingEvent = body.entry?.[0]?.messaging?.[0];
+  if (messagingEvent) {
+    // 1. Ignore echo messages (messages sent by the bot itself)
+    if (messagingEvent.message?.is_echo || messagingEvent.sender?.id === pageId) {
+      // eslint-disable-next-line no-console
+      console.log('Ignoring echo message (bot reply).');
+      return new NextResponse('OK', { status: 200 });
+    }
+    // 2. Ignore message delivery / read receipts
+    if (messagingEvent.delivery || messagingEvent.read) {
+      // eslint-disable-next-line no-console
+      console.log('Ignoring delivery/read receipt.');
+      return new NextResponse('OK', { status: 200 });
+    }
+  }
+
+  // Filter out WhatsApp status updates (delivery/read/sent)
+  const waChangesValue = body.entry?.[0]?.changes?.[0]?.value;
+  if (waChangesValue?.statuses) {
+    // eslint-disable-next-line no-console
+    console.log('Ignoring WhatsApp status update (delivery/read).');
+    return new NextResponse('OK', { status: 200 });
+  }
+  // ----------------------------------------------------------------
+
   // Forward to n8n Flow
   const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL;
 
