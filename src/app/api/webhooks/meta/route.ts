@@ -47,26 +47,9 @@ export const POST = async (request: Request) => {
 
       if (pageId) {
         // Find the tenant (Organization) that owns this Instagram/WhatsApp account.
-        //
-        // NOTE: For Instagram webhooks, body.entry[0].id is the Instagram-linked
-        // Page ID (same as the Facebook Page ID we store as providerId).
-        // However some older integrations stored the Instagram Business Account ID.
-        // We try both: direct providerId match first, then fall back to checking
-        // the messaging recipient page_id inside the webhook payload.
-        let integration = await db.query.integrationSchema.findFirst({
+        const integration = await db.query.integrationSchema.findFirst({
           where: eq(integrationSchema.providerId, pageId),
         });
-
-        // Fallback: try to find via the page_id inside the messaging entries
-        if (!integration && platform === 'instagram') {
-          const recipientPageId = body.entry?.[0]?.messaging?.[0]?.recipient?.id
-            ?? body.entry?.[0]?.changes?.[0]?.value?.recipient_id;
-          if (recipientPageId && recipientPageId !== pageId) {
-            integration = await db.query.integrationSchema.findFirst({
-              where: eq(integrationSchema.providerId, recipientPageId),
-            });
-          }
-        }
 
         if (integration) {
           const orgId = integration.organizationId;

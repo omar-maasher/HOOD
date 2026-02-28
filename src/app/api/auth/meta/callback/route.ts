@@ -81,12 +81,12 @@ export const GET = async (request: Request) => {
             if (igData.instagram_business_account) {
               const igAccountId = igData.instagram_business_account.id;
 
-              // IMPORTANT: For the Messenger API for Instagram, messages must be sent
-              // via the FACEBOOK PAGE ID (not the Instagram account ID), using the PAGE token.
+              // IMPORTANT: For the Webhook to work, providerId must match the Instagram Account ID.
+              // For sending messages, we need the Facebook Page ID.
               // We store:
-              //   providerId   = Facebook Page ID  (used as sender in /messages endpoint)
-              //   accessToken  = Page Access Token
-              //   externalId   = Instagram Business Account ID (for reference)
+              //   providerId = Instagram Business Account ID (for incoming Webhooks)
+              //   config     = JSON string containing { pageId } (for sending messages)
+              //   accessToken= Page Access Token
               const existingIg = await db.query.integrationSchema.findFirst({
                 where: and(
                   eq(integrationSchema.organizationId, orgId),
@@ -98,9 +98,8 @@ export const GET = async (request: Request) => {
                 await db.update(integrationSchema)
                   .set({
                     accessToken: pageToken,
-                    providerId: pageId, // <-- Facebook Page ID for messaging
-                    // @ts-expect-error – externalId stores the IG account ID for reference
-                    externalId: igAccountId,
+                    providerId: igAccountId, // Instagram Account ID (needed for Webhook)
+                    config: JSON.stringify({ pageId }), // Facebook Page ID (needed for Sending Messages)
                     updatedAt: new Date(),
                   })
                   .where(
@@ -113,8 +112,9 @@ export const GET = async (request: Request) => {
                 await db.insert(integrationSchema).values({
                   organizationId: orgId,
                   type: 'instagram',
-                  providerId: pageId, // <-- Facebook Page ID for messaging
+                  providerId: igAccountId, // Instagram Account ID (needed for Webhook)
                   accessToken: pageToken, // Page Access Token
+                  config: JSON.stringify({ pageId }), // Facebook Page ID (needed for Sending Messages)
                   status: 'active',
                 });
               }
