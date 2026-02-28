@@ -1,8 +1,12 @@
+import { Buffer } from 'node:buffer';
+
+import { and, eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
-import { exchangeCodeForToken, getLongLivedToken } from '@/libs/Meta';
+
 import { db } from '@/libs/DB';
+import { exchangeCodeForToken, getLongLivedToken } from '@/libs/Meta';
 import { integrationSchema } from '@/models/Schema';
-import { eq, and } from 'drizzle-orm';
+
 export const GET = async (request: Request) => {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
@@ -18,7 +22,7 @@ export const GET = async (request: Request) => {
 
     // Exchange short-lived code for token
     const tokenResponse = await exchangeCodeForToken(code);
-    
+
     if (tokenResponse.error) {
       console.error('Meta Token Exchange Error:', tokenResponse.error);
       return NextResponse.redirect(new URL('/dashboard/integrations?error=token_exchange_failed', request.url));
@@ -31,13 +35,13 @@ export const GET = async (request: Request) => {
     // Here you would normally fetch the user's pages and let them choose
     // For now, we just save the main token for the organization
     // We'll tag it as 'facebook' which can then be used to list pages/instagram/etc.
-    
+
     // Check if the integration already exists
     const existingIntegration = await db.query.integrationSchema.findFirst({
       where: and(
         eq(integrationSchema.organizationId, orgId),
-        eq(integrationSchema.type, 'facebook_root')
-      )
+        eq(integrationSchema.type, 'facebook_root'),
+      ),
     });
 
     if (existingIntegration) {
@@ -46,14 +50,14 @@ export const GET = async (request: Request) => {
         .where(
           and(
             eq(integrationSchema.organizationId, orgId),
-            eq(integrationSchema.type, 'facebook_root')
-          )
+            eq(integrationSchema.type, 'facebook_root'),
+          ),
         );
     } else {
       await db.insert(integrationSchema).values({
         organizationId: orgId,
         type: 'facebook_root',
-        accessToken: accessToken,
+        accessToken,
         status: 'active',
       });
     }
@@ -63,49 +67,60 @@ export const GET = async (request: Request) => {
       const pagesRes = await fetch(`https://graph.facebook.com/v21.0/me/accounts?access_token=${accessToken}`);
       if (pagesRes.ok) {
         const pagesData = await pagesRes.json();
-        
+
         // Loop through all pages to see if they have an Instagram Business account connected
         for (const page of pagesData.data || []) {
           const pageToken = page.access_token;
           const pageId = page.id;
-          
+
           const igRes = await fetch(`https://graph.facebook.com/v21.0/${pageId}?fields=instagram_business_account&access_token=${pageToken}`);
           if (igRes.ok) {
             const igData = await igRes.json();
-            
+
             // If the page has an Instagram account connected
             if (igData.instagram_business_account) {
               const igAccountId = igData.instagram_business_account.id;
-              
-              // We found an Instagram account! Save it as an 'instagram' integration using the PAGE token.
+
+              // IMPORTANT: For the Messenger API for Instagram, messages must be sent
+              // via the FACEBOOK PAGE ID (not the Instagram account ID), using the PAGE token.
+              // We store:
+              //   providerId   = Facebook Page ID  (used as sender in /messages endpoint)
+              //   accessToken  = Page Access Token
+              //   externalId   = Instagram Business Account ID (for reference)
               const existingIg = await db.query.integrationSchema.findFirst({
                 where: and(
                   eq(integrationSchema.organizationId, orgId),
-                  eq(integrationSchema.type, 'instagram')
-                )
+                  eq(integrationSchema.type, 'instagram'),
+                ),
               });
 
               if (existingIg) {
                 await db.update(integrationSchema)
-                  .set({ accessToken: pageToken, providerId: igAccountId, updatedAt: new Date() })
+                  .set({
+                    accessToken: pageToken,
+                    providerId: pageId, // <-- Facebook Page ID for messaging
+                    // @ts-expect-error – externalId stores the IG account ID for reference
+                    externalId: igAccountId,
+                    updatedAt: new Date(),
+                  })
                   .where(
                     and(
                       eq(integrationSchema.organizationId, orgId),
-                      eq(integrationSchema.type, 'instagram')
-                    )
+                      eq(integrationSchema.type, 'instagram'),
+                    ),
                   );
               } else {
                 await db.insert(integrationSchema).values({
                   organizationId: orgId,
                   type: 'instagram',
-                  providerId: igAccountId,
-                  accessToken: pageToken, // THIS IS THE CRITICAL PAGE TOKEN n8n NEEDS!
+                  providerId: pageId, // <-- Facebook Page ID for messaging
+                  accessToken: pageToken, // Page Access Token
                   status: 'active',
                 });
               }
-              
+
               // Only auto-connect the first found one for now
-              break; 
+              break;
             }
           }
         }
