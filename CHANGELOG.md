@@ -1,3 +1,10 @@
+## [1.6.2](https://github.com/omar-maasher/HOOD/compare/v1.6.1...v1.6.2) (2026-02-28)
+
+
+### Bug Fixes
+
+* identify instagram to n8n ([f1ecc43](https://github.com/omar-maasher/HOOD/commit/f1ecc431ea2c49da2e44d84b886871703971112d))
+
 ## [1.6.1](https://github.com/omar-maasher/HOOD/compare/v1.6.0...v1.6.1) (2026-02-28)
 
 
