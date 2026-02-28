@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server';
-import { db } from '@/libs/DB';
-import { integrationSchema, aiSettingsSchema } from '@/models/Schema';
 import { eq } from 'drizzle-orm';
+import { NextResponse } from 'next/server';
+
+import { db } from '@/libs/DB';
+import { aiSettingsSchema, integrationSchema } from '@/models/Schema';
 
 export const GET = async (request: Request) => {
   const { searchParams } = new URL(request.url);
@@ -19,6 +20,7 @@ export const GET = async (request: Request) => {
 export const POST = async (request: Request) => {
   const body = await request.json();
 
+  // eslint-disable-next-line no-console
   console.log('Received Meta Webhook:', JSON.stringify(body, null, 2));
 
   let pageId = null;
@@ -38,7 +40,7 @@ export const POST = async (request: Request) => {
 
   // Forward to n8n Flow
   const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL;
-  
+
   if (n8nWebhookUrl) {
     try {
       // Background async processing: Don't await so Meta gets 200 OK fast
@@ -65,25 +67,28 @@ export const POST = async (request: Request) => {
                 organizationId: orgId,
                 integrationType: integration.type,
                 aiConfig: aiSettings || { isActive: 'false' }, // Fallback if no settings
-              }
+              },
             };
           } else {
+            // eslint-disable-next-line no-console
             console.log(`No active integration found for provider id: ${pageId}`);
           }
         }
 
+        // eslint-disable-next-line no-console
         console.log('Forwarding Enriched Payload to n8n...');
         await fetch(n8nWebhookUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(enrichedPayload),
+
         });
       })().catch(err => console.error('Error forwarding to n8n:', err));
-      
     } catch (error) {
       console.error('Error initiating forward to n8n:', error);
     }
   } else {
+    // eslint-disable-next-line no-console
     console.log('No N8N_WEBHOOK_URL configured, skipping forward.');
   }
 
