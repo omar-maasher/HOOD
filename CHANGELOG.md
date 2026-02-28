@@ -5,6 +5,16 @@
 
 * await webhook dispatch to prevent vercel freeze ([029db73](https://github.com/omar-maasher/HOOD/commit/029db73b1d66e4538b504205c038e2918011be78))
 * fallback lookup for instagram webhook provider id mismatch ([ebd8b48](https://github.com/omar-maasher/HOOD/commit/ebd8b483568408b4459e68a8d600c02b523a5f74))
+* ignore bot echo messages and status receipts in webhooks to prevent duplicate responses ([4327e3e](https://github.com/omar-maasher/HOOD/commit/4327e3e40324df3ee06d20e2c6dde1916e8d527c))
+* use Facebook Page ID (not Instagram account ID) for Messenger API ([995de62](https://github.com/omar-maasher/HOOD/commit/995de622d30e62505356cac68c2c750ad6210617))
+
+## [1.6.1](https://github.com/omar-maasher/HOOD/compare/v1.6.0...v1.6.1) (2026-02-28)
+
+
+### Bug Fixes
+
+* await webhook dispatch to prevent vercel freeze ([029db73](https://github.com/omar-maasher/HOOD/commit/029db73b1d66e4538b504205c038e2918011be78))
+* fallback lookup for instagram webhook provider id mismatch ([ebd8b48](https://github.com/omar-maasher/HOOD/commit/ebd8b483568408b4459e68a8d600c02b523a5f74))
 * use Facebook Page ID (not Instagram account ID) for Messenger API ([995de62](https://github.com/omar-maasher/HOOD/commit/995de622d30e62505356cac68c2c750ad6210617))
 
 ## [1.6.1](https://github.com/omar-maasher/HOOD/compare/v1.6.0...v1.6.1) (2026-02-28)
