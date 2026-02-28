@@ -1,3 +1,10 @@
+## [1.6.1](https://github.com/omar-maasher/HOOD/compare/v1.6.0...v1.6.1) (2026-02-28)
+
+
+### Bug Fixes
+
+* correctly identify instagram platform in webhook ([ee24c3e](https://github.com/omar-maasher/HOOD/commit/ee24c3ea7d8c7ce03e12bbba5a7b26c4fdeb9b3c))
+
 # [1.6.0](https://github.com/omar-maasher/HOOD/compare/v1.5.0...v1.6.0) (2026-02-27)
 
 
