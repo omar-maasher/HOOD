@@ -26,7 +26,10 @@ export const POST = async (request: Request) => {
 
   // Extract Page ID / WABA ID depending on the object type
   if (body.object === 'page') {
-    pageId = body.entry?.[0]?.id; // Instagram/Messenger Page ID
+    pageId = body.entry?.[0]?.id; // Messenger Page ID
+    platform = 'messenger';
+  } else if (body.object === 'instagram') {
+    pageId = body.entry?.[0]?.id; // Instagram Account ID
     platform = 'instagram';
   } else if (body.object === 'whatsapp_business_account') {
     pageId = body.entry?.[0]?.id; // WhatsApp WABA ID
