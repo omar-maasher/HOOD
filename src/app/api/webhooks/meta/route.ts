@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server';
-import { db } from '@/libs/DB';
-import { integrationSchema, aiSettingsSchema } from '@/models/Schema';
 import { eq } from 'drizzle-orm';
+import { NextResponse } from 'next/server';
+
+import { db } from '@/libs/DB';
+import { aiSettingsSchema, integrationSchema } from '@/models/Schema';
 
 export const GET = async (request: Request) => {
   const { searchParams } = new URL(request.url);
@@ -39,16 +40,33 @@ export const POST = async (request: Request) => {
 
   // Forward to n8n Flow
   const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL;
-  
+
   if (n8nWebhookUrl) {
     try {
       let enrichedPayload: any = { rawBody: body, platform };
 
       if (pageId) {
-        // Find the tenant (Organization) that owns this Instagram/WhatsApp account
-        const integration = await db.query.integrationSchema.findFirst({
+        // Find the tenant (Organization) that owns this Instagram/WhatsApp account.
+        //
+        // NOTE: For Instagram webhooks, body.entry[0].id is the Instagram-linked
+        // Page ID (same as the Facebook Page ID we store as providerId).
+        // However some older integrations stored the Instagram Business Account ID.
+        // We try both: direct providerId match first, then fall back to checking
+        // the messaging recipient page_id inside the webhook payload.
+        let integration = await db.query.integrationSchema.findFirst({
           where: eq(integrationSchema.providerId, pageId),
         });
+
+        // Fallback: try to find via the page_id inside the messaging entries
+        if (!integration && platform === 'instagram') {
+          const recipientPageId = body.entry?.[0]?.messaging?.[0]?.recipient?.id
+            ?? body.entry?.[0]?.changes?.[0]?.value?.recipient_id;
+          if (recipientPageId && recipientPageId !== pageId) {
+            integration = await db.query.integrationSchema.findFirst({
+              where: eq(integrationSchema.providerId, recipientPageId),
+            });
+          }
+        }
 
         if (integration) {
           const orgId = integration.organizationId;
@@ -64,7 +82,7 @@ export const POST = async (request: Request) => {
               organizationId: orgId,
               integrationType: integration.type,
               aiConfig: aiSettings || { isActive: 'false' }, // Fallback if no settings
-            }
+            },
           };
         } else {
           // eslint-disable-next-line no-console
@@ -74,16 +92,14 @@ export const POST = async (request: Request) => {
 
       // eslint-disable-next-line no-console
       console.log('Forwarding Enriched Payload to n8n...');
-      
+
       // Wait for n8n to accept the payload so Vercel does not kill it prematurely
       await fetch(n8nWebhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(enrichedPayload),
       });
-      
     } catch (error) {
-      // eslint-disable-next-line no-console
       console.error('Error forwarding Payload to n8n:', error);
     }
   } else {
