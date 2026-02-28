@@ -1,3 +1,10 @@
+## [1.6.3](https://github.com/omar-maasher/HOOD/compare/v1.6.2...v1.6.3) (2026-02-28)
+
+
+### Bug Fixes
+
+* correctly identify instagram in webhook ([981ef48](https://github.com/omar-maasher/HOOD/commit/981ef48063e0614d5a7ec1895a7de9b3348e44de))
+
 ## [1.6.2](https://github.com/omar-maasher/HOOD/compare/v1.6.1...v1.6.2) (2026-02-28)
 
 
