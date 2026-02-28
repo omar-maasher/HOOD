@@ -12,6 +12,14 @@
 ### Bug Fixes
 
 * await webhook dispatch to prevent vercel freeze ([029db73](https://github.com/omar-maasher/HOOD/commit/029db73b1d66e4538b504205c038e2918011be78))
+* use Facebook Page ID (not Instagram account ID) for Messenger API ([995de62](https://github.com/omar-maasher/HOOD/commit/995de622d30e62505356cac68c2c750ad6210617))
+
+## [1.6.1](https://github.com/omar-maasher/HOOD/compare/v1.6.0...v1.6.1) (2026-02-28)
+
+
+### Bug Fixes
+
+* await webhook dispatch to prevent vercel freeze ([029db73](https://github.com/omar-maasher/HOOD/commit/029db73b1d66e4538b504205c038e2918011be78))
 
 # [1.6.0](https://github.com/omar-maasher/HOOD/compare/v1.5.0...v1.6.0) (2026-02-27)
 
