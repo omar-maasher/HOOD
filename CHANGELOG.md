@@ -1,3 +1,10 @@
+# [1.10.0](https://github.com/omar-maasher/HOOD/compare/v1.9.0...v1.10.0) (2026-03-01)
+
+
+### Features
+
+* implement platform-specific permissions and auto-connection for Meta platforms ([c2161c4](https://github.com/omar-maasher/HOOD/commit/c2161c441aa16ad80efca2cf2b747024714eefd6))
+
 # [1.9.0](https://github.com/omar-maasher/HOOD/compare/v1.8.5...v1.9.0) (2026-03-01)
 
 
