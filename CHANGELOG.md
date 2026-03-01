@@ -1,3 +1,10 @@
+## [1.8.2](https://github.com/omar-maasher/HOOD/compare/v1.8.1...v1.8.2) (2026-03-01)
+
+
+### Bug Fixes
+
+* resolve lint errors and update messenger webhook ([59ff879](https://github.com/omar-maasher/HOOD/commit/59ff879624af3effa0ec307d3636e4f54c5a91b8))
+
 ## [1.8.1](https://github.com/omar-maasher/HOOD/compare/v1.8.0...v1.8.1) (2026-03-01)
 
 
