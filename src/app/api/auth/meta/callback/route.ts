@@ -18,7 +18,7 @@ export const GET = async (request: Request) => {
 
   try {
     const state = JSON.parse(Buffer.from(stateBase64, 'base64').toString());
-    const { orgId } = state;
+    const { orgId, platform } = state;
 
     // Exchange short-lived code for token
     const tokenResponse = await exchangeCodeForToken(code);
@@ -62,73 +62,94 @@ export const GET = async (request: Request) => {
       });
     }
 
-    // --- NEW: AUTO FETCH PAGES AND INSTAGRAM ACCOUNT ---
-    try {
-      const pagesRes = await fetch(`https://graph.facebook.com/v21.0/me/accounts?access_token=${accessToken}`);
-      if (pagesRes.ok) {
-        const pagesData = await pagesRes.json();
+    // CREATE DISPLAY RECORD BASED ON PLATFORM CLICKED
+    if (platform === 'messenger') {
+      const existingMsg = await db.query.integrationSchema.findFirst({
+        where: and(
+          eq(integrationSchema.organizationId, orgId),
+          eq(integrationSchema.type, 'messenger'),
+        ),
+      });
 
-        // Loop through all pages to see if they have an Instagram Business account connected
-        for (const page of pagesData.data || []) {
-          const pageToken = page.access_token;
-          const pageId = page.id;
+      if (existingMsg) {
+        await db.update(integrationSchema)
+          .set({ accessToken, updatedAt: new Date() })
+          .where(
+            and(
+              eq(integrationSchema.organizationId, orgId),
+              eq(integrationSchema.type, 'messenger'),
+            ),
+          );
+      } else {
+        await db.insert(integrationSchema).values({
+          organizationId: orgId,
+          type: 'messenger',
+          accessToken,
+          status: 'active',
+        });
+      }
+    } else if (platform === 'instagram') {
+      // --- AUTO FETCH PAGES AND INSTAGRAM ACCOUNT ---
+      try {
+        const pagesRes = await fetch(`https://graph.facebook.com/v21.0/me/accounts?access_token=${accessToken}`);
+        if (pagesRes.ok) {
+          const pagesData = await pagesRes.json();
 
-          const igRes = await fetch(`https://graph.facebook.com/v21.0/${pageId}?fields=instagram_business_account&access_token=${pageToken}`);
-          if (igRes.ok) {
-            const igData = await igRes.json();
+          // Loop through all pages to see if they have an Instagram Business account connected
+          for (const page of pagesData.data || []) {
+            const pageToken = page.access_token;
+            const pageId = page.id;
 
-            // If the page has an Instagram account connected
-            if (igData.instagram_business_account) {
-              const igAccountId = igData.instagram_business_account.id;
+            const igRes = await fetch(`https://graph.facebook.com/v21.0/${pageId}?fields=instagram_business_account&access_token=${pageToken}`);
+            if (igRes.ok) {
+              const igData = await igRes.json();
 
-              // IMPORTANT: For the Webhook to work, providerId must match the Instagram Account ID.
-              // For sending messages, we need the Facebook Page ID.
-              // We store:
-              //   providerId = Instagram Business Account ID (for incoming Webhooks)
-              //   config     = JSON string containing { pageId } (for sending messages)
-              //   accessToken= Page Access Token
-              const existingIg = await db.query.integrationSchema.findFirst({
-                where: and(
-                  eq(integrationSchema.organizationId, orgId),
-                  eq(integrationSchema.type, 'instagram'),
-                ),
-              });
+              // If the page has an Instagram account connected
+              if (igData.instagram_business_account) {
+                const igAccountId = igData.instagram_business_account.id;
 
-              if (existingIg) {
-                await db.update(integrationSchema)
-                  .set({
-                    accessToken: pageToken,
-                    providerId: igAccountId, // Instagram Account ID (needed for Webhook)
-                    config: JSON.stringify({ pageId }), // Facebook Page ID (needed for Sending Messages)
-                    updatedAt: new Date(),
-                  })
-                  .where(
-                    and(
-                      eq(integrationSchema.organizationId, orgId),
-                      eq(integrationSchema.type, 'instagram'),
-                    ),
-                  );
-              } else {
-                await db.insert(integrationSchema).values({
-                  organizationId: orgId,
-                  type: 'instagram',
-                  providerId: igAccountId, // Instagram Account ID (needed for Webhook)
-                  accessToken: pageToken, // Page Access Token
-                  config: JSON.stringify({ pageId }), // Facebook Page ID (needed for Sending Messages)
-                  status: 'active',
+                const existingIg = await db.query.integrationSchema.findFirst({
+                  where: and(
+                    eq(integrationSchema.organizationId, orgId),
+                    eq(integrationSchema.type, 'instagram'),
+                  ),
                 });
-              }
 
-              // Only auto-connect the first found one for now
-              break;
+                if (existingIg) {
+                  await db.update(integrationSchema)
+                    .set({
+                      accessToken: pageToken,
+                      providerId: igAccountId, // Instagram Account ID (needed for Webhook)
+                      config: JSON.stringify({ pageId }), // Facebook Page ID (needed for Sending Messages)
+                      updatedAt: new Date(),
+                    })
+                    .where(
+                      and(
+                        eq(integrationSchema.organizationId, orgId),
+                        eq(integrationSchema.type, 'instagram'),
+                      ),
+                    );
+                } else {
+                  await db.insert(integrationSchema).values({
+                    organizationId: orgId,
+                    type: 'instagram',
+                    providerId: igAccountId,
+                    accessToken: pageToken,
+                    config: JSON.stringify({ pageId }),
+                    status: 'active',
+                  });
+                }
+
+                // Only auto-connect the first found one for now
+                break;
+              }
             }
           }
         }
+      } catch (e) {
+        console.error('Auto-connect Instagram Error:', e);
       }
-    } catch (e) {
-      console.error('Auto-connect Instagram Error:', e);
     }
-    // --------------------------------------------------
 
     return NextResponse.redirect(new URL(`/dashboard/integrations?success=connected`, request.url));
   } catch (error) {

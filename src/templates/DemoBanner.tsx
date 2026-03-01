@@ -1,6 +1,5 @@
-import Link from 'next/link';
-
 import { StickyBanner } from '@/features/landing/StickyBanner';
+import { Link } from '@/libs/i18nNavigation';
 
 export const DemoBanner = () => (
   <StickyBanner>

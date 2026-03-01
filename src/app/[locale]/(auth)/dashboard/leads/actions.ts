@@ -1,13 +1,16 @@
 'use server';
 
 import { auth } from '@clerk/nextjs/server';
-import { eq, and, desc } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
+
 import { db } from '@/libs/DB';
 import { leadSchema, organizationSchema } from '@/models/Schema';
 
 export async function getLeads() {
   const { orgId } = await auth();
-  if (!orgId) return [];
+  if (!orgId) {
+    return [];
+  }
 
   const leads = await db
     .select()
@@ -24,7 +27,9 @@ export async function getLeads() {
 
 export async function createLead(data: any) {
   const { orgId } = await auth();
-  if (!orgId) throw new Error('Unauthorized');
+  if (!orgId) {
+    throw new Error('Unauthorized');
+  }
 
   await db.insert(organizationSchema).values({ id: orgId }).onConflictDoNothing();
 
@@ -46,7 +51,9 @@ export async function createLead(data: any) {
 
 export async function updateLead(id: number, data: any) {
   const { orgId } = await auth();
-  if (!orgId) throw new Error('Unauthorized');
+  if (!orgId) {
+    throw new Error('Unauthorized');
+  }
 
   const [updated] = await db.update(leadSchema)
     .set({
@@ -68,10 +75,12 @@ export async function updateLead(id: number, data: any) {
 
 export async function deleteLead(id: number) {
   const { orgId } = await auth();
-  if (!orgId) throw new Error('Unauthorized');
+  if (!orgId) {
+    throw new Error('Unauthorized');
+  }
 
   await db.delete(leadSchema)
     .where(and(eq(leadSchema.id, id), eq(leadSchema.organizationId, orgId)));
-    
+
   return true;
 }

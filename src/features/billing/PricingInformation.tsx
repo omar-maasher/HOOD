@@ -1,8 +1,6 @@
-
-
 import { PricingCard } from '@/features/billing/PricingCard';
 import { PricingFeature } from '@/features/billing/PricingFeature';
-import { PricingPlanList, PLAN_ID } from '@/utils/AppConfig';
+import { PLAN_ID, PricingPlanList } from '@/utils/AppConfig';
 
 const planFeatures: Record<string, string[]> = {
   [PLAN_ID.FREE]: [
@@ -37,7 +35,6 @@ const planFeatures: Record<string, string[]> = {
 export const PricingInformation = (props: {
   buttonList: Record<string, React.ReactNode>;
 }) => {
-
   return (
     <div className="grid grid-cols-1 gap-x-6 gap-y-8 md:grid-cols-3">
       {Object.values(PricingPlanList).map(plan => (
@@ -48,8 +45,8 @@ export const PricingInformation = (props: {
           interval={plan.interval}
           button={props.buttonList[plan.id]}
         >
-          {planFeatures[plan.id]?.map((feature, idx) => (
-            <PricingFeature key={idx}>
+          {planFeatures[plan.id]?.map(feature => (
+            <PricingFeature key={feature}>
               {feature}
             </PricingFeature>
           ))}

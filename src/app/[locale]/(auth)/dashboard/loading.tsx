@@ -1,21 +1,21 @@
 export default function DashboardLoading() {
-    return (
-        <div className="flex flex-col gap-8 max-w-7xl mx-auto pb-20 p-8">
-            {/* Header Skeleton */}
-            <div className="w-full h-32 rounded-[2.5rem] bg-muted/50 animate-pulse border border-border"></div>
+  return (
+    <div className="mx-auto flex max-w-7xl flex-col gap-8 p-8 pb-20">
+      {/* Header Skeleton */}
+      <div className="h-32 w-full animate-pulse rounded-[2.5rem] border border-border bg-muted/50"></div>
 
-            {/* Metrics Skeleton */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="w-full h-32 rounded-[2rem] bg-muted/50 animate-pulse border border-border"></div>
-                ))}
-            </div>
+      {/* Metrics Skeleton */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} className="h-32 w-full animate-pulse rounded-[2rem] border border-border bg-muted/50"></div>
+        ))}
+      </div>
 
-            {/* Main Body Skeleton */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 w-full h-80 rounded-[2.5rem] bg-muted/50 animate-pulse border border-border"></div>
-                <div className="w-full h-80 rounded-[2.5rem] bg-muted/50 animate-pulse border border-border"></div>
-            </div>
-        </div>
-    );
+      {/* Main Body Skeleton */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="h-80 w-full animate-pulse rounded-[2.5rem] border border-border bg-muted/50 lg:col-span-2"></div>
+        <div className="h-80 w-full animate-pulse rounded-[2.5rem] border border-border bg-muted/50"></div>
+      </div>
+    </div>
+  );
 }

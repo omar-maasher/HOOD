@@ -5,23 +5,23 @@ import * as schema from '@/models/Schema';
 
 import { Env } from './Env';
 
-declare global {
-    var dbPool: Pool | undefined;
-}
+const globalForDb = globalThis as unknown as {
+  dbPool: Pool | undefined;
+};
 
 let pool: Pool;
 
 if (process.env.NODE_ENV === 'production') {
-    pool = new Pool({
-        connectionString: Env.DATABASE_URL,
-    });
+  pool = new Pool({
+    connectionString: Env.DATABASE_URL,
+  });
 } else {
-    if (!global.dbPool) {
-        global.dbPool = new Pool({
-            connectionString: Env.DATABASE_URL,
-        });
-    }
-    pool = global.dbPool;
+  if (!globalForDb.dbPool) {
+    globalForDb.dbPool = new Pool({
+      connectionString: Env.DATABASE_URL,
+    });
+  }
+  pool = globalForDb.dbPool;
 }
 
 export const db = drizzle(pool, { schema });

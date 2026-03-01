@@ -2,12 +2,15 @@
 
 import { auth } from '@clerk/nextjs/server';
 import { eq } from 'drizzle-orm';
+
 import { db } from '@/libs/DB';
 import { businessProfileSchema, organizationSchema } from '@/models/Schema';
 
 export async function getBusinessProfile() {
   const { orgId } = await auth();
-  if (!orgId) return null;
+  if (!orgId) {
+    return null;
+  }
 
   // Ensure org exists
   await db.insert(organizationSchema).values({ id: orgId }).onConflictDoNothing();
@@ -22,7 +25,9 @@ export async function getBusinessProfile() {
 
 export async function saveBusinessProfile(data: any) {
   const { orgId } = await auth();
-  if (!orgId) throw new Error('Unauthorized');
+  if (!orgId) {
+    throw new Error('Unauthorized');
+  }
 
   await db.insert(organizationSchema).values({ id: orgId }).onConflictDoNothing();
 

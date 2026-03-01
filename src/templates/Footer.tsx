@@ -1,8 +1,8 @@
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 
 import { CenteredFooter } from '@/features/landing/CenteredFooter';
 import { Section } from '@/features/landing/Section';
+import { Link } from '@/libs/i18nNavigation';
 import { AppConfig } from '@/utils/AppConfig';
 
 import { Logo } from './Logo';

@@ -1,10 +1,10 @@
-import BookingsClient from './BookingsClient';
-import { getBookings } from './actions';
 import { getProducts } from '../products/actions';
+import { getBookings } from './actions';
+import BookingsClient from './BookingsClient';
 
-export async function generateMetadata() {
+export async function generateMetadata(props: { params: { locale: string } }) {
   return {
-    title: `المواعيد والحجوزات | Hoodtrading`,
+    title: props.params.locale === 'ar' ? 'المواعيد والحجوزات | Hoodtrading' : 'Bookings & Appointments | Hoodtrading',
   };
 }
 
@@ -14,11 +14,11 @@ export default async function BookingsPage() {
   try {
     [bookings, products] = await Promise.all([
       getBookings(),
-      getProducts()
+      getProducts(),
     ]);
   } catch (error) {
     console.error('Bookings page error:', error);
   }
-  
+
   return <BookingsClient initialBookings={bookings} products={products} />;
 }

@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server';
-import ProductsClient from './ProductsClient';
+
 import { getProducts } from './actions';
+import ProductsClient from './ProductsClient';
 
 export async function generateMetadata(props: { params: { locale: string } }) {
   const t = await getTranslations({

@@ -1,9 +1,8 @@
 'use client';
 
-import Link from 'next/link';
-
 import { ToggleMenuButton } from '@/components/ToggleMenuButton';
 import { useMenu } from '@/hooks/UseMenu';
+import { Link } from '@/libs/i18nNavigation';
 import { cn } from '@/utils/Helpers';
 
 export const CenteredMenu = (props: {

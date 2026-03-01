@@ -1,8 +1,6 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-
+import { Link, usePathname } from '@/libs/i18nNavigation';
 import { cn } from '@/utils/Helpers';
 
 export const ActiveLink = (props: { href: string; children: React.ReactNode; className?: string }) => {
@@ -13,8 +11,8 @@ export const ActiveLink = (props: { href: string; children: React.ReactNode; cla
     <Link
       href={props.href}
       className={cn(
-        props.className ||
-        cn(
+        props.className
+        || cn(
           'px-3 py-2',
           isActive && 'rounded-md bg-primary text-primary-foreground',
         ),

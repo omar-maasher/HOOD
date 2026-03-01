@@ -35,6 +35,22 @@
     --ring: 243 75% 59%;
 
     --radius: 1rem;
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
@@ -50,7 +66,7 @@
 
     /* Vibrant Violet/Indigo Glowing Primary */
     --primary: 252 85% 65%;
-    --primary-foreground: 210 40% 98%; 
+    --primary-foreground: 210 40% 98%;
 
     --secondary: 240 6% 14%;
     --secondary-foreground: 210 40% 98%;
@@ -67,6 +83,14 @@
     --border: 240 6% 14%;
     --input: 240 6% 14%;
     --ring: 252 85% 65%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
 
@@ -77,7 +101,7 @@
   body {
     @apply bg-background text-foreground selection:bg-primary/20 transition-colors duration-300;
   }
-  
+
   /* Additional premium aesthetics */
   .glass {
     @apply bg-white/10 dark:bg-black/10 backdrop-blur-md border border-white/20 dark:border-white/5;

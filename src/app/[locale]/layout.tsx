@@ -1,21 +1,19 @@
 import '@/styles/global.css';
 
 import type { Metadata } from 'next';
+import { Cairo } from 'next/font/google';
 import { NextIntlClientProvider, useMessages } from 'next-intl';
 import { unstable_setRequestLocale } from 'next-intl/server';
 
-import { Cairo } from 'next/font/google';
-
+import { DemoBadge } from '@/components/DemoBadge';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { AllLocales } from '@/utils/AppConfig';
 
 const cairo = Cairo({
   subsets: ['arabic', 'latin'],
   variable: '--font-cairo',
   display: 'swap',
 });
-
-import { DemoBadge } from '@/components/DemoBadge';
-import { AllLocales } from '@/utils/AppConfig';
 
 export const metadata: Metadata = {
   icons: [
@@ -66,7 +64,7 @@ export default function RootLayout(props: {
       dir={props.params.locale === 'ar' ? 'rtl' : 'ltr'}
       suppressHydrationWarning
     >
-      <body className={`${cairo.variable} font-sans bg-background text-foreground antialiased overflow-x-hidden`} suppressHydrationWarning>
+      <body className={`${cairo.variable} overflow-x-hidden bg-background font-sans text-foreground antialiased`} suppressHydrationWarning>
         {/* PRO: Dark mode support for Shadcn UI */}
         <NextIntlClientProvider
           locale={props.params.locale}

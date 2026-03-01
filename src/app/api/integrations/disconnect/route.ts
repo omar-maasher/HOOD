@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
+import { and, eq, or } from 'drizzle-orm';
+import { NextResponse } from 'next/server';
+
 import { db } from '@/libs/DB';
 import { integrationSchema } from '@/models/Schema';
-import { eq, and, or } from 'drizzle-orm';
 
 export const POST = async (request: Request) => {
   try {
@@ -14,23 +15,35 @@ export const POST = async (request: Request) => {
     const { platform } = await request.json();
 
     if (platform === 'instagram' || platform === 'messenger') {
-      // Delete all Meta-related integrations to reset the connection completely
+      // Delete the specific selected integration
       await db.delete(integrationSchema).where(
         and(
           eq(integrationSchema.organizationId, orgId),
-          or(
-            eq(integrationSchema.type, 'facebook_root'),
-            eq(integrationSchema.type, 'instagram'),
-            eq(integrationSchema.type, 'messenger')
-          )
-        )
+          eq(integrationSchema.type, platform),
+        ),
       );
+
+      // If neither instagram nor messenger exist, delete facebook_root
+      const remainingMeta = await db.query.integrationSchema.findFirst({
+        where: and(
+          eq(integrationSchema.organizationId, orgId),
+          or(
+            eq(integrationSchema.type, 'instagram'),
+            eq(integrationSchema.type, 'messenger'),
+          ),
+        ),
+      });
+      if (!remainingMeta) {
+        await db.delete(integrationSchema).where(
+          and(eq(integrationSchema.organizationId, orgId), eq(integrationSchema.type, 'facebook_root')),
+        );
+      }
     } else if (platform === 'whatsapp') {
       await db.delete(integrationSchema).where(
         and(
           eq(integrationSchema.organizationId, orgId),
-          eq(integrationSchema.type, 'whatsapp')
-        )
+          eq(integrationSchema.type, 'whatsapp'),
+        ),
       );
     }
 

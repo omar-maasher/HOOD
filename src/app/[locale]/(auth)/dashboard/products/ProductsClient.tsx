@@ -1,20 +1,24 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { 
-  Plus, MoreHorizontal, 
-  Edit, Trash2, Sparkles, X, Upload, 
-  Download, Search, Box, Package, Info
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+  Box,
+  Download,
+  Edit,
+  Info,
+  MoreHorizontal,
+  Package,
+  Plus,
+  Search,
+  Sparkles,
+  Trash2,
+  Upload,
+  X,
+} from 'lucide-react';
+import { useLocale } from 'next-intl';
+import { useRef, useState } from 'react';
+import * as XLSX from 'xlsx';
+
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,10 +27,20 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { createProduct, updateProduct, deleteProduct, bulkUploadProducts, deleteProducts } from './actions';
-import * as XLSX from 'xlsx';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+
+import { bulkUploadProducts, createProduct, deleteProduct, deleteProducts, updateProduct } from './actions';
 
 export default function ProductsClient({ initialProducts }: { initialProducts: any[] }) {
+  const locale = useLocale();
+  const isAr = locale === 'ar';
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [products, setProducts] = useState(initialProducts || []);
@@ -51,7 +65,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: a
     setFormData({ name: '', price: '', currency: 'SAR', category: '', status: 'active', description: '', stock: '' });
     setIsModalOpen(true);
   };
-  
+
   const handleEdit = (product: any) => {
     setEditingProductId(product.id);
     setFormData({
@@ -71,7 +85,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: a
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
       if (editingProductId) {
         const updatedProduct = await updateProduct(editingProductId, formData);
@@ -90,7 +104,6 @@ export default function ProductsClient({ initialProducts }: { initialProducts: a
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('هل أنت متأكد من حذف هذا المنتج؟')) return;
     try {
       await deleteProduct(id);
       const remainingProducts = products.filter(p => p.id !== id);
@@ -107,21 +120,27 @@ export default function ProductsClient({ initialProducts }: { initialProducts: a
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      return;
+    }
 
     setIsLoading(true);
     try {
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data);
       const sheetName = workbook.SheetNames[0];
-      if (!sheetName) throw new Error('No sheet found');
-      
+      if (!sheetName) {
+        throw new Error('No sheet found');
+      }
+
       const worksheet = workbook.Sheets[sheetName];
-      if (!worksheet) throw new Error('Worksheet is undefined');
-      
+      if (!worksheet) {
+        throw new Error('Worksheet is undefined');
+      }
+
       const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet);
 
-      const formattedProducts = jsonData.map(row => {
+      const formattedProducts = jsonData.map((row) => {
         // Normalize keys (remove surrounding spaces) to prevent mapping issues
         const normalizedRow: any = {};
         for (const key in row) {
@@ -129,7 +148,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: a
             normalizedRow[key.trim()] = row[key];
           }
         }
-        
+
         return {
           name: normalizedRow.name || normalizedRow['اسم المنتج'] || normalizedRow.Name || '',
           price: normalizedRow.price || normalizedRow['السعر'] || normalizedRow.Price || 0,
@@ -142,18 +161,20 @@ export default function ProductsClient({ initialProducts }: { initialProducts: a
       }).filter(p => p.name && String(p.name).trim() !== '');
 
       if (formattedProducts.length === 0) {
-        alert('لم يتم العثور على منتجات صالحة في الملف. تأكد من تطابق أسماء الأعمدة.');
         setIsLoading(false);
-        if (fileInputRef.current) fileInputRef.current.value = '';
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
         return;
       }
 
       const newProducts = await bulkUploadProducts(formattedProducts);
       setProducts([...newProducts, ...products]);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     } catch (error) {
       console.error('Failed to upload file', error);
-      alert('حدث خطأ أثناء رفع الملف. يرجى المحاولة مرة أخرى.');
     } finally {
       setIsLoading(false);
     }
@@ -164,7 +185,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: a
       { 'اسم المنتج': 'مثال: اشتراك رقمي', 'السعر': 150, 'العملة': 'SAR', 'القسم': 'اشتراكات', 'الوصف': 'اشتراك لمدة شهر', 'المخزون': 20 },
       { 'اسم المنتج': 'مثال: بطاقة العاب', 'السعر': 45, 'العملة': 'USD', 'القسم': 'بطاقات', 'الوصف': 'بطاقة شحن 10 دولار', 'المخزون': 15 },
       { 'اسم المنتج': 'مثال: شدات ببجي', 'السعر': 2000, 'العملة': 'يمني قعيطي', 'القسم': 'ألعاب', 'الوصف': '600 شدة', 'المخزون': 50 },
-      { 'اسم المنتج': 'مثال: رصيد العاب', 'السعر': 3000, 'العملة': 'يمني قديم', 'القسم': 'شحن', 'الوصف': 'شحن فوري', 'المخزون': 10 }
+      { 'اسم المنتج': 'مثال: رصيد العاب', 'السعر': 3000, 'العملة': 'يمني قديم', 'القسم': 'شحن', 'الوصف': 'شحن فوري', 'المخزون': 10 },
     ];
     const worksheet = XLSX.utils.json_to_sheet(templateData);
     const workbook = XLSX.utils.book_new();
@@ -175,7 +196,7 @@ export default function ProductsClient({ initialProducts }: { initialProducts: a
 
   const categories = Array.from(new Set(products.map(p => p.category))).filter(Boolean) as string[];
 
-  const filteredProducts = products.filter(p => {
+  const filteredProducts = products.filter((p) => {
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = categoryFilter ? p.category === categoryFilter : true;
     return matchesSearch && matchesCategory;
@@ -198,7 +219,6 @@ export default function ProductsClient({ initialProducts }: { initialProducts: a
   };
 
   const handleBulkDelete = async () => {
-    if (!confirm(`هل أنت متأكد من حذف ${selectedProductIds.length} منتج؟`)) return;
     setIsLoading(true);
     try {
       await deleteProducts(selectedProductIds);
@@ -210,70 +230,90 @@ export default function ProductsClient({ initialProducts }: { initialProducts: a
       }
     } catch (error) {
       console.error('Failed to delete products', error);
-      alert('حدث خطأ أثناء الحذف');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto pb-20">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 pb-20">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+      <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
         <div className="text-start">
-          <h1 className="text-3xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
-            كتالوج المنتجات
+          <h1 className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-3xl font-extrabold tracking-tight text-transparent">
+            {isAr ? 'كتالوج المنتجات' : 'Products Catalog'}
           </h1>
-          <p className="text-muted-foreground mt-1 font-medium italic text-base">أضف منتجاتك هنا ليتمكن البوت من تعريف العملاء عليها.</p>
+          <p className="mt-1 text-base font-medium italic text-muted-foreground">
+            {isAr ? 'أضف منتجاتك هنا ليتمكن البوت من تعريف العملاء عليها.' : 'Add your products here so the bot can introduce them to customers.'}
+          </p>
         </div>
-        
-        <div className="flex flex-wrap gap-3 w-full md:w-auto">
+
+        <div className="flex w-full flex-wrap gap-3 md:w-auto">
           <input type="file" className="hidden" ref={fileInputRef} onChange={handleFileUpload} />
-          <Button onClick={handleDownloadTemplate} variant="outline" className="rounded-2xl h-11 px-6 font-bold flex gap-2 border-2 border-dashed bg-muted/5 group hover:bg-muted transition-all text-sm">
-            <Download className="size-4 group-hover:-translate-y-0.5 transition-transform" />
-            تحميل النموذج
+          <Button onClick={handleDownloadTemplate} variant="outline" className="group flex h-11 gap-2 rounded-2xl border-2 border-dashed bg-muted/5 px-6 text-sm font-bold transition-all hover:bg-muted">
+            <Download className="size-4 transition-transform group-hover:-translate-y-0.5" />
+            {isAr ? 'تحميل النموذج' : 'Download Template'}
           </Button>
-          <Button onClick={() => fileInputRef.current?.click()} variant="outline" className="rounded-2xl h-11 px-6 font-bold flex gap-2 border-2 group hover:bg-muted transition-all text-sm">
-            <Upload className="size-4 group-hover:-translate-y-0.5 transition-transform" />
-            رفع (Excel)
+          <Button onClick={() => fileInputRef.current?.click()} variant="outline" className="group flex h-11 gap-2 rounded-2xl border-2 px-6 text-sm font-bold transition-all hover:bg-muted">
+            <Upload className="size-4 transition-transform group-hover:-translate-y-0.5" />
+            {isAr ? 'رفع (Excel)' : 'Upload (Excel)'}
           </Button>
-          <Button onClick={handleOpenModal} className="rounded-2xl h-11 px-8 font-bold flex gap-2 shadow-lg shadow-primary/20 active:scale-95 transition-all text-sm">
+          <Button onClick={handleOpenModal} className="flex h-11 gap-2 rounded-2xl px-8 text-sm font-bold shadow-lg shadow-primary/20 transition-all active:scale-95">
             <Plus className="size-5" />
-            منتج جديد
+            {isAr ? 'منتج جديد' : 'New Product'}
           </Button>
         </div>
       </div>
 
       {/* Excel Upload Instructions */}
-      <div className="bg-blue-50/50 border border-blue-100 rounded-[2rem] p-6 md:p-8 text-start animate-in fade-in duration-500 shadow-sm">
-        <div className="flex flex-col md:flex-row gap-6 items-start">
-          <div className="p-4 bg-blue-100/50 rounded-2xl text-blue-600 shrink-0">
+      <div className="rounded-[2rem] border border-blue-100 bg-blue-50/50 p-6 text-start shadow-sm duration-500 animate-in fade-in md:p-8">
+        <div className="flex flex-col items-start gap-6 md:flex-row">
+          <div className="shrink-0 rounded-2xl bg-blue-100/50 p-4 text-blue-600">
             <Info className="size-8" />
           </div>
           <div className="space-y-4">
             <h3 className="text-xl font-black text-blue-900">كيفية رفع المنتجات دفعة واحدة (Excel)</h3>
-            <p className="text-base text-blue-800/80 leading-relaxed font-medium">لتسهيل إضافة منتجاتك، يمكنك استخدام ملف Excel. اتبع الخطوات التالية:</p>
-            <ul className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm font-bold text-blue-900">
+            <p className="text-base font-medium leading-relaxed text-blue-800/80">لتسهيل إضافة منتجاتك، يمكنك استخدام ملف Excel. اتبع الخطوات التالية:</p>
+            <ul className="grid grid-cols-1 gap-4 text-sm font-bold text-blue-900 md:grid-cols-2">
               <li className="flex items-center gap-2">
-                <span className="flex items-center justify-center size-6 rounded-full bg-blue-200 text-blue-800 text-xs shrink-0">1</span>
+                <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-blue-200 text-xs text-blue-800">1</span>
                 اضغط على &quot;تحميل النموذج&quot; للحصول على الملف الجاهز.
               </li>
               <li className="flex items-center gap-2">
-                <span className="flex items-center justify-center size-6 rounded-full bg-blue-200 text-blue-800 text-xs shrink-0">2</span>
+                <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-blue-200 text-xs text-blue-800">2</span>
                 افتح الملف وقم بتعبئة منتجاتك (مثال: الاسم، السعر، القسم...).
               </li>
               <li className="flex items-start gap-2">
-                <span className="flex items-center justify-center size-6 rounded-full bg-blue-200 text-blue-800 text-xs shrink-0 mt-0.5">3</span>
-                <span className="flex-1">تأكد من كتابة <strong>رمز العملة الصحيح</strong> (مثل: SAR ، USD).</span>
+                <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-blue-200 text-xs text-blue-800">3</span>
+                <span className="flex-1">
+                  تأكد من كتابة
+                  <strong>رمز العملة الصحيح</strong>
+                  {' '}
+                  (مثل: SAR ، USD).
+                </span>
               </li>
-              <li className="flex items-start gap-2 md:col-span-2 bg-blue-100/30 p-3 rounded-xl border border-blue-100 mt-2">
-                <span className="flex items-center justify-center size-6 rounded-full bg-amber-200 text-amber-800 text-xs shrink-0 mt-0.5">هام</span>
-                <span className="flex-1"><strong>للعملات اليمنية:</strong> يجب التفريق بين الريال القديم والجديد كالتالي:<br />
-                • اكتب <strong>يمني قعيطي</strong> للريال اليمني الجديد.<br />
-                • اكتب <strong>يمني قديم</strong> للريال اليمني القديم (طبعة صنعاء).</span>
+              <li className="mt-2 flex items-start gap-2 rounded-xl border border-blue-100 bg-blue-100/30 p-3 md:col-span-2">
+                <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-amber-200 text-xs text-amber-800">هام</span>
+                <span className="flex-1">
+                  <strong>للعملات اليمنية:</strong>
+                  {' '}
+                  يجب التفريق بين الريال القديم والجديد كالتالي:
+                  <br />
+                  • اكتب
+                  {' '}
+                  <strong>يمني قعيطي</strong>
+                  {' '}
+                  للريال اليمني الجديد.
+                  <br />
+                  • اكتب
+                  {' '}
+                  <strong>يمني قديم</strong>
+                  {' '}
+                  للريال اليمني القديم (طبعة صنعاء).
+                </span>
               </li>
               <li className="flex items-start gap-2 md:col-span-2">
-                <span className="flex items-center justify-center size-6 rounded-full bg-blue-200 text-blue-800 text-xs shrink-0 mt-0.5">4</span>
+                <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-blue-200 text-xs text-blue-800">4</span>
                 <span className="flex-1">اضغط على &quot;رفع (Excel)&quot; لاختيار الملف المحفوظ ورفعه للنظام.</span>
               </li>
             </ul>
@@ -282,173 +322,181 @@ export default function ProductsClient({ initialProducts }: { initialProducts: a
       </div>
 
       {/* Stats & Search Bar */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-        <div className="lg:col-span-8 flex flex-col sm:flex-row gap-4">
-          <div className="relative group flex-1">
-            <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-muted-foreground group-focus-within:text-primary transition-colors">
+      <div className="grid grid-cols-1 items-center gap-6 lg:grid-cols-12">
+        <div className="flex flex-col gap-4 sm:flex-row lg:col-span-8">
+          <div className="group relative flex-1">
+            <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-muted-foreground transition-colors group-focus-within:text-primary">
               <Search className="size-5" />
             </div>
-            <Input 
-              placeholder="ابحث عن اسم منتج..." 
-              className="rounded-2xl h-16 pr-12 bg-card border-none shadow-xl shadow-gray-100/40 text-lg focus-visible:ring-primary w-full"
+            <Input
+              placeholder="ابحث عن اسم منتج..."
+              className="h-16 w-full rounded-2xl border-none bg-card pr-12 text-lg shadow-xl shadow-gray-100/40 focus-visible:ring-primary"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={e => setSearchQuery(e.target.value)}
             />
           </div>
-          
+
           <select
-            className="rounded-2xl h-16 px-6 bg-card border-none shadow-xl shadow-gray-100/40 text-base font-bold outline-none cursor-pointer focus:ring-2 focus:ring-primary w-full sm:w-auto min-w-[160px]"
+            className="h-16 w-full min-w-[160px] cursor-pointer rounded-2xl border-none bg-card px-6 text-base font-bold shadow-xl shadow-gray-100/40 outline-none focus:ring-2 focus:ring-primary sm:w-auto"
             value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
+            onChange={e => setCategoryFilter(e.target.value)}
           >
             <option value="">جميع الأقسام</option>
-            {categories.map((cat, idx) => (
-              <option key={idx} value={cat}>{cat}</option>
+            {categories.map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
             ))}
           </select>
         </div>
-        <div className="lg:col-span-4 flex items-center gap-4 bg-muted/20 p-2 rounded-2xl border border-white/50 h-16 overflow-hidden">
-          <div className="flex-1 flex flex-col items-center justify-center border-l border-muted-foreground/10 px-4">
-            <span className="text-xs uppercase font-extrabold text-muted-foreground tracking-tighter mb-1">إجمالي المنتجات</span>
+        <div className="flex h-16 items-center gap-4 overflow-hidden rounded-2xl border border-white/50 bg-muted/20 p-2 lg:col-span-4">
+          <div className="flex flex-1 flex-col items-center justify-center border-l border-muted-foreground/10 px-4">
+            <span className="mb-1 text-xs font-extrabold uppercase tracking-tighter text-muted-foreground">إجمالي المنتجات</span>
             <span className="text-2xl font-black text-primary">{products.length}</span>
           </div>
-          <div className="flex-1 flex flex-col items-center justify-center px-4">
-            <span className="text-xs uppercase font-extrabold text-muted-foreground tracking-tighter mb-1">الفئات النشطة</span>
+          <div className="flex flex-1 flex-col items-center justify-center px-4">
+            <span className="mb-1 text-xs font-extrabold uppercase tracking-tighter text-muted-foreground">الفئات النشطة</span>
             <span className="text-2xl font-black text-blue-600">{new Set(products.map(p => p.category)).size}</span>
           </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-4 flex items-center justify-between">
         {selectedProductIds.length > 0 && (
-          <div className="animate-in fade-in zoom-in-95 duration-200">
-            <Button 
+          <div className="duration-200 animate-in fade-in zoom-in-95">
+            <Button
               onClick={handleBulkDelete}
-              variant="destructive" 
-              className="rounded-xl h-10 px-6 font-bold shadow-lg shadow-red-500/20"
+              variant="destructive"
+              className="h-10 rounded-xl px-6 font-bold shadow-lg shadow-red-500/20"
               disabled={isLoading}
             >
-              <Trash2 className="size-4 mr-2 ml-1" />
-              حذف المحدد ({selectedProductIds.length})
+              <Trash2 className="ml-1 mr-2 size-4" />
+              حذف المحدد (
+              {selectedProductIds.length}
+              )
             </Button>
           </div>
         )}
       </div>
 
       {/* Main Table Container */}
-      <div className="bg-card border rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.02)] overflow-hidden">
-        {filteredProducts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="size-24 rounded-[2rem] bg-muted/30 flex items-center justify-center mb-6 text-muted-foreground/30 animate-pulse">
-              <Package className="size-12" />
-            </div>
-            <h3 className="text-3xl font-black text-muted-foreground mb-3">لا يوجد منتجات حالياً</h3>
-            <p className="text-base text-muted-foreground max-w-sm mx-auto italic">ابدأ بإضافة أول منتج لتجربة قوة الرد الآلي في متجرك.</p>
-          </div>
-        ) : (
-          <Table>
-            <TableHeader className="bg-muted/10 border-b">
-              <TableRow className="hover:bg-transparent border-none">
-                <TableHead className="py-6 px-6 w-12">
-                  <input 
-                    type="checkbox" 
-                    className="size-5 rounded-md border-gray-300 text-primary focus:ring-primary accent-primary cursor-pointer"
-                    checked={filteredProducts.length > 0 && selectedProductIds.length === filteredProducts.length}
-                    onChange={handleSelectAll}
-                  />
-                </TableHead>
-                <TableHead className="py-6 px-4 font-black text-sm uppercase tracking-widest text-start">تفاصيل المنتج</TableHead>
-                <TableHead className="py-6 px-6 font-black text-sm uppercase tracking-widest text-start">التصنيف</TableHead>
-                <TableHead className="py-6 px-6 font-black text-sm uppercase tracking-widest text-start">السعر</TableHead>
-                <TableHead className="py-6 px-6 font-black text-sm uppercase tracking-widest text-start text-center">المخزون</TableHead>
-                <TableHead className="py-6 px-6 font-black text-sm uppercase tracking-widest text-start">الحالة</TableHead>
-                <TableHead className="py-6 px-8 font-black text-sm uppercase tracking-widest text-end font-bold">إجراءات</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredProducts.map((product) => (
-                <TableRow 
-                  key={product.id} 
-                  className={`group hover:bg-muted/5 border-b last:border-0 transition-all cursor-pointer ${selectedProductIds.includes(product.id) ? 'bg-primary/5 hover:bg-primary/10' : ''}`}
-                  onClick={() => handleEdit(product)}
-                >
-                  <TableCell className="py-5 px-6" onClick={(e) => e.stopPropagation()}>
-                    <input 
-                      type="checkbox" 
-                      className="size-5 rounded-md border-gray-300 text-primary focus:ring-primary accent-primary cursor-pointer"
-                      checked={selectedProductIds.includes(product.id)}
-                      onChange={(e) => handleSelectProduct(product.id, e.target.checked)}
-                    />
-                  </TableCell>
-                  <TableCell className="py-5 px-4">
-                    <div className="flex items-center gap-4 text-start">
-                      <div className="size-14 rounded-2xl bg-primary/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shadow-inner shrink-0">
-                        <Box className="size-7" />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-bold text-base text-gray-900 group-hover:text-primary transition-colors">{product.name}</span>
-                        <span className="text-xs text-muted-foreground line-clamp-2 max-w-[240px] mt-0.5 leading-relaxed">{product.description || 'بدون وصف'}</span>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-5 px-6">
-                    <span className="px-4 py-1.5 rounded-xl bg-muted text-xs font-bold text-muted-foreground">{product.category}</span>
-                  </TableCell>
-                  <TableCell className="py-5 px-6">
-                    <span className="text-xl font-black text-gray-800 tracking-tight">
-                      {product.price} <span className="text-xs text-muted-foreground font-medium uppercase mr-1">{product.currency}</span>
-                    </span>
-                  </TableCell>
-                  <TableCell className="py-5 px-6 text-center">
-                    <span className={`text-base font-bold ${product.stock > 10 ? 'text-gray-600' : 'text-amber-600'}`}>
-                      {product.stock}
-                    </span>
-                  </TableCell>
-                  <TableCell className="py-5 px-6">
-                    {product.status === 'active' ? (
-                      <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-xl bg-emerald-100 text-emerald-700 text-xs font-extrabold uppercase tracking-widest ring-4 ring-emerald-50 w-fit">
-                        <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
-                        نشط
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-xl bg-gray-100 text-gray-500 text-xs font-extrabold uppercase tracking-widest w-fit">
-                        مسودة
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell className="py-5 px-8 text-end" onClick={(e) => e.stopPropagation()}>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="group-hover:bg-muted rounded-2xl h-10 w-10 transition-all">
-                          <MoreHorizontal className="size-5" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="rounded-2xl p-2 border-muted/50 shadow-2xl min-w-[200px]">
-                        <DropdownMenuItem onClick={() => handleEdit(product)} className="flex gap-3 py-3 rounded-xl font-bold text-base cursor-pointer hover:bg-primary/5 hover:text-primary focus:bg-primary/5 focus:text-primary">
-                          <Edit className="size-5" />
-                          تعديل المنتج
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDelete(product.id)} className="flex gap-3 py-3 rounded-xl font-bold text-base cursor-pointer text-red-500 hover:bg-red-50 hover:text-red-600 focus:bg-red-50 focus:text-red-600">
-                          <Trash2 className="size-5" />
-                          حذف المنتج
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
+      <div className="overflow-hidden rounded-[2rem] border bg-card shadow-[0_20px_50px_rgba(0,0,0,0.02)]">
+        {filteredProducts.length === 0
+          ? (
+              <div className="flex flex-col items-center justify-center py-24 text-center">
+                <div className="mb-6 flex size-24 animate-pulse items-center justify-center rounded-[2rem] bg-muted/30 text-muted-foreground/30">
+                  <Package className="size-12" />
+                </div>
+                <h3 className="mb-3 text-3xl font-black text-muted-foreground">{isAr ? 'لا يوجد منتجات حالياً' : 'No products available'}</h3>
+                <p className="mx-auto max-w-sm text-base italic text-muted-foreground">{isAr ? 'ابدأ بإضافة أول منتج لتجربة قوة الرد الآلي في متجرك.' : 'Start by adding your first product to experience the power of AI replies in your store.'}</p>
+              </div>
+            )
+          : (
+              <Table>
+                <TableHeader className="border-b bg-muted/10">
+                  <TableRow className="border-none hover:bg-transparent">
+                    <TableHead className="w-12 p-6">
+                      <input
+                        type="checkbox"
+                        className="size-5 cursor-pointer rounded-md border-gray-300 text-primary accent-primary focus:ring-primary"
+                        checked={filteredProducts.length > 0 && selectedProductIds.length === filteredProducts.length}
+                        onChange={handleSelectAll}
+                      />
+                    </TableHead>
+                    <TableHead className="px-4 py-6 text-start text-sm font-black uppercase tracking-widest">تفاصيل المنتج</TableHead>
+                    <TableHead className="p-6 text-start text-sm font-black uppercase tracking-widest">التصنيف</TableHead>
+                    <TableHead className="p-6 text-start text-sm font-black uppercase tracking-widest">السعر</TableHead>
+                    <TableHead className="p-6 text-start text-sm font-black uppercase tracking-widest">المخزون</TableHead>
+                    <TableHead className="p-6 text-start text-sm font-black uppercase tracking-widest">الحالة</TableHead>
+                    <TableHead className="px-8 py-6 text-end text-sm font-black uppercase tracking-widest">إجراءات</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredProducts.map(product => (
+                    <TableRow
+                      key={product.id}
+                      className={`group cursor-pointer border-b transition-all last:border-0 hover:bg-muted/5 ${selectedProductIds.includes(product.id) ? 'bg-primary/5 hover:bg-primary/10' : ''}`}
+                      onClick={() => handleEdit(product)}
+                    >
+                      <TableCell className="px-6 py-5" onClick={e => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          className="size-5 cursor-pointer rounded-md border-gray-300 text-primary accent-primary focus:ring-primary"
+                          checked={selectedProductIds.includes(product.id)}
+                          onChange={e => handleSelectProduct(product.id, e.target.checked)}
+                        />
+                      </TableCell>
+                      <TableCell className="px-4 py-5">
+                        <div className="flex items-center gap-4 text-start">
+                          <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-primary/5 text-primary shadow-inner transition-transform group-hover:scale-110">
+                            <Box className="size-7" />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-base font-bold text-gray-900 transition-colors group-hover:text-primary">{product.name}</span>
+                            <span className="mt-0.5 line-clamp-2 max-w-[240px] text-xs leading-relaxed text-muted-foreground">{product.description || 'بدون وصف'}</span>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-6 py-5">
+                        <span className="rounded-xl bg-muted px-4 py-1.5 text-xs font-bold text-muted-foreground">{product.category}</span>
+                      </TableCell>
+                      <TableCell className="px-6 py-5">
+                        <span className="text-xl font-black tracking-tight text-gray-800">
+                          {product.price}
+                          {' '}
+                          <span className="mr-1 text-xs font-medium uppercase text-muted-foreground">{product.currency}</span>
+                        </span>
+                      </TableCell>
+                      <TableCell className="px-6 py-5 text-center">
+                        <span className={`text-base font-bold ${product.stock > 10 ? 'text-gray-600' : 'text-amber-600'}`}>
+                          {product.stock}
+                        </span>
+                      </TableCell>
+                      <TableCell className="px-6 py-5">
+                        {product.status === 'active'
+                          ? (
+                              <span className="inline-flex w-fit items-center gap-2 rounded-xl bg-emerald-100 px-4 py-1.5 text-xs font-extrabold uppercase tracking-widest text-emerald-700 ring-4 ring-emerald-50">
+                                <span className="size-2 animate-pulse rounded-full bg-emerald-500" />
+                                نشط
+                              </span>
+                            )
+                          : (
+                              <span className="inline-flex w-fit items-center gap-2 rounded-xl bg-gray-100 px-4 py-1.5 text-xs font-extrabold uppercase tracking-widest text-gray-500">
+                                مسودة
+                              </span>
+                            )}
+                      </TableCell>
+                      <TableCell className="px-8 py-5 text-end" onClick={e => e.stopPropagation()}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="size-10 rounded-2xl transition-all group-hover:bg-muted">
+                              <MoreHorizontal className="size-5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="min-w-[200px] rounded-2xl border-muted/50 p-2 shadow-2xl">
+                            <DropdownMenuItem onClick={() => handleEdit(product)} className="flex cursor-pointer gap-3 rounded-xl py-3 text-base font-bold hover:bg-primary/5 hover:text-primary focus:bg-primary/5 focus:text-primary">
+                              <Edit className="size-5" />
+                              تعديل المنتج
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDelete(product.id)} className="flex cursor-pointer gap-3 rounded-xl py-3 text-base font-bold text-red-500 hover:bg-red-50 hover:text-red-600 focus:bg-red-50 focus:text-red-600">
+                              <Trash2 className="size-5" />
+                              حذف المنتج
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
       </div>
 
-      <div className="rounded-[2rem] bg-indigo-50/50 border border-indigo-200/50 p-8 flex flex-col md:flex-row items-center gap-6 text-start">
-        <div className="size-16 rounded-2xl bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0 shadow-inner">
+      <div className="flex flex-col items-center gap-6 rounded-[2rem] border border-indigo-200/50 bg-indigo-50/50 p-8 text-start md:flex-row">
+        <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-600 shadow-inner">
           <Sparkles className="size-8" />
         </div>
         <div>
-          <h3 className="text-xl font-bold text-indigo-900 mb-2">تلميح للذكاء الاصطناعي</h3>
-          <p className="text-base text-indigo-800/80 leading-relaxed max-w-4xl italic">
+          <h3 className="mb-2 text-xl font-bold text-indigo-900">تلميح للذكاء الاصطناعي</h3>
+          <p className="max-w-4xl text-base italic leading-relaxed text-indigo-800/80">
             كل منتج تضيفه يصبح جزءاً من "ذاكرة" مساعدك الذكي. البوت سيتمكن من ترشيح المنتجات لعملائك، شرح مميزاتها، وحتى إعطائهم الأسعار بدقة خرافية!
           </p>
         </div>
@@ -456,43 +504,43 @@ export default function ProductsClient({ initialProducts }: { initialProducts: a
 
       {/* Modern Modal REDESIGN */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="relative w-full max-w-2xl bg-card rounded-[2.5rem] shadow-[0_32px_128px_-10px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 slide-in-from-bottom-5 duration-300">
-            <div className="flex items-center justify-between p-8 border-b bg-muted/10">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md duration-300 animate-in fade-in">
+          <div className="relative flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-[2.5rem] bg-card shadow-[0_32px_128px_-10px_rgba(0,0,0,0.4)] duration-300 animate-in zoom-in-95 slide-in-from-bottom-5">
+            <div className="flex items-center justify-between border-b bg-muted/10 p-8">
               <div className="flex items-center gap-4">
-                <div className="size-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                   {editingProductId ? <Edit className="size-7" /> : <Plus className="size-7" />}
                 </div>
                 <div>
                   <h2 className="text-2xl font-black">
                     {editingProductId ? 'تعديل بيانات المنتج' : 'إضافة منتج جديد'}
                   </h2>
-                  <p className="text-sm text-muted-foreground font-bold mt-1">أدخل التفاصيل بدقة ليتمكن الـ AI من مساعدتك.</p>
+                  <p className="mt-1 text-sm font-bold text-muted-foreground">أدخل التفاصيل بدقة ليتمكن الـ AI من مساعدتك.</p>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" onClick={handleCloseModal} className="rounded-2xl hover:bg-red-50 hover:text-red-500 transition-all size-12">
+              <Button variant="ghost" size="icon" onClick={handleCloseModal} className="size-12 rounded-2xl transition-all hover:bg-red-50 hover:text-red-500">
                 <X className="size-7" />
               </Button>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-10 space-y-8 text-start scrollbar-hide">
+            <form onSubmit={handleSubmit} className="flex-1 space-y-8 overflow-y-auto p-10 text-start">
               <div className="space-y-6">
                 <div className="grid gap-3">
-                  <Label htmlFor="name" className="text-lg font-black px-1">اسم المنتج</Label>
+                  <Label htmlFor="name" className="px-1 text-lg font-black">اسم المنتج</Label>
                   <Input
                     id="name"
                     required
                     placeholder="مثلاً: سماعة ابل Airpods Pro"
                     value={formData.name}
                     onChange={e => setFormData({ ...formData, name: e.target.value })}
-                    className="h-16 rounded-2xl bg-muted/30 border-none shadow-inner focus-visible:ring-primary text-xl"
+                    className="h-16 rounded-2xl border-none bg-muted/30 text-xl shadow-inner focus-visible:ring-primary"
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   <div className="grid gap-3 text-start">
-                    <Label htmlFor="price" className="text-lg font-black px-1">السعر والعملة</Label>
-                    <div className="flex gap-2 h-16">
+                    <Label htmlFor="price" className="px-1 text-lg font-black">السعر والعملة</Label>
+                    <div className="flex h-16 gap-2">
                       <Input
                         id="price"
                         type="number"
@@ -501,13 +549,13 @@ export default function ProductsClient({ initialProducts }: { initialProducts: a
                         placeholder="0.00"
                         value={formData.price}
                         onChange={e => setFormData({ ...formData, price: e.target.value })}
-                        className="rounded-2xl h-full flex-1 bg-muted/30 border-none text-start text-xl font-bold"
+                        className="h-full flex-1 rounded-2xl border-none bg-muted/30 text-start text-xl font-bold"
                         dir="ltr"
                       />
                       <select
                         value={formData.currency}
                         onChange={e => setFormData({ ...formData, currency: e.target.value })}
-                        className="h-full w-32 rounded-2xl bg-muted/50 border-none px-4 text-sm font-black tracking-tighter focus:ring-2 focus:ring-primary outline-none appearance-none cursor-pointer hover:bg-muted transition-colors"
+                        className="h-full w-32 cursor-pointer appearance-none rounded-2xl border-none bg-muted/50 px-4 text-sm font-black tracking-tighter outline-none transition-colors hover:bg-muted focus:ring-2 focus:ring-primary"
                       >
                         <option value="SAR">ر.س (SAR)</option>
                         <option value="USD">دولار ($)</option>
@@ -517,21 +565,21 @@ export default function ProductsClient({ initialProducts }: { initialProducts: a
                     </div>
                   </div>
                   <div className="grid gap-3 text-start">
-                    <Label htmlFor="category" className="text-lg font-black px-1">التصنيف / الفئة</Label>
+                    <Label htmlFor="category" className="px-1 text-lg font-black">التصنيف / الفئة</Label>
                     <Input
                       id="category"
                       required
                       placeholder="مثلاً: الكترونيات"
                       value={formData.category}
                       onChange={e => setFormData({ ...formData, category: e.target.value })}
-                      className="h-16 rounded-2xl bg-muted/30 border-none shadow-inner focus-visible:ring-primary text-xl"
+                      className="h-16 rounded-2xl border-none bg-muted/30 text-xl shadow-inner focus-visible:ring-primary"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   <div className="grid gap-3 text-start">
-                    <Label htmlFor="stock" className="text-lg font-black px-1">الكمية المتوفرة</Label>
+                    <Label htmlFor="stock" className="px-1 text-lg font-black">الكمية المتوفرة</Label>
                     <Input
                       id="stock"
                       type="number"
@@ -539,14 +587,14 @@ export default function ProductsClient({ initialProducts }: { initialProducts: a
                       placeholder="0"
                       value={formData.stock}
                       onChange={e => setFormData({ ...formData, stock: e.target.value })}
-                      className="h-16 rounded-2xl bg-muted/30 border-none text-center text-xl font-bold"
+                      className="h-16 rounded-2xl border-none bg-muted/30 text-center text-xl font-bold"
                     />
                   </div>
                   <div className="grid gap-3 text-start">
-                    <Label htmlFor="status" className="text-lg font-black px-1">حالة العرض</Label>
+                    <Label htmlFor="status" className="px-1 text-lg font-black">حالة العرض</Label>
                     <select
                       id="status"
-                      className="h-16 rounded-2xl bg-muted/50 border-none px-6 text-base font-bold focus:ring-2 focus:ring-primary outline-none cursor-pointer hover:bg-muted transition-colors"
+                      className="h-16 cursor-pointer rounded-2xl border-none bg-muted/50 px-6 text-base font-bold outline-none transition-colors hover:bg-muted focus:ring-2 focus:ring-primary"
                       value={formData.status}
                       onChange={e => setFormData({ ...formData, status: e.target.value })}
                     >
@@ -557,24 +605,24 @@ export default function ProductsClient({ initialProducts }: { initialProducts: a
                 </div>
 
                 <div className="grid gap-3 text-start">
-                  <Label htmlFor="description" className="text-lg font-black px-1">وصف المنتج (لأتمتة الأجوبة)</Label>
+                  <Label htmlFor="description" className="px-1 text-lg font-black">وصف المنتج (لأتمتة الأجوبة)</Label>
                   <textarea
                     id="description"
                     required
                     rows={5}
                     placeholder="اكتب هنا جميع تفاصيل المنتج، لونه، مقاسه، ضمانه... الذكاء الاصطناعي سيتعلم من هذا النص للرد على العملاء."
-                    className="flex min-h-[160px] w-full rounded-[2rem] bg-muted/30 p-6 text-base font-medium border-none focus:ring-2 focus:ring-primary outline-none transition-all resize-none shadow-inner leading-relaxed"
+                    className="flex min-h-[160px] w-full resize-none rounded-[2rem] border-none bg-muted/30 p-6 text-base font-medium leading-relaxed shadow-inner outline-none transition-all focus:ring-2 focus:ring-primary"
                     value={formData.description}
                     onChange={e => setFormData({ ...formData, description: e.target.value })}
                   />
                 </div>
               </div>
 
-              <div className="pt-8 border-t flex flex-col sm:flex-row gap-4">
-                <Button type="submit" size="lg" className="flex-1 rounded-2xl h-16 font-black text-xl bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 active:scale-95 transition-all text-white" disabled={isLoading}>
+              <div className="flex flex-col gap-4 border-t pt-8 sm:flex-row">
+                <Button type="submit" size="lg" className="h-16 flex-1 rounded-2xl bg-primary text-xl font-black text-white shadow-xl shadow-primary/20 transition-all hover:bg-primary/90 active:scale-95" disabled={isLoading}>
                   {isLoading ? 'جاري المعالجة...' : editingProductId ? 'تحديث البيانات' : 'إضافة إلى الكتالوج'}
                 </Button>
-                <Button type="button" variant="ghost" onClick={handleCloseModal} className="h-16 px-10 rounded-2xl font-bold text-lg bg-muted/20 hover:bg-muted transition-all">
+                <Button type="button" variant="ghost" onClick={handleCloseModal} className="h-16 rounded-2xl bg-muted/20 px-10 text-lg font-bold transition-all hover:bg-muted">
                   إلغاء
                 </Button>
               </div>
@@ -585,4 +633,3 @@ export default function ProductsClient({ initialProducts }: { initialProducts: a
     </div>
   );
 }
-

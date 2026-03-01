@@ -1,12 +1,16 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
+import { useLocale } from 'next-intl';
 import { useTransition } from 'react';
+
+import { Button } from '@/components/ui/button';
 
 export function DisconnectButton({ channelKey }: { channelKey: string }) {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const locale = useLocale();
+  const isAr = locale === 'ar';
 
   const handleDisconnect = () => {
     startTransition(async () => {
@@ -14,9 +18,9 @@ export function DisconnectButton({ channelKey }: { channelKey: string }) {
         const res = await fetch('/api/integrations/disconnect', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ platform: channelKey })
+          body: JSON.stringify({ platform: channelKey }),
         });
-        
+
         if (res.ok) {
           router.refresh();
         }
@@ -27,14 +31,14 @@ export function DisconnectButton({ channelKey }: { channelKey: string }) {
   };
 
   return (
-    <Button 
-      variant="ghost" 
-      size="sm" 
+    <Button
+      variant="ghost"
+      size="sm"
       onClick={handleDisconnect}
       disabled={isPending}
-      className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl font-bold"
+      className="rounded-xl font-bold text-red-500 hover:bg-red-50 hover:text-red-600"
     >
-      {isPending ? 'جاري الإلغاء...' : 'إلغاء الربط'}
+      {isPending ? (isAr ? 'جاري الإلغاء...' : 'Disconnecting...') : (isAr ? 'إلغاء الربط' : 'Disconnect')}
     </Button>
   );
 }

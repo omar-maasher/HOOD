@@ -1,5 +1,5 @@
-import LeadsClient from './LeadsClient';
 import { getLeads } from './actions';
+import LeadsClient from './LeadsClient';
 
 export async function generateMetadata() {
   return {

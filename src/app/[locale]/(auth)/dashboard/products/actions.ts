@@ -1,13 +1,14 @@
 'use server';
 
 import { auth } from '@clerk/nextjs/server';
-import { eq, and, inArray } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
+
 import { db } from '@/libs/DB';
-import { productSchema, organizationSchema } from '@/models/Schema';
+import { organizationSchema, productSchema } from '@/models/Schema';
 
 export async function getProducts() {
   const { orgId } = await auth();
-  
+
   if (!orgId) {
     return [];
   }
@@ -20,13 +21,13 @@ export async function getProducts() {
   return products.map((p: any) => ({
     ...p,
     price: p.price ? Number(p.price).toFixed(2) : '0.00',
-    stock: p.stock ? Number(p.stock) : 0
+    stock: p.stock ? Number(p.stock) : 0,
   }));
 }
 
 export async function createProduct(data: any) {
   const { orgId } = await auth();
-  
+
   if (!orgId) {
     throw new Error('Unauthorized');
   }
@@ -45,14 +46,18 @@ export async function createProduct(data: any) {
     stock: data.stock ? data.stock.toString() : '0',
   }).returning();
 
-  if (!newProduct) throw new Error('Failed to create product');
+  if (!newProduct) {
+    throw new Error('Failed to create product');
+  }
 
   return { ...newProduct, price: newProduct.price ? Number(newProduct.price).toFixed(2) : '0.00', stock: newProduct.stock ? Number(newProduct.stock) : 0 };
 }
 
 export async function bulkUploadProducts(products: any[]) {
   const { orgId } = await auth();
-  if (!orgId) throw new Error('Unauthorized');
+  if (!orgId) {
+    throw new Error('Unauthorized');
+  }
   await db.insert(organizationSchema).values({ id: orgId }).onConflictDoNothing();
 
   const formattedProducts = products.map(p => ({
@@ -66,7 +71,9 @@ export async function bulkUploadProducts(products: any[]) {
     stock: (p.stock || 0).toString(),
   }));
 
-  if (formattedProducts.length === 0) return [];
+  if (formattedProducts.length === 0) {
+    return [];
+  }
 
   const newProducts = await db.insert(productSchema).values(formattedProducts).returning();
 
@@ -75,7 +82,7 @@ export async function bulkUploadProducts(products: any[]) {
 
 export async function updateProduct(id: number, data: any) {
   const { orgId } = await auth();
-  
+
   if (!orgId) {
     throw new Error('Unauthorized');
   }
@@ -93,35 +100,39 @@ export async function updateProduct(id: number, data: any) {
     .where(and(eq(productSchema.id, id), eq(productSchema.organizationId, orgId)))
     .returning();
 
-  if (!updated) throw new Error('Failed to update product');
+  if (!updated) {
+    throw new Error('Failed to update product');
+  }
 
   return { ...updated, price: updated.price ? Number(updated.price).toFixed(2) : '0.00', stock: updated.stock ? Number(updated.stock) : 0 };
 }
 
 export async function deleteProduct(id: number) {
   const { orgId } = await auth();
-  
+
   if (!orgId) {
     throw new Error('Unauthorized');
   }
 
   await db.delete(productSchema)
     .where(and(eq(productSchema.id, id), eq(productSchema.organizationId, orgId)));
-    
+
   return true;
 }
 
 export async function deleteProducts(ids: number[]) {
   const { orgId } = await auth();
-  
+
   if (!orgId) {
     throw new Error('Unauthorized');
   }
 
-  if (ids.length === 0) return true;
+  if (ids.length === 0) {
+    return true;
+  }
 
   await db.delete(productSchema)
     .where(and(inArray(productSchema.id, ids), eq(productSchema.organizationId, orgId)));
-    
+
   return true;
 }

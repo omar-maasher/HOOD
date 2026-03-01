@@ -1,12 +1,12 @@
 import {
   bigint,
+  jsonb,
   numeric,
   pgTable,
   serial,
   text,
   timestamp,
   uniqueIndex,
-  jsonb,
 } from 'drizzle-orm/pg-core';
 
 // This file defines the structure of your database tables using the Drizzle ORM.

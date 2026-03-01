@@ -13,6 +13,7 @@ export default function SubscriptionError({
         <p className="text-muted-foreground">يرجى المحاولة مرة أخرى</p>
       </div>
       <button
+        type="button"
         onClick={() => reset()}
         className="rounded-2xl bg-primary px-6 py-3 font-bold text-primary-foreground transition-all hover:bg-primary/90"
       >

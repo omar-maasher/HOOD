@@ -1,23 +1,27 @@
 'use client';
 
-import { useState } from 'react';
-import { 
-  Plus, Users, Search, MoreHorizontal, 
-  Edit, Trash2, X, MessageSquare, 
-  TrendingUp, UserCheck, UserMinus, UserPlus,
-  Instagram, Facebook, Phone
-} from 'lucide-react';
-
-import { Button } from '@/components/ui/button';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+  Edit,
+  Facebook,
+  Instagram,
+  MessageSquare,
+  MoreHorizontal,
+  Phone,
+  Plus,
+  Search,
+  Trash2,
+  TrendingUp,
+  UserCheck,
+  UserMinus,
+  UserPlus,
+  Users,
+  X,
+} from 'lucide-react';
+import { useLocale } from 'next-intl';
+import { useState } from 'react';
+
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,9 +30,20 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { createLead, updateLead, deleteLead } from './actions';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+
+import { createLead, deleteLead, updateLead } from './actions';
 
 export default function LeadsClient({ initialLeads }: { initialLeads: any[] }) {
+  const locale = useLocale();
+  const isAr = locale === 'ar';
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [leads, setLeads] = useState(initialLeads || []);
@@ -49,7 +64,7 @@ export default function LeadsClient({ initialLeads }: { initialLeads: any[] }) {
     setFormData({ name: '', contactMethod: '', source: 'whatsapp', status: 'new', notes: '' });
     setIsModalOpen(true);
   };
-  
+
   const handleEdit = (lead: any) => {
     setEditingLeadId(lead.id);
     setFormData({
@@ -67,7 +82,7 @@ export default function LeadsClient({ initialLeads }: { initialLeads: any[] }) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
       if (editingLeadId) {
         const updatedLead = await updateLead(editingLeadId, formData);
@@ -85,7 +100,6 @@ export default function LeadsClient({ initialLeads }: { initialLeads: any[] }) {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('هل أنت متأكد من حذف هذا العميل؟')) return;
     try {
       await deleteLead(id);
       setLeads(leads.filter(l => l.id !== id));
@@ -97,25 +111,25 @@ export default function LeadsClient({ initialLeads }: { initialLeads: any[] }) {
   const getSourceBadge = (source: string) => {
     switch (source) {
       case 'whatsapp': return (
-        <span className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-100">
+        <span className="flex items-center gap-1.5 rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-1 text-[10px] font-bold text-emerald-700">
           <Phone className="size-3" />
           واتساب
         </span>
       );
       case 'instagram': return (
-        <span className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-pink-50 text-pink-700 text-[10px] font-bold border border-pink-100">
+        <span className="flex items-center gap-1.5 rounded-xl border border-pink-100 bg-pink-50 px-3 py-1 text-[10px] font-bold text-pink-700">
           <Instagram className="size-3" />
           انستقرام
         </span>
       );
       case 'messenger': return (
-        <span className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-blue-50 text-blue-700 text-[10px] font-bold border border-blue-100">
+        <span className="flex items-center gap-1.5 rounded-xl border border-blue-100 bg-blue-50 px-3 py-1 text-[10px] font-bold text-blue-700">
           <Facebook className="size-3" />
           ماسنجر
         </span>
       );
       default: return (
-        <span className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-gray-50 text-gray-700 text-[10px] font-bold border border-gray-100">
+        <span className="flex items-center gap-1.5 rounded-xl border border-gray-100 bg-gray-50 px-3 py-1 text-[10px] font-bold text-gray-700">
           إضافة يدوية
         </span>
       );
@@ -125,31 +139,31 @@ export default function LeadsClient({ initialLeads }: { initialLeads: any[] }) {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'new': return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-blue-100 text-blue-700 text-[10px] font-extrabold uppercase tracking-widest ring-4 ring-blue-50/50">
+        <span className="inline-flex items-center gap-1.5 rounded-xl bg-blue-100 px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-blue-700 ring-4 ring-blue-50/50">
           <UserPlus className="size-3" />
           جديد
         </span>
       );
       case 'interested': return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-100 text-amber-700 text-[10px] font-extrabold uppercase tracking-widest ring-4 ring-amber-50/50">
+        <span className="inline-flex items-center gap-1.5 rounded-xl bg-amber-100 px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-amber-700 ring-4 ring-amber-50/50">
           <TrendingUp className="size-3" />
           مهتم
         </span>
       );
       case 'negotiating': return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-purple-100 text-purple-700 text-[10px] font-extrabold uppercase tracking-widest ring-4 ring-purple-50/50">
+        <span className="inline-flex items-center gap-1.5 rounded-xl bg-purple-100 px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-purple-700 ring-4 ring-purple-50/50">
           <MessageSquare className="size-3" />
           تفاوض
         </span>
       );
       case 'closed_won': return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-100 text-emerald-700 text-[10px] font-extrabold uppercase tracking-widest ring-4 ring-emerald-50/50">
+        <span className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-100 px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-emerald-700 ring-4 ring-emerald-50/50">
           <UserCheck className="size-3" />
           تم البيع
         </span>
       );
       case 'closed_lost': return (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-gray-100 text-gray-500 text-[10px] font-extrabold uppercase tracking-widest">
+        <span className="inline-flex items-center gap-1.5 rounded-xl bg-gray-100 px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-gray-500">
           <UserMinus className="size-3" />
           انسحاب
         </span>
@@ -158,175 +172,179 @@ export default function LeadsClient({ initialLeads }: { initialLeads: any[] }) {
     }
   };
 
-  const filteredLeads = leads.filter(lead => 
-    lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    lead.contactMethod.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredLeads = leads.filter(lead =>
+    lead.name.toLowerCase().includes(searchQuery.toLowerCase())
+    || lead.contactMethod.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
-    <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto pb-20">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 pb-20">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+      <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
         <div className="text-start">
-          <h1 className="text-3xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
-            إدارة العملاء والمهتمين
+          <h1 className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-3xl font-extrabold tracking-tight text-transparent">
+            {isAr ? 'إدارة العملاء والمهتمين' : 'Leads & Customers Management'}
           </h1>
-          <p className="text-muted-foreground mt-1 font-medium italic">تتبع رحلة عملائك من أول محادثة حتى إتمام البيع.</p>
+          <p className="mt-1 font-medium italic text-muted-foreground">
+            {isAr ? 'تتبع رحلة عملائك من أول محادثة حتى إتمام البيع.' : 'Track your customers\' journey from the first chat until the sale is closed.'}
+          </p>
         </div>
-        <Button onClick={handleOpenModal} className="rounded-2xl h-11 px-8 font-bold flex gap-2 shadow-lg shadow-primary/20 active:scale-95 transition-all">
+        <Button onClick={handleOpenModal} className="flex h-11 gap-2 rounded-2xl px-8 font-bold shadow-lg shadow-primary/20 transition-all active:scale-95">
           <Plus className="size-5" />
-          إضافة عميل
+          {isAr ? 'إضافة عميل' : 'Add Lead'}
         </Button>
       </div>
 
       {/* Stats & Search */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-        <div className="lg:col-span-8 relative group">
-          <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-muted-foreground group-focus-within:text-primary transition-colors">
+      <div className="grid grid-cols-1 items-center gap-6 lg:grid-cols-12">
+        <div className="group relative lg:col-span-8">
+          <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-muted-foreground transition-colors group-focus-within:text-primary">
             <Search className="size-5" />
           </div>
-          <Input 
-            placeholder="ابحث عن اسم أو وسيلة تواصل..." 
-            className="rounded-2xl h-14 pr-12 bg-card border-none shadow-xl shadow-gray-100/40 text-lg focus-visible:ring-primary"
+          <Input
+            placeholder="ابحث عن اسم أو وسيلة تواصل..."
+            className="h-14 rounded-2xl border-none bg-card pr-12 text-lg shadow-xl shadow-gray-100/40 focus-visible:ring-primary"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={e => setSearchQuery(e.target.value)}
           />
         </div>
-        <div className="lg:col-span-4 flex items-center gap-4 bg-muted/20 p-2 rounded-2xl border border-white/50 h-14 overflow-hidden">
-          <div className="flex-1 flex flex-col items-center justify-center border-l border-muted-foreground/10 px-4">
-            <span className="text-[10px] uppercase font-extrabold text-muted-foreground tracking-tighter">عملاء نشطون</span>
+        <div className="flex h-14 items-center gap-4 overflow-hidden rounded-2xl border border-white/50 bg-muted/20 p-2 lg:col-span-4">
+          <div className="flex flex-1 flex-col items-center justify-center border-l border-muted-foreground/10 px-4">
+            <span className="text-[10px] font-extrabold uppercase tracking-tighter text-muted-foreground">عملاء نشطون</span>
             <span className="text-xl font-black text-emerald-600">{leads.filter(l => l.status === 'closed_won').length}</span>
           </div>
-          <div className="flex-1 flex flex-col items-center justify-center px-4">
-            <span className="text-[10px] uppercase font-extrabold text-muted-foreground tracking-tighter">قيد المتابعة</span>
+          <div className="flex flex-1 flex-col items-center justify-center px-4">
+            <span className="text-[10px] font-extrabold uppercase tracking-tighter text-muted-foreground">قيد المتابعة</span>
             <span className="text-xl font-black text-primary">{leads.filter(l => ['new', 'interested', 'negotiating'].includes(l.status)).length}</span>
           </div>
         </div>
       </div>
 
       {/* Main Table Container */}
-      <div className="bg-card border rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.02)] overflow-hidden">
-        {leads.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="size-24 rounded-[2rem] bg-muted/30 flex items-center justify-center mb-6 text-muted-foreground/30 animate-pulse">
-              <Users className="size-12" />
-            </div>
-            <h3 className="text-2xl font-black text-muted-foreground mb-2">لا يوجد عملاء حالياً</h3>
-            <p className="text-sm text-muted-foreground max-w-xs mx-auto italic">المحادثات الجديدة من السوشيال ميديا ستظهر هنا تلقائياً.</p>
-          </div>
-        ) : (
-          <Table>
-            <TableHeader className="bg-muted/10 border-b">
-              <TableRow className="hover:bg-transparent border-none">
-                <TableHead className="py-6 px-8 font-black text-xs uppercase tracking-widest text-start">العميل</TableHead>
-                <TableHead className="py-6 px-6 font-black text-xs uppercase tracking-widest text-start">المصدر</TableHead>
-                <TableHead className="py-6 px-6 font-black text-xs uppercase tracking-widest text-start">وسيلة التواصل</TableHead>
-                <TableHead className="py-6 px-6 font-black text-xs uppercase tracking-widest text-start">المرحلة</TableHead>
-                <TableHead className="py-6 px-8 font-black text-xs uppercase tracking-widest text-end font-bold">إجراءات</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredLeads.map((lead) => (
-                <TableRow key={lead.id} className="group hover:bg-muted/5 border-b last:border-0 transition-all">
-                  <TableCell className="py-5 px-8">
-                    <div className="flex items-center gap-4 text-start">
-                      <div className="size-12 rounded-2xl bg-primary/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shadow-inner text-lg font-black italic">
-                        {lead.name.substring(0, 1)}
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-bold text-gray-900 group-hover:text-primary transition-colors text-lg">{lead.name}</span>
-                        <span className="text-[10px] text-muted-foreground italic truncate max-w-[150px]">{lead.notes || 'بدون ملاحظات'}</span>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-5 px-6">
-                    {getSourceBadge(lead.source)}
-                  </TableCell>
-                  <TableCell className="py-5 px-6">
-                    <span className="text-sm font-bold text-gray-700 font-mono tracking-tighter" dir="ltr">{lead.contactMethod}</span>
-                  </TableCell>
-                  <TableCell className="py-5 px-6">
-                    {getStatusBadge(lead.status)}
-                  </TableCell>
-                  <TableCell className="py-5 px-8 text-end">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="group-hover:bg-muted rounded-2xl h-10 w-10 transition-all">
-                          <MoreHorizontal className="size-5" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="rounded-2xl p-2 border-muted/50 shadow-2xl min-w-[160px]">
-                        <DropdownMenuItem onClick={() => handleEdit(lead)} className="flex gap-3 py-3 rounded-xl font-bold text-sm cursor-pointer hover:bg-primary/5 hover:text-primary focus:bg-primary/5 focus:text-primary">
-                          <Edit className="size-4" />
-                          مراجعة العميل
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleDelete(lead.id)} className="flex gap-3 py-3 rounded-xl font-bold text-sm cursor-pointer text-red-500 hover:bg-red-50 hover:text-red-600 focus:bg-red-50 focus:text-red-600">
-                          <Trash2 className="size-4" />
-                          حذف البيانات
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
+      <div className="overflow-hidden rounded-[2rem] border bg-card shadow-[0_20px_50px_rgba(0,0,0,0.02)]">
+        {leads.length === 0
+          ? (
+              <div className="flex flex-col items-center justify-center py-24 text-center">
+                <div className="mb-6 flex size-24 animate-pulse items-center justify-center rounded-[2rem] bg-muted/30 text-muted-foreground/30">
+                  <Users className="size-12" />
+                </div>
+                <h3 className="mb-2 text-2xl font-black text-muted-foreground">{isAr ? 'لا يوجد عملاء حالياً' : 'No leads currently'}</h3>
+                <p className="mx-auto max-w-xs text-sm italic text-muted-foreground">{isAr ? 'المحادثات الجديدة من السوشيال ميديا ستظهر هنا تلقائياً.' : 'New chats from social media will appear here automatically.'}</p>
+              </div>
+            )
+          : (
+              <Table>
+                <TableHeader className="border-b bg-muted/10">
+                  <TableRow className="border-none hover:bg-transparent">
+                    <TableHead className="px-8 py-6 text-start text-xs font-black uppercase tracking-widest">العميل</TableHead>
+                    <TableHead className="p-6 text-start text-xs font-black uppercase tracking-widest">المصدر</TableHead>
+                    <TableHead className="p-6 text-start text-xs font-black uppercase tracking-widest">وسيلة التواصل</TableHead>
+                    <TableHead className="p-6 text-start text-xs font-black uppercase tracking-widest">المرحلة</TableHead>
+                    <TableHead className="px-8 py-6 text-end text-xs font-black uppercase tracking-widest">إجراءات</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredLeads.map(lead => (
+                    <TableRow key={lead.id} className="group border-b transition-all last:border-0 hover:bg-muted/5">
+                      <TableCell className="px-8 py-5">
+                        <div className="flex items-center gap-4 text-start">
+                          <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/5 text-lg font-black italic text-primary shadow-inner transition-transform group-hover:scale-110">
+                            {lead.name.substring(0, 1)}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-lg font-bold text-gray-900 transition-colors group-hover:text-primary">{lead.name}</span>
+                            <span className="max-w-[150px] truncate text-[10px] italic text-muted-foreground">{lead.notes || 'بدون ملاحظات'}</span>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-6 py-5">
+                        {getSourceBadge(lead.source)}
+                      </TableCell>
+                      <TableCell className="px-6 py-5">
+                        <span className="font-mono text-sm font-bold tracking-tighter text-gray-700" dir="ltr">{lead.contactMethod}</span>
+                      </TableCell>
+                      <TableCell className="px-6 py-5">
+                        {getStatusBadge(lead.status)}
+                      </TableCell>
+                      <TableCell className="px-8 py-5 text-end">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="size-10 rounded-2xl transition-all group-hover:bg-muted">
+                              <MoreHorizontal className="size-5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="min-w-[160px] rounded-2xl border-muted/50 p-2 shadow-2xl">
+                            <DropdownMenuItem onClick={() => handleEdit(lead)} className="flex cursor-pointer gap-3 rounded-xl py-3 text-sm font-bold hover:bg-primary/5 hover:text-primary focus:bg-primary/5 focus:text-primary">
+                              <Edit className="size-4" />
+                              مراجعة العميل
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDelete(lead.id)} className="flex cursor-pointer gap-3 rounded-xl py-3 text-sm font-bold text-red-500 hover:bg-red-50 hover:text-red-600 focus:bg-red-50 focus:text-red-600">
+                              <Trash2 className="size-4" />
+                              حذف البيانات
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
       </div>
 
       {/* Modern Modal REDESIGN */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="relative w-full max-w-2xl bg-card rounded-[2.5rem] shadow-[0_32px_128px_-10px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 slide-in-from-bottom-5 duration-300">
-            <div className="flex items-center justify-between p-8 border-b bg-muted/10">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md duration-300 animate-in fade-in">
+          <div className="relative flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-[2.5rem] bg-card shadow-[0_32px_128px_-10px_rgba(0,0,0,0.4)] duration-300 animate-in zoom-in-95 slide-in-from-bottom-5">
+            <div className="flex items-center justify-between border-b bg-muted/10 p-8">
               <div className="flex items-center gap-4 text-start">
-                <div className="size-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                   {editingLeadId ? <Edit className="size-6" /> : <Plus className="size-6" />}
                 </div>
                 <div>
-                  <h2 className="text-2xl font-black text-start">
+                  <h2 className="text-start text-2xl font-black">
                     {editingLeadId ? 'تحديث ملف العميل' : 'إضافة عميل جديد'}
                   </h2>
-                  <p className="text-xs text-muted-foreground font-bold italic">قم ببناء قاعدة بيانات عملائك بذكاء.</p>
+                  <p className="text-xs font-bold italic text-muted-foreground">قم ببناء قاعدة بيانات عملائك بذكاء.</p>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" onClick={handleCloseModal} className="rounded-2xl hover:bg-red-50 hover:text-red-500 transition-all">
+              <Button variant="ghost" size="icon" onClick={handleCloseModal} className="rounded-2xl transition-all hover:bg-red-50 hover:text-red-500">
                 <X className="size-6" />
               </Button>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-10 space-y-8 text-start scrollbar-hide">
+            <form onSubmit={handleSubmit} className="flex-1 space-y-8 overflow-y-auto p-10 text-start">
               <div className="space-y-6">
                 <div className="grid gap-3">
-                  <Label htmlFor="name" className="text-base font-black px-1">اسم العميل</Label>
+                  <Label htmlFor="name" className="px-1 text-base font-black">اسم العميل</Label>
                   <Input
                     id="name"
                     required
                     placeholder="مثلاً: محمد أحمد"
                     value={formData.name}
                     onChange={e => setFormData({ ...formData, name: e.target.value })}
-                    className="h-14 rounded-2xl bg-muted/30 border-none shadow-inner focus-visible:ring-primary text-lg font-bold"
+                    className="h-14 rounded-2xl border-none bg-muted/30 text-lg font-bold shadow-inner focus-visible:ring-primary"
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   <div className="grid gap-3">
-                    <Label htmlFor="contactMethod" className="text-base font-black px-1">وسيلة التواصل</Label>
+                    <Label htmlFor="contactMethod" className="px-1 text-base font-black">وسيلة التواصل</Label>
                     <Input
                       id="contactMethod"
                       required
                       placeholder="+966 50 000 0000"
                       value={formData.contactMethod}
                       onChange={e => setFormData({ ...formData, contactMethod: e.target.value })}
-                      className="h-14 rounded-2xl bg-muted/30 border-none shadow-inner text-lg font-bold"
+                      className="h-14 rounded-2xl border-none bg-muted/30 text-lg font-bold shadow-inner"
                       dir="ltr"
                     />
                   </div>
                   <div className="grid gap-3">
-                    <Label htmlFor="source" className="text-base font-black px-1">المصدر</Label>
+                    <Label htmlFor="source" className="px-1 text-base font-black">المصدر</Label>
                     <select
                       id="source"
-                      className="h-14 rounded-2xl bg-muted/50 border-none px-6 text-sm font-bold shadow-sm outline-none cursor-pointer"
+                      className="h-14 cursor-pointer rounded-2xl border-none bg-muted/50 px-6 text-sm font-bold shadow-sm outline-none"
                       value={formData.source}
                       onChange={e => setFormData({ ...formData, source: e.target.value })}
                     >
@@ -339,10 +357,10 @@ export default function LeadsClient({ initialLeads }: { initialLeads: any[] }) {
                 </div>
 
                 <div className="grid gap-3">
-                  <Label htmlFor="status" className="text-base font-black px-1 text-start">المرحلة الحالية</Label>
+                  <Label htmlFor="status" className="px-1 text-start text-base font-black">المرحلة الحالية</Label>
                   <select
                     id="status"
-                    className="h-14 rounded-2xl bg-muted/50 border-none px-6 text-sm font-bold shadow-sm outline-none cursor-pointer"
+                    className="h-14 cursor-pointer rounded-2xl border-none bg-muted/50 px-6 text-sm font-bold shadow-sm outline-none"
                     value={formData.status}
                     onChange={e => setFormData({ ...formData, status: e.target.value })}
                   >
@@ -355,23 +373,23 @@ export default function LeadsClient({ initialLeads }: { initialLeads: any[] }) {
                 </div>
 
                 <div className="grid gap-3">
-                  <Label htmlFor="notes" className="text-base font-black px-1">ملاحظات المحادثة والاهتمامات</Label>
+                  <Label htmlFor="notes" className="px-1 text-base font-black">ملاحظات المحادثة والاهتمامات</Label>
                   <textarea
                     id="notes"
                     rows={4}
                     placeholder="اكتب هنا أي تفاصيل حول ما يريده العميل أو ملخص محادثته لتذكيرك مستقبلاً..."
-                    className="flex min-h-[140px] w-full rounded-[2rem] bg-muted/30 p-6 text-sm font-medium border-none focus:ring-2 focus:ring-primary outline-none transition-all resize-none shadow-inner"
+                    className="flex min-h-[140px] w-full resize-none rounded-[2rem] border-none bg-muted/30 p-6 text-sm font-medium shadow-inner outline-none transition-all focus:ring-2 focus:ring-primary"
                     value={formData.notes}
                     onChange={e => setFormData({ ...formData, notes: e.target.value })}
                   />
                 </div>
               </div>
 
-              <div className="pt-8 border-t flex flex-col sm:flex-row gap-4">
-                <Button type="submit" size="lg" className="flex-1 rounded-2xl h-14 font-black text-lg bg-primary hover:bg-primary/90 shadow-xl shadow-primary/20 active:scale-95 transition-all" disabled={isLoading}>
+              <div className="flex flex-col gap-4 border-t pt-8 sm:flex-row">
+                <Button type="submit" size="lg" className="h-14 flex-1 rounded-2xl bg-primary text-lg font-black shadow-xl shadow-primary/20 transition-all hover:bg-primary/90 active:scale-95" disabled={isLoading}>
                   {isLoading ? 'جاري الحفظ...' : editingLeadId ? 'تعديل البيانات' : 'حفظ ملف العميل'}
                 </Button>
-                <Button type="button" variant="ghost" onClick={handleCloseModal} className="h-14 px-8 rounded-2xl font-bold bg-muted/20 hover:bg-muted transition-all">
+                <Button type="button" variant="ghost" onClick={handleCloseModal} className="h-14 rounded-2xl bg-muted/20 px-8 font-bold transition-all hover:bg-muted">
                   إلغاء
                 </Button>
               </div>
@@ -382,4 +400,3 @@ export default function LeadsClient({ initialLeads }: { initialLeads: any[] }) {
     </div>
   );
 }
-

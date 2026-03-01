@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server';
+
 import { getBusinessProfile } from './actions';
 import BusinessClient from './BusinessClient';
 

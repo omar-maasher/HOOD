@@ -7,21 +7,21 @@ export default async function UserProfilePage(props: { params: { locale: string 
   const t = await getTranslations('UserProfile');
 
   return (
-    <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto pb-20">
+    <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 pb-20">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+      <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
         <div className="text-start">
-          <h1 className="text-3xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
+          <h1 className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-3xl font-extrabold tracking-tight text-transparent">
             {t('title_bar')}
           </h1>
-          <p className="text-muted-foreground mt-1 font-medium text-base">
+          <p className="mt-1 text-base font-medium text-muted-foreground">
             {t('title_bar_description')}
           </p>
         </div>
       </div>
 
       {/* Main Card */}
-      <div className="bg-card border rounded-[2rem] shadow-xl shadow-gray-100/50 overflow-hidden p-8 md:p-10">
+      <div className="overflow-hidden rounded-[2rem] border bg-card p-8 shadow-xl shadow-gray-100/50 md:p-10">
         <UserProfile
           routing="path"
           path={getI18nPath('/dashboard/user-profile', props.params.locale)}

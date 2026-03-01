@@ -1,22 +1,32 @@
 'use client';
 
-import { useState } from 'react';
-import { 
-  Save, Bot, Plus, Trash2, 
-  ShieldQuestion, Check, 
-  AlertTriangle, User, Settings2,
-  Clock, MessageCircle, ShieldAlert
+import {
+  AlertTriangle,
+  Bot,
+  Check,
+  Clock,
+  MessageCircle,
+  Plus,
+  Save,
+  Settings2,
+  ShieldAlert,
+  ShieldQuestion,
+  Trash2,
+  User,
 } from 'lucide-react';
+import { useState } from 'react';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+
 import { saveAiSettings } from './actions';
 
 export default function AiSettingsClient({ settings }: { settings: any }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [activeTab, setActiveTab] = useState('identity'); // 'identity' | 'faq' | 'system'
-  
+
   const [formData, setFormData] = useState({
     isActive: settings?.isActive ? (settings.isActive === 'true' || settings.isActive === true) : true,
     botName: settings?.botName || 'مساعد المتجر',
@@ -38,10 +48,12 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
   ];
 
   const handleAddFaq = () => {
-    if (!currentFaq.question || !currentFaq.answer) return;
+    if (!currentFaq.question || !currentFaq.answer) {
+      return;
+    }
     setFormData({
       ...formData,
-      faqs: [...formData.faqs, { ...currentFaq }]
+      faqs: [...formData.faqs, { ...currentFaq }],
     });
     setCurrentFaq({ question: '', answer: '' });
   };
@@ -53,10 +65,12 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
   };
 
   const handleSubmit = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
+    if (e) {
+      e.preventDefault();
+    }
     setIsLoading(true);
     setIsSaved(false);
-    
+
     try {
       await saveAiSettings({
         ...formData,
@@ -74,7 +88,7 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
   const handleToggleActive = async () => {
     const newState = !formData.isActive;
     setFormData({ ...formData, isActive: newState });
-    
+
     // Auto-save when toggling the bot status
     setIsLoading(true);
     try {
@@ -92,73 +106,73 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
   };
 
   return (
-    <div className="flex flex-col gap-8 w-full max-w-6xl mx-auto pb-20">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 pb-20">
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
+          <h1 className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-3xl font-extrabold tracking-tight text-transparent">
             تخصيص المساعد الذكي
           </h1>
-          <p className="text-muted-foreground mt-1 font-medium">تحكم في شخصية وكفاءة المساعد الآلي لمتجرك.</p>
+          <p className="mt-1 font-medium text-muted-foreground">تحكم في شخصية وكفاءة المساعد الآلي لمتجرك.</p>
         </div>
-        
-        <div className="flex items-center gap-4 p-1.5 bg-background border rounded-2xl shadow-sm">
-          <div className={`px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors ${formData.isActive ? 'text-green-600' : 'text-muted-foreground'}`}>
-            <span className={`size-2 rounded-full animate-pulse ${formData.isActive ? 'bg-green-500' : 'bg-gray-400'}`} />
+
+        <div className="flex items-center gap-4 rounded-2xl border bg-background p-1.5 shadow-sm">
+          <div className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-colors ${formData.isActive ? 'text-green-600' : 'text-muted-foreground'}`}>
+            <span className={`size-2 animate-pulse rounded-full ${formData.isActive ? 'bg-green-500' : 'bg-gray-400'}`} />
             {formData.isActive ? 'المساعد متصل' : 'المساعد متوقف'}
           </div>
           <button
             type="button"
             onClick={handleToggleActive}
             disabled={isLoading}
-            className={`relative inline-flex h-8 w-14 items-center rounded-full transition-all duration-300 focus:outline-none ${formData.isActive ? 'bg-primary shadow-lg shadow-primary/20' : 'bg-gray-200'} ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`relative inline-flex h-8 w-14 items-center rounded-full transition-all duration-300 focus:outline-none ${formData.isActive ? 'bg-primary shadow-lg shadow-primary/20' : 'bg-gray-200'} ${isLoading ? 'cursor-not-allowed opacity-50' : ''}`}
           >
-            <span className={`inline-block size-6 transform rounded-full bg-white transition-transform duration-300 ${formData.isActive ? 'translate-x-1 rtl:-translate-x-7' : 'translate-x-7 rtl:-translate-x-1'}`} />
+            <span className={`inline-block size-6 rounded-full bg-white transition-transform duration-300${formData.isActive ? 'translate-x-1 rtl:-translate-x-7' : 'translate-x-7 rtl:-translate-x-1'}`} />
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
         {/* Navigation Sidebar */}
-        <div className="lg:col-span-3 flex flex-col gap-2">
-          <button 
+        <div className="flex flex-col gap-2 lg:col-span-3">
+          <button
             onClick={() => setActiveTab('identity')}
-            className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-all ${activeTab === 'identity' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-[1.02]' : 'hover:bg-muted text-muted-foreground'}`}
+            className={`flex items-center gap-3 rounded-2xl px-4 py-3 font-bold transition-all ${activeTab === 'identity' ? 'scale-[1.02] bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'text-muted-foreground hover:bg-muted'}`}
           >
             <User className="size-5" />
             شخصية البوت
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('faq')}
-            className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-all ${activeTab === 'faq' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-[1.02]' : 'hover:bg-muted text-muted-foreground'}`}
+            className={`flex items-center gap-3 rounded-2xl px-4 py-3 font-bold transition-all ${activeTab === 'faq' ? 'scale-[1.02] bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'text-muted-foreground hover:bg-muted'}`}
           >
             <ShieldQuestion className="size-5" />
             الأسئلة الشائعة
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('system')}
-            className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-all ${activeTab === 'system' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-[1.02]' : 'hover:bg-muted text-muted-foreground'}`}
+            className={`flex items-center gap-3 rounded-2xl px-4 py-3 font-bold transition-all ${activeTab === 'system' ? 'scale-[1.02] bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'text-muted-foreground hover:bg-muted'}`}
           >
             <Settings2 className="size-5" />
             القواعد المتقدمة
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('welcome')}
-            className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-all ${activeTab === 'welcome' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-[1.02]' : 'hover:bg-muted text-muted-foreground'}`}
+            className={`flex items-center gap-3 rounded-2xl px-4 py-3 font-bold transition-all ${activeTab === 'welcome' ? 'scale-[1.02] bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'text-muted-foreground hover:bg-muted'}`}
           >
             <MessageCircle className="size-5" />
             رسالة الترحيب
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('hours')}
-            className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-all ${activeTab === 'hours' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-[1.02]' : 'hover:bg-muted text-muted-foreground'}`}
+            className={`flex items-center gap-3 rounded-2xl px-4 py-3 font-bold transition-all ${activeTab === 'hours' ? 'scale-[1.02] bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'text-muted-foreground hover:bg-muted'}`}
           >
             <Clock className="size-5" />
             ساعات العمل
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('spam')}
-            className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-all ${activeTab === 'spam' ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-[1.02]' : 'hover:bg-muted text-muted-foreground'}`}
+            className={`flex items-center gap-3 rounded-2xl px-4 py-3 font-bold transition-all ${activeTab === 'spam' ? 'scale-[1.02] bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'text-muted-foreground hover:bg-muted'}`}
           >
             <ShieldAlert className="size-5" />
             منع الإزعاج
@@ -166,15 +180,15 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
         </div>
 
         {/* Main Form Content */}
-        <form onSubmit={handleSubmit} className="lg:col-span-9 flex flex-col gap-6">
-          <div className={`bg-card border rounded-[2rem] shadow-xl shadow-gray-100/50 overflow-hidden transition-all duration-500 ${formData.isActive ? 'opacity-100' : 'opacity-50 grayscale pointer-events-none'}`}>
-            
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6 lg:col-span-9">
+          <div className={`overflow-hidden rounded-[2rem] border bg-card shadow-xl shadow-gray-100/50 transition-all duration-500 ${formData.isActive ? 'opacity-100' : 'pointer-events-none opacity-50 grayscale'}`}>
+
             <div className="p-8 md:p-10">
               {/* Tab: Identity */}
               {activeTab === 'identity' && (
-                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col gap-8">
+                <div className="flex flex-col gap-8 duration-500 animate-in fade-in slide-in-from-bottom-4">
                   <div className="flex items-center gap-3 border-b pb-6">
-                    <div className="size-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                    <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                       <Bot className="size-7" />
                     </div>
                     <div>
@@ -191,26 +205,26 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
                         placeholder="مثلاً: مساعد متجر هود"
                         value={formData.botName}
                         onChange={e => setFormData({ ...formData, botName: e.target.value })}
-                        className="rounded-2xl h-12 bg-muted/30 border-none focus-visible:ring-primary"
+                        className="h-12 rounded-2xl border-none bg-muted/30 focus-visible:ring-primary"
                       />
                     </div>
 
                     <div className="grid gap-3 text-start">
                       <Label className="text-base font-bold">نبرة الحديث</Label>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        {toneOptions.map((option) => (
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                        {toneOptions.map(option => (
                           <button
                             key={option.id}
                             type="button"
                             onClick={() => setFormData({ ...formData, tone: option.id })}
-                            className={`flex items-center gap-3 p-4 rounded-2xl border-2 transition-all text-start ${
-                              formData.tone === option.id 
-                                ? 'border-primary bg-primary/5 shadow-md' 
+                            className={`flex items-center gap-3 rounded-2xl border-2 p-4 text-start transition-all ${
+                              formData.tone === option.id
+                                ? 'border-primary bg-primary/5 shadow-md'
                                 : 'border-transparent bg-muted/30 hover:bg-muted/50'
                             }`}
                           >
                             <span className="text-2xl">{option.icon}</span>
-                            <span className="font-bold text-sm tracking-tight">{option.label}</span>
+                            <span className="text-sm font-bold tracking-tight">{option.label}</span>
                           </button>
                         ))}
                       </div>
@@ -222,7 +236,7 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
                         id="systemPrompt"
                         rows={6}
                         placeholder="أنت مساعد ذكي ولطيف، مهمتك مساعدة العملاء..."
-                        className="flex min-h-[120px] w-full rounded-2xl border-none bg-muted/30 px-4 py-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-all"
+                        className="flex min-h-[120px] w-full rounded-2xl border-none bg-muted/30 px-4 py-3 text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                         value={formData.systemPrompt}
                         onChange={e => setFormData({ ...formData, systemPrompt: e.target.value })}
                       />
@@ -233,9 +247,9 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
 
               {/* Tab: FAQ */}
               {activeTab === 'faq' && (
-                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col gap-8">
+                <div className="flex flex-col gap-8 duration-500 animate-in fade-in slide-in-from-bottom-4">
                   <div className="flex items-center gap-3 border-b pb-6">
-                    <div className="size-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
+                    <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                       <ShieldQuestion className="size-7" />
                     </div>
                     <div>
@@ -244,7 +258,7 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
                     </div>
                   </div>
 
-                  <div className="bg-muted/20 p-6 rounded-3xl border-2 border-dashed border-muted/50 text-start">
+                  <div className="rounded-3xl border-2 border-dashed border-muted/50 bg-muted/20 p-6 text-start">
                     <div className="flex flex-col gap-4">
                       <div className="grid gap-2">
                         <Label className="font-bold">السؤال المكرر</Label>
@@ -252,7 +266,7 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
                           placeholder="مثلاً: كم يستغرق الشحن؟"
                           value={currentFaq.question}
                           onChange={e => setCurrentFaq({ ...currentFaq, question: e.target.value })}
-                          className="rounded-xl border-none bg-background shadow-sm h-11"
+                          className="h-11 rounded-xl border-none bg-background shadow-sm"
                         />
                       </div>
                       <div className="grid gap-2">
@@ -262,16 +276,16 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
                           placeholder="الشحن يستغرق من 2-5 أيام عمل لجميع مناطق المملكة."
                           value={currentFaq.answer}
                           onChange={e => setCurrentFaq({ ...currentFaq, answer: e.target.value })}
-                          className="flex min-h-[80px] w-full rounded-xl border-none bg-background px-4 py-3 text-sm shadow-sm focus:ring-2 focus:ring-primary outline-none"
+                          className="flex min-h-[80px] w-full rounded-xl border-none bg-background px-4 py-3 text-sm shadow-sm outline-none focus:ring-2 focus:ring-primary"
                         />
                       </div>
-                      <Button 
-                        type="button" 
+                      <Button
+                        type="button"
                         onClick={handleAddFaq}
-                        className="rounded-xl self-end px-8 font-bold"
+                        className="self-end rounded-xl px-8 font-bold"
                         disabled={!currentFaq.question || !currentFaq.answer}
                       >
-                        <Plus className="size-4 ml-2" />
+                        <Plus className="ml-2 size-4" />
                         إضافة للسجل
                       </Button>
                     </div>
@@ -279,22 +293,32 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
 
                   {formData.faqs.length > 0 && (
                     <div className="grid gap-4 text-start">
-                      <h4 className="font-bold text-lg px-2">الأسئلة والردود الحالية ({formData.faqs.length})</h4>
+                      <h4 className="px-2 text-lg font-bold">
+                        الأسئلة والردود الحالية (
+                        {formData.faqs.length}
+                        )
+                      </h4>
                       <div className="flex flex-col gap-3">
                         {formData.faqs.map((faq: { question: string; answer: string }, index: number) => (
-                          <div key={index} className="group flex flex-col gap-2 p-5 bg-muted/10 border rounded-2xl hover:border-primary/30 transition-all relative">
-                            <div className="flex justify-between items-start">
-                              <span className="bg-primary/10 text-primary text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase">FAQ Item</span>
+                          <div key={index} className="group relative flex flex-col gap-2 rounded-2xl border bg-muted/10 p-5 transition-all hover:border-primary/30">
+                            <div className="flex items-start justify-between">
+                              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-extrabold uppercase text-primary">FAQ Item</span>
                               <button
                                 type="button"
                                 onClick={() => handleRemoveFaq(index)}
-                                className="text-muted-foreground hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                className="text-muted-foreground opacity-0 transition-opacity hover:text-red-500 group-hover:opacity-100"
                               >
                                 <Trash2 className="size-4" />
                               </button>
                             </div>
-                            <p className="font-bold text-blue-900 leading-tight">س: {faq.question}</p>
-                            <p className="text-sm text-muted-foreground leading-relaxed">ج: {faq.answer}</p>
+                            <p className="font-bold leading-tight text-blue-900">
+                              س:
+                              {faq.question}
+                            </p>
+                            <p className="text-sm leading-relaxed text-muted-foreground">
+                              ج:
+                              {faq.answer}
+                            </p>
                           </div>
                         ))}
                       </div>
@@ -305,9 +329,9 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
 
               {/* Tab: System */}
               {activeTab === 'system' && (activeTab === 'system') && (
-                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col gap-8">
+                <div className="flex flex-col gap-8 duration-500 animate-in fade-in slide-in-from-bottom-4">
                   <div className="flex items-center gap-3 border-b pb-6">
-                    <div className="size-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-600">
+                    <div className="flex size-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600">
                       <Settings2 className="size-7" />
                     </div>
                     <div>
@@ -318,16 +342,16 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
 
                   <div className="grid gap-6 text-start">
                     <div className="grid gap-2">
-                       <Label htmlFor="escalationRules" className="text-base font-bold flex items-center gap-2">
+                      <Label htmlFor="escalationRules" className="flex items-center gap-2 text-base font-bold">
                         <AlertTriangle className="size-4 text-amber-500" />
                         قواعد التصعيد (Escalation)
                       </Label>
-                      <p className="text-xs text-muted-foreground mb-2">أدخل الحالات التي يجب فيها تحويل المحادثة لأحد الموظفين.</p>
+                      <p className="mb-2 text-xs text-muted-foreground">أدخل الحالات التي يجب فيها تحويل المحادثة لأحد الموظفين.</p>
                       <textarea
                         id="escalationRules"
                         rows={5}
                         placeholder="مثلاً: عند الطلب المتكرر للتحدث مع بشري، أو عند الشكاوى الفنية المعقدة..."
-                        className="flex min-h-[140px] w-full rounded-2xl border-none bg-muted/30 px-4 py-3 text-sm shadow-inner focus:ring-2 focus:ring-primary outline-none"
+                        className="flex min-h-[140px] w-full rounded-2xl border-none bg-muted/30 px-4 py-3 text-sm shadow-inner outline-none focus:ring-2 focus:ring-primary"
                         value={formData.escalationRules}
                         onChange={e => setFormData({ ...formData, escalationRules: e.target.value })}
                       />
@@ -338,9 +362,9 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
 
               {/* Tab: Welcome Message */}
               {activeTab === 'welcome' && (
-                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col gap-8">
+                <div className="flex flex-col gap-8 duration-500 animate-in fade-in slide-in-from-bottom-4">
                   <div className="flex items-center gap-3 border-b pb-6">
-                    <div className="size-12 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-600">
+                    <div className="flex size-12 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-600">
                       <MessageCircle className="size-7" />
                     </div>
                     <div>
@@ -351,14 +375,19 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
 
                   <div className="grid gap-6 text-start">
                     <div className="grid gap-2">
-                       <Label className="text-base font-bold flex items-center gap-2">
+                      <Label className="flex items-center gap-2 text-base font-bold">
                         محتوى رسالة الترحيب
                       </Label>
-                      <p className="text-xs text-muted-foreground mb-2">استخدم {`{name}`} لجلب اسم العميل (إن أمكن). وضع الخيارات التوجيهية للعميل.</p>
+                      <p className="mb-2 text-xs text-muted-foreground">
+                        استخدم
+                        {`{name}`}
+                        {' '}
+                        لجلب اسم العميل (إن أمكن). وضع الخيارات التوجيهية للعميل.
+                      </p>
                       <textarea
                         rows={4}
                         placeholder="أهلاً بك {name}! كيف يمكنني مساعدتك؟ (طلب / سعر / دعم / حجز / تواصل بشري)"
-                        className="flex w-full rounded-2xl border-none bg-muted/30 px-4 py-3 text-sm shadow-inner focus:ring-2 focus:ring-primary outline-none"
+                        className="flex w-full rounded-2xl border-none bg-muted/30 px-4 py-3 text-sm shadow-inner outline-none focus:ring-2 focus:ring-primary"
                         value={formData.welcomeMessage}
                         onChange={e => setFormData({ ...formData, welcomeMessage: e.target.value })}
                       />
@@ -369,9 +398,9 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
 
               {/* Tab: Working Hours */}
               {activeTab === 'hours' && (
-                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col gap-8">
+                <div className="flex flex-col gap-8 duration-500 animate-in fade-in slide-in-from-bottom-4">
                   <div className="flex items-center gap-3 border-b pb-6">
-                    <div className="size-12 rounded-2xl bg-purple-500/10 flex items-center justify-center text-purple-600">
+                    <div className="flex size-12 items-center justify-center rounded-2xl bg-purple-500/10 text-purple-600">
                       <Clock className="size-7" />
                     </div>
                     <div>
@@ -380,19 +409,19 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4 p-4 border rounded-2xl bg-muted/10">
+                  <div className="flex items-center gap-4 rounded-2xl border bg-muted/10 p-4">
                     <button
                       type="button"
-                      onClick={() => setFormData({ 
-                        ...formData, 
-                        workingHours: { ...formData.workingHours, enabled: !formData.workingHours.enabled } 
+                      onClick={() => setFormData({
+                        ...formData,
+                        workingHours: { ...formData.workingHours, enabled: !formData.workingHours.enabled },
                       })}
-                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${formData.workingHours.enabled ? 'bg-primary' : 'bg-gray-300'}`}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${formData.workingHours.enabled ? 'bg-primary' : 'bg-gray-300'}`}
                     >
-                      <span className={`inline-block size-4 transform rounded-full bg-white transition-transform ${formData.workingHours.enabled ? 'translate-x-1 rtl:-translate-x-6' : 'translate-x-6 rtl:-translate-x-1'}`} />
+                      <span className={`inline-block size-4 rounded-full bg-white transition-transform${formData.workingHours.enabled ? 'translate-x-1 rtl:-translate-x-6' : 'translate-x-6 rtl:-translate-x-1'}`} />
                     </button>
                     <div className="flex flex-col text-start">
-                      <span className="font-bold text-sm">تفعيل نظام أوقات العمل</span>
+                      <span className="text-sm font-bold">تفعيل نظام أوقات العمل</span>
                       <span className="text-xs text-muted-foreground">خارج العمل: رد آلي محترم وتأجيل المتابعة</span>
                     </div>
                   </div>
@@ -401,31 +430,39 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
                     <div className="grid gap-6 text-start">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="grid gap-2">
-                           <Label className="text-sm font-bold">وقت بدء العمل</Label>
-                           <Input 
-                             type="time" 
-                             value={formData.workingHours.start} 
-                             onChange={e => setFormData({ ...formData, workingHours: { ...formData.workingHours, start: e.target.value } })}
-                             className="rounded-xl border-none bg-muted/30 shadow-sm"
-                           />
+                          <Label className="text-sm font-bold">وقت بدء العمل</Label>
+                          <Input
+                            type="time"
+                            value={formData.workingHours.start}
+                            onChange={e => setFormData({ ...formData, workingHours: { ...formData.workingHours, start: e.target.value } })}
+                            className="rounded-xl border-none bg-muted/30 shadow-sm"
+                          />
                         </div>
                         <div className="grid gap-2">
-                           <Label className="text-sm font-bold">وقت انتهاء العمل</Label>
-                           <Input 
-                             type="time" 
-                             value={formData.workingHours.end} 
-                             onChange={e => setFormData({ ...formData, workingHours: { ...formData.workingHours, end: e.target.value } })}
-                             className="rounded-xl border-none bg-muted/30 shadow-sm"
-                           />
+                          <Label className="text-sm font-bold">وقت انتهاء العمل</Label>
+                          <Input
+                            type="time"
+                            value={formData.workingHours.end}
+                            onChange={e => setFormData({ ...formData, workingHours: { ...formData.workingHours, end: e.target.value } })}
+                            className="rounded-xl border-none bg-muted/30 shadow-sm"
+                          />
                         </div>
                       </div>
 
                       <div className="grid gap-2">
-                         <Label className="text-base font-bold">رسالة خارج وقت العمل</Label>
-                        <p className="text-xs text-muted-foreground mb-2">استخدم {`{start}`} و {`{end}`} لعرض الأوقات تلقائياً.</p>
+                        <Label className="text-base font-bold">رسالة خارج وقت العمل</Label>
+                        <p className="mb-2 text-xs text-muted-foreground">
+                          استخدم
+                          {`{start}`}
+                          {' '}
+                          و
+                          {`{end}`}
+                          {' '}
+                          لعرض الأوقات تلقائياً.
+                        </p>
                         <textarea
                           rows={3}
-                          className="flex w-full rounded-2xl border-none bg-muted/30 px-4 py-3 text-sm shadow-inner focus:ring-2 focus:ring-primary outline-none"
+                          className="flex w-full rounded-2xl border-none bg-muted/30 px-4 py-3 text-sm shadow-inner outline-none focus:ring-2 focus:ring-primary"
                           value={formData.workingHours.outOfHoursMessage}
                           onChange={e => setFormData({ ...formData, workingHours: { ...formData.workingHours, outOfHoursMessage: e.target.value } })}
                         />
@@ -435,11 +472,11 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
                 </div>
               )}
 
-               {/* Tab: Anti-spam */}
+              {/* Tab: Anti-spam */}
               {activeTab === 'spam' && (
-                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 flex flex-col gap-8">
+                <div className="flex flex-col gap-8 duration-500 animate-in fade-in slide-in-from-bottom-4">
                   <div className="flex items-center gap-3 border-b pb-6">
-                    <div className="size-12 rounded-2xl bg-red-500/10 flex items-center justify-center text-red-600">
+                    <div className="flex size-12 items-center justify-center rounded-2xl bg-red-500/10 text-red-600">
                       <ShieldAlert className="size-7" />
                     </div>
                     <div>
@@ -448,52 +485,52 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
                     </div>
                   </div>
 
-                   <div className="flex items-center gap-4 p-4 border rounded-2xl bg-muted/10">
+                  <div className="flex items-center gap-4 rounded-2xl border bg-muted/10 p-4">
                     <button
                       type="button"
-                      onClick={() => setFormData({ 
-                        ...formData, 
-                        antiSpam: { ...formData.antiSpam, enabled: !formData.antiSpam.enabled } 
+                      onClick={() => setFormData({
+                        ...formData,
+                        antiSpam: { ...formData.antiSpam, enabled: !formData.antiSpam.enabled },
                       })}
-                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${formData.antiSpam.enabled ? 'bg-primary' : 'bg-gray-300'}`}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${formData.antiSpam.enabled ? 'bg-primary' : 'bg-gray-300'}`}
                     >
-                      <span className={`inline-block size-4 transform rounded-full bg-white transition-transform ${formData.antiSpam.enabled ? 'translate-x-1 rtl:-translate-x-6' : 'translate-x-6 rtl:-translate-x-1'}`} />
+                      <span className={`inline-block size-4 rounded-full bg-white transition-transform${formData.antiSpam.enabled ? 'translate-x-1 rtl:-translate-x-6' : 'translate-x-6 rtl:-translate-x-1'}`} />
                     </button>
                     <div className="flex flex-col text-start">
-                      <span className="font-bold text-sm">تفعيل التدريع وإيقاف الإزعاج</span>
+                      <span className="text-sm font-bold">تفعيل التدريع وإيقاف الإزعاج</span>
                     </div>
                   </div>
 
                   {formData.antiSpam.enabled && (
-                    <div className="grid gap-6 text-start bg-muted/10 rounded-2xl p-6 border border-dashed">
+                    <div className="grid gap-6 rounded-2xl border border-dashed bg-muted/10 p-6 text-start">
                       <div className="grid grid-cols-2 gap-4">
                         <div className="grid gap-2">
-                           <Label className="text-sm font-bold">أقصى عدد رسائل (ردود آلية)</Label>
-                           <Input 
-                             type="number" 
-                             min="1"
-                             value={formData.antiSpam.maxMessagesPerWindow} 
-                             onChange={e => setFormData({ ...formData, antiSpam: { ...formData.antiSpam, maxMessagesPerWindow: parseInt(e.target.value) || 3 } })}
-                             className="rounded-xl border-none bg-background shadow-sm"
-                           />
+                          <Label className="text-sm font-bold">أقصى عدد رسائل (ردود آلية)</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={formData.antiSpam.maxMessagesPerWindow}
+                            onChange={e => setFormData({ ...formData, antiSpam: { ...formData.antiSpam, maxMessagesPerWindow: Number.parseInt(e.target.value) || 3 } })}
+                            className="rounded-xl border-none bg-background shadow-sm"
+                          />
                         </div>
                         <div className="grid gap-2">
-                           <Label className="text-sm font-bold">المدة الزمنية (بالدقائق)</Label>
-                           <Input 
-                             type="number" 
-                             min="1"
-                             value={formData.antiSpam.windowMinutes} 
-                             onChange={e => setFormData({ ...formData, antiSpam: { ...formData.antiSpam, windowMinutes: parseInt(e.target.value) || 5 } })}
-                             className="rounded-xl border-none bg-background shadow-sm"
-                           />
+                          <Label className="text-sm font-bold">المدة الزمنية (بالدقائق)</Label>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={formData.antiSpam.windowMinutes}
+                            onChange={e => setFormData({ ...formData, antiSpam: { ...formData.antiSpam, windowMinutes: Number.parseInt(e.target.value) || 5 } })}
+                            className="rounded-xl border-none bg-background shadow-sm"
+                          />
                         </div>
                       </div>
 
-                       <div className="grid gap-2 mt-2">
-                         <Label className="text-sm font-bold">الرد الحازم عند تجاوز الحد (تكرار الرسائل)</Label>
+                      <div className="mt-2 grid gap-2">
+                        <Label className="text-sm font-bold">الرد الحازم عند تجاوز الحد (تكرار الرسائل)</Label>
                         <textarea
                           rows={2}
-                          className="flex w-full rounded-2xl border-none bg-background px-4 py-3 text-sm shadow-inner focus:ring-2 focus:ring-primary outline-none"
+                          className="flex w-full rounded-2xl border-none bg-background px-4 py-3 text-sm shadow-inner outline-none focus:ring-2 focus:ring-primary"
                           value={formData.antiSpam.warningMessage}
                           onChange={e => setFormData({ ...formData, antiSpam: { ...formData.antiSpam, warningMessage: e.target.value } })}
                         />
@@ -505,30 +542,34 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
             </div>
 
             {/* Footer Action Bar */}
-            <div className="border-t bg-muted/10 px-8 py-6 flex items-center justify-between gap-4">
-              <p className="text-sm text-muted-foreground hidden md:block">يتم حفظ جميع التعديلات في قاعدة البيانات بشكل فوري عند الضغط على حفظ.</p>
-              <Button 
-                type="submit" 
+            <div className="flex items-center justify-between gap-4 border-t bg-muted/10 px-8 py-6">
+              <p className="hidden text-sm text-muted-foreground md:block">يتم حفظ جميع التعديلات في قاعدة البيانات بشكل فوري عند الضغط على حفظ.</p>
+              <Button
+                type="submit"
                 disabled={isLoading}
                 size="lg"
-                className={`rounded-2xl px-12 font-bold transition-all duration-300 h-12 ${isSaved ? 'bg-green-600 hover:bg-green-700 shadow-lg shadow-green-500/20' : 'shadow-lg shadow-primary/20'}`}
+                className={`h-12 rounded-2xl px-12 font-bold transition-all duration-300 ${isSaved ? 'bg-green-600 shadow-lg shadow-green-500/20 hover:bg-green-700' : 'shadow-lg shadow-primary/20'}`}
               >
-                {isLoading ? (
-                  <span className="flex items-center gap-2">
-                    <div className="size-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    جاري الحفظ
-                  </span>
-                ) : isSaved ? (
-                  <>
-                    <Check className="size-5 ml-2" />
-                    تم الحفظ بنجاح
-                  </>
-                ) : (
-                  <>
-                    <Save className="size-5 ml-2" />
-                    حفظ التغييرات
-                  </>
-                )}
+                {isLoading
+                  ? (
+                      <span className="flex items-center gap-2">
+                        <div className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                        جاري الحفظ
+                      </span>
+                    )
+                  : isSaved
+                    ? (
+                        <>
+                          <Check className="ml-2 size-5" />
+                          تم الحفظ بنجاح
+                        </>
+                      )
+                    : (
+                        <>
+                          <Save className="ml-2 size-5" />
+                          حفظ التغييرات
+                        </>
+                      )}
               </Button>
             </div>
           </div>
@@ -537,5 +578,3 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
     </div>
   );
 }
-
-

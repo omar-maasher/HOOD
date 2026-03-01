@@ -1,4 +1,5 @@
 import { getTranslations } from 'next-intl/server';
+
 import { getAiSettings } from './actions';
 import AiSettingsClient from './AiSettingsClient';
 

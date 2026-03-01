@@ -1,11 +1,11 @@
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 
 import { LocaleSwitcher } from '@/components/LocaleSwitcher';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { buttonVariants } from '@/components/ui/buttonVariants';
 import { CenteredMenu } from '@/features/landing/CenteredMenu';
 import { Section } from '@/features/landing/Section';
-import { ThemeToggle } from '@/components/ThemeToggle';
+import { Link } from '@/libs/i18nNavigation';
 
 import { Logo } from './Logo';
 

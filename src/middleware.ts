@@ -29,7 +29,7 @@ export default function middleware(
   // Force Arabic locale unless explicitly visiting /en path
   const { pathname } = request.nextUrl;
   const isEnglishPath = pathname.startsWith('/en') || pathname.startsWith('/en/');
-  
+
   if (!isEnglishPath) {
     request.cookies.set('NEXT_LOCALE', 'ar');
   }

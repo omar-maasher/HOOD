@@ -1,13 +1,16 @@
 'use server';
 
 import { auth } from '@clerk/nextjs/server';
-import { eq, and, desc, inArray } from 'drizzle-orm';
+import { and, desc, eq, inArray } from 'drizzle-orm';
+
 import { db } from '@/libs/DB';
 import { bookingSchema, organizationSchema } from '@/models/Schema';
 
 export async function getBookings() {
   const { orgId } = await auth();
-  if (!orgId) return [];
+  if (!orgId) {
+    return [];
+  }
 
   const bookings = await db
     .select()
@@ -26,7 +29,9 @@ export async function getBookings() {
 
 export async function createBooking(data: any) {
   const { orgId } = await auth();
-  if (!orgId) throw new Error('Unauthorized');
+  if (!orgId) {
+    throw new Error('Unauthorized');
+  }
 
   await db.insert(organizationSchema).values({ id: orgId }).onConflictDoNothing();
 
@@ -52,7 +57,9 @@ export async function createBooking(data: any) {
 
 export async function updateBooking(id: number, data: any) {
   const { orgId } = await auth();
-  if (!orgId) throw new Error('Unauthorized');
+  if (!orgId) {
+    throw new Error('Unauthorized');
+  }
 
   const [updated] = await db.update(bookingSchema)
     .set({
@@ -78,31 +85,41 @@ export async function updateBooking(id: number, data: any) {
 
 export async function deleteBooking(id: number) {
   const { orgId } = await auth();
-  if (!orgId) throw new Error('Unauthorized');
+  if (!orgId) {
+    throw new Error('Unauthorized');
+  }
 
   await db.delete(bookingSchema)
     .where(and(eq(bookingSchema.id, id), eq(bookingSchema.organizationId, orgId)));
-    
+
   return true;
 }
 
 export async function deleteBookings(ids: number[]) {
   const { orgId } = await auth();
-  if (!orgId) throw new Error('Unauthorized');
-  
-  if (ids.length === 0) return true;
+  if (!orgId) {
+    throw new Error('Unauthorized');
+  }
+
+  if (ids.length === 0) {
+    return true;
+  }
 
   await db.delete(bookingSchema)
     .where(and(inArray(bookingSchema.id, ids), eq(bookingSchema.organizationId, orgId)));
-    
+
   return true;
 }
 
 export async function updateBookingsStatus(ids: number[], status: string) {
   const { orgId } = await auth();
-  if (!orgId) throw new Error('Unauthorized');
+  if (!orgId) {
+    throw new Error('Unauthorized');
+  }
 
-  if (ids.length === 0) return true;
+  if (ids.length === 0) {
+    return true;
+  }
 
   await db.update(bookingSchema)
     .set({ status })
