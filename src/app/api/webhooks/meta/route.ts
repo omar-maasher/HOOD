@@ -23,97 +23,110 @@ export const POST = async (request: Request) => {
   // eslint-disable-next-line no-console
   console.log('Received Meta Webhook:', JSON.stringify(body, null, 2));
 
-  let pageId = null;
-  let platform = 'unknown';
-
-  // Extract Page ID / WABA ID depending on the object type
-  if (body.object === 'page') {
-    pageId = body.entry?.[0]?.id; // Messenger Page ID
-    platform = 'messenger';
-  } else if (body.object === 'instagram') {
-    pageId = body.entry?.[0]?.id; // Instagram Account ID
-    platform = 'instagram';
-  } else if (body.object === 'whatsapp_business_account') {
-    pageId = body.entry?.[0]?.id; // WhatsApp WABA ID
-    platform = 'whatsapp';
-  }
-
-  // --- FILTER OUT ECHOES & SYSTEM EVENTS TO PREVENT INFINITE LOOPS ---
-  const messagingEvent = body.entry?.[0]?.messaging?.[0];
-  if (messagingEvent) {
-    // 1. Ignore echo messages (messages sent by the bot itself)
-    if (messagingEvent.message?.is_echo || messagingEvent.sender?.id === pageId) {
-      // eslint-disable-next-line no-console
-      console.log('Ignoring echo message (bot reply).');
-      return new NextResponse('OK', { status: 200 });
-    }
-    // 2. Ignore message delivery / read receipts
-    if (messagingEvent.delivery || messagingEvent.read) {
-      // eslint-disable-next-line no-console
-      console.log('Ignoring delivery/read receipt.');
-      return new NextResponse('OK', { status: 200 });
-    }
-  }
-
-  // Filter out WhatsApp status updates (delivery/read/sent)
-  const waChangesValue = body.entry?.[0]?.changes?.[0]?.value;
-  if (waChangesValue?.statuses) {
-    // eslint-disable-next-line no-console
-    console.log('Ignoring WhatsApp status update (delivery/read).');
-    return new NextResponse('OK', { status: 200 });
-  }
-  // ----------------------------------------------------------------
-
-  // Forward to n8n Flow
+  const entries = body.entry || [];
   const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL;
 
-  if (n8nWebhookUrl) {
-    try {
-      let enrichedPayload: any = { rawBody: body, platform };
+  // Process all entries and messaging events
+  for (const entry of entries) {
+    const pageId = entry.id;
+    const messaging = entry.messaging || [];
+    const changes = entry.changes || [];
 
-      if (pageId) {
-        // Find the tenant (Organization) that owns this Instagram/WhatsApp account.
-        const integration = await db.query.integrationSchema.findFirst({
-          where: eq(integrationSchema.providerId, pageId),
-        });
-
-        if (integration) {
-          const orgId = integration.organizationId;
-          // Fetch AI Settings for this organization
-          const aiSettings = await db.query.aiSettingsSchema.findFirst({
-            where: eq(aiSettingsSchema.organizationId, orgId),
-          });
-
-          // Attach context so n8n doesn't have to hit DB
-          enrichedPayload = {
-            ...enrichedPayload,
-            context: {
-              organizationId: orgId,
-              integrationType: integration.type,
-              aiConfig: aiSettings || { isActive: 'false' }, // Fallback if no settings
-            },
-          };
-        } else {
-          // eslint-disable-next-line no-console
-          console.log(`No active integration found for provider id: ${pageId}`);
-        }
+    // --- 1. HANDLE MESSAGING (Instagram/Messenger) ---
+    for (const messagingEvent of messaging) {
+      // Filter out echoes and system events
+      if (
+        messagingEvent.message?.is_echo
+        || messagingEvent.sender?.id === pageId
+        || messagingEvent.delivery
+        || messagingEvent.read
+      ) {
+        continue;
       }
 
-      // eslint-disable-next-line no-console
-      console.log('Forwarding Enriched Payload to n8n...');
+      if (n8nWebhookUrl) {
+        try {
+          const platform = body.object === 'page' ? 'messenger' : (body.object === 'instagram' ? 'instagram' : 'unknown');
 
-      // Wait for n8n to accept the payload so Vercel does not kill it prematurely
-      await fetch(n8nWebhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(enrichedPayload),
-      });
-    } catch (error) {
-      console.error('Error forwarding Payload to n8n:', error);
+          const enrichedPayload: any = {
+            rawBody: { ...body, entry: [entry] },
+            platform,
+          };
+
+          // Find the organization
+          const integration = await db.query.integrationSchema.findFirst({
+            where: eq(integrationSchema.providerId, pageId),
+          });
+
+          if (integration) {
+            const orgId = integration.organizationId;
+            const aiSettings = await db.query.aiSettingsSchema.findFirst({
+              where: eq(aiSettingsSchema.organizationId, orgId),
+            });
+
+            enrichedPayload.context = {
+              organizationId: orgId,
+              integrationType: integration.type,
+              aiConfig: aiSettings || { isActive: 'false' },
+            };
+          }
+
+          // Forward to n8n
+          await fetch(n8nWebhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(enrichedPayload),
+          });
+        } catch (error) {
+          console.error('Error forwarding to n8n:', error);
+        }
+      }
     }
-  } else {
-    // eslint-disable-next-line no-console
-    console.log('No N8N_WEBHOOK_URL configured, skipping forward.');
+
+    // --- 2. HANDLE CHANGES (WhatsApp/Others) ---
+    for (const change of changes) {
+      const waValue = change.value;
+
+      // Filter WhatsApp status updates
+      if (waValue?.statuses) {
+        continue;
+      }
+
+      if (n8nWebhookUrl && waValue?.messages) {
+        try {
+          const enrichedPayload: any = {
+            rawBody: { ...body, entry: [entry] },
+            platform: 'whatsapp',
+          };
+
+          // Find organization by WABA ID (pageId)
+          const integration = await db.query.integrationSchema.findFirst({
+            where: eq(integrationSchema.providerId, pageId),
+          });
+
+          if (integration) {
+            const orgId = integration.organizationId;
+            const aiSettings = await db.query.aiSettingsSchema.findFirst({
+              where: eq(aiSettingsSchema.organizationId, orgId),
+            });
+
+            enrichedPayload.context = {
+              organizationId: orgId,
+              integrationType: integration.type,
+              aiConfig: aiSettings || { isActive: 'false' },
+            };
+          }
+
+          await fetch(n8nWebhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(enrichedPayload),
+          });
+        } catch (error) {
+          console.error('Error forwarding WhatsApp to n8n:', error);
+        }
+      }
+    }
   }
 
   // Acknowledge receipt to Meta
