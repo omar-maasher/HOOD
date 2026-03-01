@@ -5,17 +5,32 @@ export const META_CONFIG = {
   graphVersion: 'v21.0',
 };
 
-export const getMetaAuthUrl = (state: string) => {
-  const scopes = [
+export type MetaPlatform = 'instagram' | 'messenger' | 'whatsapp';
+
+const PLATFORM_SCOPES: Record<MetaPlatform, string[]> = {
+  instagram: [
     'pages_show_list',
     'pages_messaging',
     'instagram_basic',
     'instagram_manage_messages',
+    'public_profile',
+  ],
+  messenger: [
+    'pages_show_list',
+    'pages_messaging',
+    'public_profile',
+  ],
+  whatsapp: [
     'whatsapp_business_management',
     'whatsapp_business_messaging',
     'public_profile',
-    'email',
-  ].join(',');
+  ],
+};
+
+export const getMetaAuthUrl = (state: string, platform?: MetaPlatform) => {
+  const scopes = platform
+    ? PLATFORM_SCOPES[platform].join(',')
+    : [...new Set(Object.values(PLATFORM_SCOPES).flat())].join(',');
 
   return `https://www.facebook.com/${META_CONFIG.graphVersion}/dialog/oauth?client_id=${META_CONFIG.appId}&redirect_uri=${META_CONFIG.redirectUri}&state=${state}&scope=${scopes}`;
 };
