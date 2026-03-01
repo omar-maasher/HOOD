@@ -136,6 +136,7 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
         {/* Navigation Sidebar */}
         <div className="flex flex-col gap-2 lg:col-span-3">
           <button
+            type="button"
             onClick={() => setActiveTab('identity')}
             className={`flex items-center gap-3 rounded-2xl px-4 py-3 font-bold transition-all ${activeTab === 'identity' ? 'scale-[1.02] bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'text-muted-foreground hover:bg-muted'}`}
           >
@@ -143,6 +144,7 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
             شخصية البوت
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('faq')}
             className={`flex items-center gap-3 rounded-2xl px-4 py-3 font-bold transition-all ${activeTab === 'faq' ? 'scale-[1.02] bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'text-muted-foreground hover:bg-muted'}`}
           >
@@ -150,6 +152,7 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
             الأسئلة الشائعة
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('system')}
             className={`flex items-center gap-3 rounded-2xl px-4 py-3 font-bold transition-all ${activeTab === 'system' ? 'scale-[1.02] bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'text-muted-foreground hover:bg-muted'}`}
           >
@@ -157,6 +160,7 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
             القواعد المتقدمة
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('welcome')}
             className={`flex items-center gap-3 rounded-2xl px-4 py-3 font-bold transition-all ${activeTab === 'welcome' ? 'scale-[1.02] bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'text-muted-foreground hover:bg-muted'}`}
           >
@@ -164,6 +168,7 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
             رسالة الترحيب
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('hours')}
             className={`flex items-center gap-3 rounded-2xl px-4 py-3 font-bold transition-all ${activeTab === 'hours' ? 'scale-[1.02] bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'text-muted-foreground hover:bg-muted'}`}
           >
@@ -171,6 +176,7 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
             ساعات العمل
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('spam')}
             className={`flex items-center gap-3 rounded-2xl px-4 py-3 font-bold transition-all ${activeTab === 'spam' ? 'scale-[1.02] bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'text-muted-foreground hover:bg-muted'}`}
           >
@@ -300,7 +306,7 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
                       </h4>
                       <div className="flex flex-col gap-3">
                         {formData.faqs.map((faq: { question: string; answer: string }, index: number) => (
-                          <div key={index} className="group relative flex flex-col gap-2 rounded-2xl border bg-muted/10 p-5 transition-all hover:border-primary/30">
+                          <div key={faq.question} className="group relative flex flex-col gap-2 rounded-2xl border bg-muted/10 p-5 transition-all hover:border-primary/30">
                             <div className="flex items-start justify-between">
                               <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-extrabold uppercase text-primary">FAQ Item</span>
                               <button
