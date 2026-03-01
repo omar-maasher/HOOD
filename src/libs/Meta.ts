@@ -10,15 +10,19 @@ export type MetaPlatform = 'instagram' | 'messenger' | 'whatsapp';
 const PLATFORM_SCOPES: Record<MetaPlatform, string[]> = {
   instagram: [
     'pages_show_list',
+    'pages_read_engagement',
     'pages_messaging',
     'instagram_basic',
     'instagram_manage_messages',
     'public_profile',
+    'email',
   ],
   messenger: [
     'pages_show_list',
+    'pages_read_engagement',
     'pages_messaging',
     'public_profile',
+    'email',
   ],
   whatsapp: [
     'whatsapp_business_management',
@@ -29,10 +33,12 @@ const PLATFORM_SCOPES: Record<MetaPlatform, string[]> = {
 
 export const getMetaAuthUrl = (state: string, platform?: MetaPlatform) => {
   const scopes = platform
-    ? PLATFORM_SCOPES[platform].join(',')
-    : [...new Set(Object.values(PLATFORM_SCOPES).flat())].join(',');
+    ? PLATFORM_SCOPES[platform]
+    : [...new Set(Object.values(PLATFORM_SCOPES).flat())];
 
-  return `https://www.facebook.com/${META_CONFIG.graphVersion}/dialog/oauth?client_id=${META_CONFIG.appId}&redirect_uri=${META_CONFIG.redirectUri}&state=${state}&scope=${scopes}`;
+  const scopeString = scopes.join(',');
+
+  return `https://www.facebook.com/${META_CONFIG.graphVersion}/dialog/oauth?client_id=${META_CONFIG.appId}&redirect_uri=${META_CONFIG.redirectUri}&state=${state}&scope=${scopeString}`;
 };
 
 export const exchangeCodeForToken = async (code: string) => {
@@ -88,6 +94,38 @@ export const sendInstagramMessage = async (
   if (!response.ok) {
     const errorData = await response.json();
     console.error('Failed to send Instagram message:', errorData);
+    throw new Error(`Meta API error: ${JSON.stringify(errorData)}`);
+  }
+
+  return response.json();
+};
+
+/**
+ * Send a message via the Messenger API for Facebook Pages.
+ */
+export const sendMessengerMessage = async (
+  pageId: string, // Facebook Page ID (stored as providerId in DB)
+  recipientId: string, // Page-scoped user ID of the recipient
+  text: string,
+  accessToken: string, // Page Access Token
+) => {
+  const url = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${pageId}/messages`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      recipient: { id: recipientId },
+      message: { text },
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    console.error('Failed to send Messenger message:', errorData);
     throw new Error(`Meta API error: ${JSON.stringify(errorData)}`);
   }
 

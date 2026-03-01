@@ -121,7 +121,7 @@ export default async function IntegrationsPage() {
                     )
                   : (
                       <a
-                        href={channel.key === 'whatsapp' ? '#' : `/api/auth/meta?platform=${channel.key}`}
+                        href={`/api/auth/meta?platform=${channel.key}`}
                         className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-4 font-bold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 active:scale-[0.98]"
                       >
                         <LinkIcon className="size-4" />

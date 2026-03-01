@@ -169,6 +169,54 @@ export const GET = async (request: Request) => {
       } catch (e) {
         console.error('Auto-connect Instagram Error:', e);
       }
+    } else if (platform === 'whatsapp') {
+      try {
+        const businessesRes = await fetch(`https://graph.facebook.com/v21.0/me/businesses?access_token=${accessToken}`);
+        if (businessesRes.ok) {
+          const businessesData = await businessesRes.json();
+          for (const business of businessesData.data || []) {
+            const wabaRes = await fetch(`https://graph.facebook.com/v21.0/${business.id}/whatsapp_business_accounts?access_token=${accessToken}`);
+            if (wabaRes.ok) {
+              const wabaData = await wabaRes.json();
+              if (wabaData.data && wabaData.data.length > 0) {
+                const waba = wabaData.data[0];
+                const wabaId = waba.id;
+
+                const existingWa = await db.query.integrationSchema.findFirst({
+                  where: and(
+                    eq(integrationSchema.organizationId, orgId),
+                    eq(integrationSchema.type, 'whatsapp'),
+                  ),
+                });
+
+                if (existingWa) {
+                  await db.update(integrationSchema)
+                    .set({
+                      accessToken,
+                      providerId: wabaId,
+                      updatedAt: new Date(),
+                    })
+                    .where(and(
+                      eq(integrationSchema.organizationId, orgId),
+                      eq(integrationSchema.type, 'whatsapp'),
+                    ));
+                } else {
+                  await db.insert(integrationSchema).values({
+                    organizationId: orgId,
+                    type: 'whatsapp',
+                    providerId: wabaId,
+                    accessToken,
+                    status: 'active',
+                  });
+                }
+                break;
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Auto-connect WhatsApp Error:', e);
+      }
     }
 
     return NextResponse.redirect(new URL(`/dashboard/integrations?success=connected`, request.url));

@@ -2,7 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/DB';
-import { sendInstagramMessage } from '@/libs/Meta';
+import { sendInstagramMessage, sendMessengerMessage } from '@/libs/Meta';
 import { integrationSchema } from '@/models/Schema';
 
 export const POST = async (request: Request) => {
@@ -23,11 +23,11 @@ export const POST = async (request: Request) => {
       return NextResponse.json({ error: 'Missing required fields: platform, orgId, recipientId, message' }, { status: 400 });
     }
 
-    // 2. Fetch the specific integration (Page Token) for Instagram
-    const instagramIntegration = await db.query.integrationSchema.findFirst({
+    // 2. Fetch the specific integration (Page Token)
+    const platformIntegration = await db.query.integrationSchema.findFirst({
       where: and(
         eq(integrationSchema.organizationId, orgId),
-        eq(integrationSchema.type, 'instagram'),
+        eq(integrationSchema.type, platform),
       ),
     });
 
@@ -35,17 +35,17 @@ export const POST = async (request: Request) => {
 
     // 3. Send message using the appropriate platform method
     if (platform === 'instagram') {
-      if (!instagramIntegration) {
+      if (!platformIntegration) {
         return NextResponse.json({ error: 'No Instagram integration found for this organization.' }, { status: 404 });
       }
 
-      const token = instagramIntegration.accessToken;
+      const token = platformIntegration.accessToken;
 
       // We stored the Facebook Page ID inside the 'config' field dynamically
-      let pageIdForSending = instagramIntegration.providerId; // fallback
-      if (instagramIntegration.config) {
+      let pageIdForSending = platformIntegration.providerId; // fallback
+      if (platformIntegration.config) {
         try {
-          const configObj = JSON.parse(instagramIntegration.config);
+          const configObj = JSON.parse(platformIntegration.config);
           if (configObj.pageId) {
             pageIdForSending = configObj.pageId;
           }
@@ -59,12 +59,20 @@ export const POST = async (request: Request) => {
       }
 
       responseData = await sendInstagramMessage(pageIdForSending, recipientId, message, token);
-    } else {
-      /*
-      if (platform === 'whatsapp') {
-        // Future implementation for WhatsApp
+    } else if (platform === 'messenger') {
+      if (!platformIntegration) {
+        return NextResponse.json({ error: 'No Messenger integration found for this organization.' }, { status: 404 });
       }
-      */
+
+      const token = platformIntegration.accessToken;
+      const pageId = platformIntegration.providerId;
+
+      if (!token || !pageId) {
+        return NextResponse.json({ error: 'Messenger integration is missing token or ID.' }, { status: 400 });
+      }
+
+      responseData = await sendMessengerMessage(pageId, recipientId, message, token);
+    } else {
       return NextResponse.json({ error: 'Unsupported platform specified.' }, { status: 400 });
     }
 
