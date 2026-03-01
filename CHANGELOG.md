@@ -1,3 +1,10 @@
+## [1.8.1](https://github.com/omar-maasher/HOOD/compare/v1.8.0...v1.8.1) (2026-03-01)
+
+
+### Bug Fixes
+
+* resolve lint errors and add missing english translations ([7b544d8](https://github.com/omar-maasher/HOOD/commit/7b544d8261f9d30ad9e5446958629946563bee39))
+
 # [1.8.0](https://github.com/omar-maasher/HOOD/compare/v1.7.0...v1.8.0) (2026-03-01)
 
 
