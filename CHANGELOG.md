@@ -1,3 +1,10 @@
+## [1.8.4](https://github.com/omar-maasher/HOOD/compare/v1.8.3...v1.8.4) (2026-03-01)
+
+
+### Bug Fixes
+
+* optimize webhook response time with parallel processing ([d23c2f5](https://github.com/omar-maasher/HOOD/commit/d23c2f56a889ddb4c0d6f63e99e2b71303b3ca13))
+
 ## [1.8.3](https://github.com/omar-maasher/HOOD/compare/v1.8.2...v1.8.3) (2026-03-01)
 
 
