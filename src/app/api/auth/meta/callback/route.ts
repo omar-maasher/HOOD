@@ -111,60 +111,87 @@ export const GET = async (request: Request) => {
     } else if (platform === 'instagram') {
       // --- AUTO FETCH PAGES AND INSTAGRAM ACCOUNT ---
       try {
+        // eslint-disable-next-line no-console
+        console.log('Starting Instagram account discovery...');
         const pagesRes = await fetch(`https://graph.facebook.com/v21.0/me/accounts?access_token=${accessToken}`);
-        if (pagesRes.ok) {
-          const pagesData = await pagesRes.json();
+        if (!pagesRes.ok) {
+          const error = await pagesRes.json();
 
-          // Loop through all pages to see if they have an Instagram Business account connected
-          for (const page of pagesData.data || []) {
-            const pageToken = page.access_token;
-            const pageId = page.id;
+          console.error('Failed to fetch Facebook pages:', error);
+          throw new Error('Failed to fetch Facebook pages');
+        }
 
-            const igRes = await fetch(`https://graph.facebook.com/v21.0/${pageId}?fields=instagram_business_account&access_token=${pageToken}`);
-            if (igRes.ok) {
-              const igData = await igRes.json();
+        const pagesData = await pagesRes.json();
+        // eslint-disable-next-line no-console
+        console.log(`Found ${pagesData.data?.length || 0} pages to check.`);
 
-              // If the page has an Instagram account connected
-              if (igData.instagram_business_account) {
-                const igAccountId = igData.instagram_business_account.id;
+        let accountFound = false;
 
-                const existingIg = await db.query.integrationSchema.findFirst({
-                  where: and(
-                    eq(integrationSchema.organizationId, orgId),
-                    eq(integrationSchema.type, 'instagram'),
-                  ),
-                });
+        // Loop through all pages to see if they have an Instagram Business account connected
+        for (const page of pagesData.data || []) {
+          const pageToken = page.access_token;
+          const pageId = page.id;
+          // eslint-disable-next-line no-console
+          console.log(`Checking page: ${page.name} (${pageId})`);
 
-                if (existingIg) {
-                  await db.update(integrationSchema)
-                    .set({
-                      accessToken: pageToken,
-                      providerId: igAccountId, // Instagram Account ID (needed for Webhook)
-                      config: JSON.stringify({ pageId }), // Facebook Page ID (needed for Sending Messages)
-                      updatedAt: new Date(),
-                    })
-                    .where(
-                      and(
-                        eq(integrationSchema.organizationId, orgId),
-                        eq(integrationSchema.type, 'instagram'),
-                      ),
-                    );
-                } else {
-                  await db.insert(integrationSchema).values({
-                    organizationId: orgId,
-                    type: 'instagram',
-                    providerId: igAccountId,
+          const igRes = await fetch(`https://graph.facebook.com/v21.0/${pageId}?fields=instagram_business_account&access_token=${pageToken}`);
+          if (igRes.ok) {
+            const igData = await igRes.json();
+            // eslint-disable-next-line no-console
+            console.log(`Page ${page.name} IG result:`, igData);
+
+            // If the page has an Instagram account connected
+            if (igData.instagram_business_account) {
+              const igAccountId = igData.instagram_business_account.id;
+              // eslint-disable-next-line no-console
+              console.log(`Found Instagram account: ${igAccountId}`);
+
+              const existingIg = await db.query.integrationSchema.findFirst({
+                where: and(
+                  eq(integrationSchema.organizationId, orgId),
+                  eq(integrationSchema.type, 'instagram'),
+                ),
+              });
+
+              if (existingIg) {
+                await db.update(integrationSchema)
+                  .set({
                     accessToken: pageToken,
-                    config: JSON.stringify({ pageId }),
+                    providerId: igAccountId,
+                    config: JSON.stringify({ pageId, pageName: page.name }),
                     status: 'active',
-                  });
-                }
-
-                // Only auto-connect the first found one for now
-                break;
+                    updatedAt: new Date(),
+                  })
+                  .where(
+                    and(
+                      eq(integrationSchema.organizationId, orgId),
+                      eq(integrationSchema.type, 'instagram'),
+                    ),
+                  );
+              } else {
+                await db.insert(integrationSchema).values({
+                  organizationId: orgId,
+                  type: 'instagram',
+                  providerId: igAccountId,
+                  accessToken: pageToken,
+                  config: JSON.stringify({ pageId, pageName: page.name }),
+                  status: 'active',
+                });
               }
+
+              accountFound = true;
+              break;
             }
+          } else {
+            const igError = await igRes.json();
+
+            console.error(`Failed to check IG for page ${pageId}:`, igError);
           }
+        }
+
+        if (!accountFound) {
+          console.warn('No Instagram Business Account was found linked to any of the connected pages.');
+          return NextResponse.redirect(new URL('/dashboard/integrations?error=no_instagram_account', request.url));
         }
       } catch (e) {
         console.error('Auto-connect Instagram Error:', e);

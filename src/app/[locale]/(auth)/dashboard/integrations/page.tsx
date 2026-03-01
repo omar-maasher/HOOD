@@ -8,10 +8,13 @@ import { integrationSchema } from '@/models/Schema';
 
 import { DisconnectButton } from './DisconnectButton';
 
-export default async function IntegrationsPage() {
+export default async function IntegrationsPage(props: { searchParams: Promise<any> }) {
   const { orgId } = await auth();
   const locale = await getLocale();
   const isAr = locale === 'ar';
+  const searchParams = await props.searchParams;
+  const error = searchParams.error;
+  const success = searchParams.success;
 
   let integrations: any[] = [];
 
@@ -74,6 +77,30 @@ export default async function IntegrationsPage() {
           </p>
         </div>
       </div>
+
+      {error === 'no_instagram_account' && (
+        <div className={`rounded-2xl border border-red-200 bg-red-50 p-6 ${isAr ? 'text-start' : 'text-left'}`}>
+          <h3 className="text-lg font-bold text-red-900">
+            {isAr ? 'لم يتم العثور على حساب إنستجرام أعمال' : 'No Instagram Business Account Found'}
+          </h3>
+          <p className="mt-1 text-sm text-red-800/80">
+            {isAr
+              ? 'توجّه إلى إعدادات صفحة الفيسبوك وتأكد من ربط حساب إنستجرام (نوع أعمال) بها، ثم حاول مجدداً.'
+              : 'Please ensure an Instagram Business account is linked to your Facebook page in the page settings, then try again.'}
+          </p>
+        </div>
+      )}
+
+      {success === 'connected' && (
+        <div className={`rounded-2xl border border-emerald-200 bg-emerald-50 p-6 ${isAr ? 'text-start' : 'text-left'}`}>
+          <h3 className="text-lg font-bold text-emerald-900">
+            {isAr ? 'تم الربط بنجاح!' : 'Connected Successfully!'}
+          </h3>
+          <p className="mt-1 text-sm text-emerald-800/80">
+            {isAr ? 'تم تفعيل الاتصال بنجاح.' : 'The connection has been successfully established.'}
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
         {channels.map((channel) => {
