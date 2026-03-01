@@ -1,3 +1,10 @@
+## [1.8.3](https://github.com/omar-maasher/HOOD/compare/v1.8.2...v1.8.3) (2026-03-01)
+
+
+### Bug Fixes
+
+* improve meta webhook to prevent duplicate responses and clean up logic ([f1709fc](https://github.com/omar-maasher/HOOD/commit/f1709fc52ecb69a3b9418419057883476ccc26a0))
+
 ## [1.8.2](https://github.com/omar-maasher/HOOD/compare/v1.8.1...v1.8.2) (2026-03-01)
 
 
