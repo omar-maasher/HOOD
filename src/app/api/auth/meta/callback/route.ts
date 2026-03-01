@@ -64,29 +64,49 @@ export const GET = async (request: Request) => {
 
     // CREATE DISPLAY RECORD BASED ON PLATFORM CLICKED
     if (platform === 'messenger') {
-      const existingMsg = await db.query.integrationSchema.findFirst({
-        where: and(
-          eq(integrationSchema.organizationId, orgId),
-          eq(integrationSchema.type, 'messenger'),
-        ),
-      });
+      try {
+        const pagesRes = await fetch(`https://graph.facebook.com/v21.0/me/accounts?access_token=${accessToken}`);
+        if (pagesRes.ok) {
+          const pagesData = await pagesRes.json();
+          // Pick the first page the user connected
+          if (pagesData.data && pagesData.data.length > 0) {
+            const page = pagesData.data[0];
+            const pageToken = page.access_token;
+            const pageId = page.id; // This is the ID that Webhooks use!
 
-      if (existingMsg) {
-        await db.update(integrationSchema)
-          .set({ accessToken, updatedAt: new Date() })
-          .where(
-            and(
-              eq(integrationSchema.organizationId, orgId),
-              eq(integrationSchema.type, 'messenger'),
-            ),
-          );
-      } else {
-        await db.insert(integrationSchema).values({
-          organizationId: orgId,
-          type: 'messenger',
-          accessToken,
-          status: 'active',
-        });
+            const existingMsg = await db.query.integrationSchema.findFirst({
+              where: and(
+                eq(integrationSchema.organizationId, orgId),
+                eq(integrationSchema.type, 'messenger'),
+              ),
+            });
+
+            if (existingMsg) {
+              await db.update(integrationSchema)
+                .set({
+                  accessToken: pageToken,
+                  providerId: pageId,
+                  updatedAt: new Date(),
+                })
+                .where(
+                  and(
+                    eq(integrationSchema.organizationId, orgId),
+                    eq(integrationSchema.type, 'messenger'),
+                  ),
+                );
+            } else {
+              await db.insert(integrationSchema).values({
+                organizationId: orgId,
+                type: 'messenger',
+                providerId: pageId,
+                accessToken: pageToken,
+                status: 'active',
+              });
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Auto-connect Messenger Error:', e);
       }
     } else if (platform === 'instagram') {
       // --- AUTO FETCH PAGES AND INSTAGRAM ACCOUNT ---
