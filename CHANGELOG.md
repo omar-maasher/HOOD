@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/omar-maasher/HOOD/compare/v1.7.0...v1.8.0) (2026-03-01)
+
+
+### Features
+
+* complete meta integrations UI separation and dashboard updates ([96bf1c9](https://github.com/omar-maasher/HOOD/commit/96bf1c9812aabb758ee9b64e2420d4b084076684))
+
 # [1.7.0](https://github.com/omar-maasher/HOOD/compare/v1.6.0...v1.7.0) (2026-03-01)
 
 
