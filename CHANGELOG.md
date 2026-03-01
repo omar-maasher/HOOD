@@ -1,3 +1,10 @@
+# [1.9.0](https://github.com/omar-maasher/HOOD/compare/v1.8.5...v1.9.0) (2026-03-01)
+
+
+### Features
+
+* implement platform-specific OAuth scopes for Meta integrations ([245bd54](https://github.com/omar-maasher/HOOD/commit/245bd5490d58593e2e11223b044d504e0aa34508))
+
 ## [1.8.5](https://github.com/omar-maasher/HOOD/compare/v1.8.4...v1.8.5) (2026-03-01)
 
 
