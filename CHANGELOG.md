@@ -1,3 +1,10 @@
+## [1.8.5](https://github.com/omar-maasher/HOOD/compare/v1.8.4...v1.8.5) (2026-03-01)
+
+
+### Bug Fixes
+
+* resolve ts errors in webhook and prevent duplication ([ab4a5d7](https://github.com/omar-maasher/HOOD/commit/ab4a5d7664a22220846f5e393439588d5dff249f))
+
 ## [1.8.4](https://github.com/omar-maasher/HOOD/compare/v1.8.3...v1.8.4) (2026-03-01)
 
 
