@@ -26,108 +26,102 @@ export const POST = async (request: Request) => {
   const entries = body.entry || [];
   const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL;
 
-  // Process all entries and messaging events
-  for (const entry of entries) {
+  if (!n8nWebhookUrl) {
+    return new NextResponse('OK', { status: 200 });
+  }
+
+  // Use a pool of promises to process everything in parallel
+  const processingPromises = entries.flatMap((entry: any) => {
     const pageId = entry.id;
     const messaging = entry.messaging || [];
     const changes = entry.changes || [];
 
-    // --- 1. HANDLE MESSAGING (Instagram/Messenger) ---
-    for (const messagingEvent of messaging) {
-      // Filter out echoes and system events
+    const messagingPromises = messaging.map(async (messagingEvent: any) => {
       if (
         messagingEvent.message?.is_echo
         || messagingEvent.sender?.id === pageId
         || messagingEvent.delivery
         || messagingEvent.read
       ) {
-        continue;
+        return;
       }
 
-      if (n8nWebhookUrl) {
-        try {
-          const platform = body.object === 'page' ? 'messenger' : (body.object === 'instagram' ? 'instagram' : 'unknown');
+      try {
+        const platform = body.object === 'page' ? 'messenger' : (body.object === 'instagram' ? 'instagram' : 'unknown');
+        const enrichedPayload: any = {
+          rawBody: { ...body, entry: [entry] },
+          platform,
+        };
 
-          const enrichedPayload: any = {
-            rawBody: { ...body, entry: [entry] },
-            platform,
+        const integration = await db.query.integrationSchema.findFirst({
+          where: eq(integrationSchema.providerId, pageId),
+        });
+
+        if (integration) {
+          const aiSettings = await db.query.aiSettingsSchema.findFirst({
+            where: eq(aiSettingsSchema.organizationId, integration.organizationId),
+          });
+
+          enrichedPayload.context = {
+            organizationId: integration.organizationId,
+            integrationType: integration.type,
+            aiConfig: aiSettings || { isActive: 'false' },
           };
-
-          // Find the organization
-          const integration = await db.query.integrationSchema.findFirst({
-            where: eq(integrationSchema.providerId, pageId),
-          });
-
-          if (integration) {
-            const orgId = integration.organizationId;
-            const aiSettings = await db.query.aiSettingsSchema.findFirst({
-              where: eq(aiSettingsSchema.organizationId, orgId),
-            });
-
-            enrichedPayload.context = {
-              organizationId: orgId,
-              integrationType: integration.type,
-              aiConfig: aiSettings || { isActive: 'false' },
-            };
-          }
-
-          // Forward to n8n
-          await fetch(n8nWebhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(enrichedPayload),
-          });
-        } catch (error) {
-          console.error('Error forwarding to n8n:', error);
         }
-      }
-    }
 
-    // --- 2. HANDLE CHANGES (WhatsApp/Others) ---
-    for (const change of changes) {
+        await fetch(n8nWebhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(enrichedPayload),
+        });
+      } catch (error) {
+        console.error('Messaging processing error:', error);
+      }
+    });
+
+    const changesPromises = changes.map(async (change: any) => {
       const waValue = change.value;
-
-      // Filter WhatsApp status updates
-      if (waValue?.statuses) {
-        continue;
+      if (waValue?.statuses || !waValue?.messages) {
+        return;
       }
 
-      if (n8nWebhookUrl && waValue?.messages) {
-        try {
-          const enrichedPayload: any = {
-            rawBody: { ...body, entry: [entry] },
-            platform: 'whatsapp',
+      try {
+        const enrichedPayload: any = {
+          rawBody: { ...body, entry: [entry] },
+          platform: 'whatsapp',
+        };
+
+        const integration = await db.query.integrationSchema.findFirst({
+          where: eq(integrationSchema.providerId, pageId),
+        });
+
+        if (integration) {
+          const aiSettings = await db.query.aiSettingsSchema.findFirst({
+            where: eq(aiSettingsSchema.organizationId, integration.organizationId),
+          });
+
+          enrichedPayload.context = {
+            organizationId: integration.organizationId,
+            integrationType: integration.type,
+            aiConfig: aiSettings || { isActive: 'false' },
           };
-
-          // Find organization by WABA ID (pageId)
-          const integration = await db.query.integrationSchema.findFirst({
-            where: eq(integrationSchema.providerId, pageId),
-          });
-
-          if (integration) {
-            const orgId = integration.organizationId;
-            const aiSettings = await db.query.aiSettingsSchema.findFirst({
-              where: eq(aiSettingsSchema.organizationId, orgId),
-            });
-
-            enrichedPayload.context = {
-              organizationId: orgId,
-              integrationType: integration.type,
-              aiConfig: aiSettings || { isActive: 'false' },
-            };
-          }
-
-          await fetch(n8nWebhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(enrichedPayload),
-          });
-        } catch (error) {
-          console.error('Error forwarding WhatsApp to n8n:', error);
         }
+
+        await fetch(n8nWebhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(enrichedPayload),
+        });
+      } catch (error) {
+        console.error('WhatsApp processing error:', error);
       }
-    }
-  }
+    });
+
+    return [...messagingPromises, ...changesPromises];
+  });
+
+  // Await everything at once
+  await Promise.all(processingPromises);
 
   // Acknowledge receipt to Meta
   return new NextResponse('OK', { status: 200 });
