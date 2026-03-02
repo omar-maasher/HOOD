@@ -85,8 +85,8 @@ export default async function IntegrationsPage(props: { searchParams: Promise<an
           </h3>
           <p className="mt-1 text-sm text-red-800/80">
             {isAr
-              ? 'توجّه إلى إعدادات صفحة الفيسبوك وتأكد من ربط حساب إنستجرام (نوع أعمال) بها، ثم حاول مجدداً.'
-              : 'Please ensure an Instagram Business account is linked to your Facebook page in the page settings, then try again.'}
+              ? `تم العثور على (${searchParams.pages_found || 0}) صفحة فيسبوك، ولكن لا توجد أي واحدة منها مرتبطة بحساب إنستجرام احترافي. تأكد من ربط حساب الأعمال بصفحتك في إعدادات فيسبوك.`
+              : `Found (${searchParams.pages_found || 0}) Facebook pages, but none are linked to an Instagram Business account. Please link your Business account in Facebook settings.`}
           </p>
         </div>
       )}
