@@ -13,19 +13,22 @@ export const GET = async (request: Request) => {
   const stateBase64 = searchParams.get('state');
 
   if (!code || !stateBase64) {
-    return NextResponse.redirect(new URL('/dashboard/integrations?error=missing_params', request.url));
+    return NextResponse.redirect(new URL('/ar/dashboard/integrations?error=missing_params', request.url));
   }
+
+  let lang = 'ar';
 
   try {
     const state = JSON.parse(Buffer.from(stateBase64, 'base64').toString());
-    const { orgId, platform } = state;
+    const { orgId, platform, locale } = state;
+    lang = locale || 'ar';
 
     // Exchange short-lived code for token
     const tokenResponse = await exchangeCodeForToken(code);
 
     if (tokenResponse.error) {
       console.error('Meta Token Exchange Error:', tokenResponse.error);
-      return NextResponse.redirect(new URL('/dashboard/integrations?error=token_exchange_failed', request.url));
+      return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=token_exchange_failed`, request.url));
     }
 
     // Get long-lived token (60 days)
@@ -171,9 +174,9 @@ export const GET = async (request: Request) => {
       }
     }
 
-    return NextResponse.redirect(new URL(`/dashboard/integrations?success=connected`, request.url));
+    return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?success=connected`, request.url));
   } catch (error) {
     console.error('Meta Callback Error:', error);
-    return NextResponse.redirect(new URL('/dashboard/integrations?error=server_error', request.url));
+    return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=server_error`, request.url));
   }
 };
