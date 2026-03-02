@@ -1,3 +1,10 @@
+# [1.11.0](https://github.com/omar-maasher/HOOD/compare/v1.10.1...v1.11.0) (2026-03-02)
+
+
+### Features
+
+* improve Instagram account discovery and restore essential Meta scopes ([fc38651](https://github.com/omar-maasher/HOOD/commit/fc38651c529aaca6b0e90bd495b487398caf2140))
+
 ## [1.10.1](https://github.com/omar-maasher/HOOD/compare/v1.10.0...v1.10.1) (2026-03-02)
 
 
