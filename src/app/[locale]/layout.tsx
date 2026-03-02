@@ -5,7 +5,6 @@ import { Cairo } from 'next/font/google';
 import { NextIntlClientProvider, useMessages } from 'next-intl';
 import { unstable_setRequestLocale } from 'next-intl/server';
 
-import { DemoBadge } from '@/components/DemoBadge';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { AllLocales } from '@/utils/AppConfig';
 
@@ -77,8 +76,6 @@ export default function RootLayout(props: {
             disableTransitionOnChange
           >
             {props.children}
-
-            <DemoBadge />
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>

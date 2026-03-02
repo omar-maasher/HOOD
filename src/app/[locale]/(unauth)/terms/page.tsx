@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowRight, Ban, CreditCard, FileText, Gavel, Mail, RefreshCw, Scale } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Ban, CreditCard, Facebook, FileText, Gavel, Mail, RefreshCw, Scale } from 'lucide-react';
 import { unstable_setRequestLocale } from 'next-intl/server';
 
 import { Link } from '@/libs/i18nNavigation';
@@ -83,6 +83,37 @@ const getSections = (isAr: boolean) => [
       {
         subtitle: isAr ? 'إساءة الاستخدام' : 'Misuse',
         text: isAr ? 'يُحظر محاولة اختراق المنصة، أو التلاعب بالنظام، أو استخدام الخدمة بطريقة تضر بمستخدمين آخرين أو بالبنية التحتية.' : 'Hacking, manipulating the system, or harming the infrastructure or other users is forbidden.',
+      },
+    ],
+  },
+  {
+    icon: Facebook,
+    title: isAr ? 'الامتثال لسياسات منصات Meta' : 'Meta Platform Compliance',
+    color: 'blue',
+    content: [
+      {
+        subtitle: isAr ? 'سياسات Meta' : 'Meta Policies',
+        text: isAr
+          ? 'يقر المستخدم بأن استخدام المنصة عبر Instagram وFacebook Messenger وWhatsApp يخضع لسياسات وشروط منصات Meta. يتحمل المستخدم المسؤولية الكاملة عن الالتزام بسياسات Meta، بما في ذلك سياسات الرسائل، مكافحة الرسائل غير المرغوب فيها (Spam)، وسياسات المحتوى.'
+          : 'User acknowledges that using the platform via Instagram, Facebook Messenger, and WhatsApp is subject to Meta platform policies. Users bear full responsibility for complying with Meta policies, including messaging, anti-spam, and content policies.',
+      },
+      {
+        subtitle: isAr ? 'مسؤولية المحتوى' : 'Content Responsibility',
+        text: isAr
+          ? 'يتحمل المستخدم كامل المسؤولية عن جميع الرسائل، التعليقات، أو المحتوى الذي يتم إرساله عبر المنصة باستخدام حساباته المرتبطة. لا تتحمل Hood Trading أي مسؤولية عن محتوى المستخدم أو أي مخالفات تنشأ عن استخدامه للخدمة.'
+          : 'Users bear full responsibility for all messages, comments, or content sent via the platform using linked accounts. Hood Trading is not liable for user content or any violations arising from service usage.',
+      },
+      {
+        subtitle: isAr ? 'تعليق أو إنهاء الخدمة' : 'Service Suspension or Termination',
+        text: isAr
+          ? 'تحتفظ Hood Trading بالحق في تعليق أو إنهاء حساب أي مستخدم يخالف هذه الشروط أو يستخدم المنصة بشكل يعرّضها لمخاطر قانونية أو تقنية، بما في ذلك مخالفة سياسات مزودي الخدمات مثل Meta.'
+          : 'Hood Trading reserves the right to suspend or terminate any account that violates these terms or uses the platform in a way that exposes it to legal or technical risks, including violating service provider policies like Meta.',
+      },
+      {
+        subtitle: isAr ? 'بيانات الطرف الثالث' : 'Third-Party Data',
+        text: isAr
+          ? 'قد تعتمد بعض ميزات المنصة على بيانات مقدمة من منصات طرف ثالث مثل Meta. لا نتحكم في دقة أو توفر هذه البيانات، وقد تتأثر الخدمة بأي تغييرات تجريها تلك المنصات على واجهات برمجة التطبيقات الخاصة بها.'
+          : 'Some features may rely on data provided by third-party platforms like Meta. We do not control the accuracy or availability of this data, and service may be affected by API changes from those platforms.',
       },
     ],
   },

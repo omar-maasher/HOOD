@@ -1,4 +1,4 @@
-import { ArrowRight, Database, Eye, Globe, Lock, Mail, Shield, UserCheck } from 'lucide-react';
+import { ArrowRight, Database, Eye, Facebook, Globe, Lock, Mail, Shield, UserCheck } from 'lucide-react';
 import { unstable_setRequestLocale } from 'next-intl/server';
 
 import { Link } from '@/libs/i18nNavigation';
@@ -26,10 +26,6 @@ const getSections = (isAr: boolean) => [
       {
         subtitle: isAr ? 'بيانات الاستخدام' : 'Usage Data',
         text: isAr ? 'نجمع تلقائياً معلومات حول كيفية تفاعلك مع المنصة، مثل الصفحات التي تزورها، والميزات التي تستخدمها، وأوقات الوصول.' : 'We automatically collect information about how you interact with the platform, such as visited pages, used features, and access times.',
-      },
-      {
-        subtitle: isAr ? 'بيانات الدفع' : 'Payment Data',
-        text: isAr ? 'تتم معالجة المدفوعات عبر Stripe، ولا نقوم بتخزين بيانات بطاقتك الائتمانية على خوادمنا مباشرة.' : 'Payments are processed via Stripe, and we do not store your credit card details directly on our servers.',
       },
     ],
   },
@@ -87,6 +83,31 @@ const getSections = (isAr: boolean) => [
       {
         subtitle: isAr ? 'نقل البيانات' : 'Data Portability',
         text: isAr ? 'يحق لك طلب نسخة من بياناتك بتنسيق قابل للقراءة الآلية.' : 'You have the right to request a copy of your data in a machine-readable format.',
+      },
+    ],
+  },
+  {
+    icon: Facebook,
+    title: isAr ? 'بيانات منصات Meta' : 'Meta Platform Data',
+    color: 'blue',
+    content: [
+      {
+        subtitle: isAr ? 'البيانات التي نستقبلها' : 'Data We Receive',
+        text: isAr
+          ? 'عند ربط حساب Instagram أو Facebook بالمنصة، قد نستقبل بيانات من Meta تشمل: معرف المستخدم (User ID)، اسم الحساب، صورة الملف الشخصي، الرسائل الواردة والصادرة، التعليقات على المنشورات، ورموز الوصول (Access Tokens). نستخدم هذه البيانات فقط لتشغيل خدمات الأتمتة والردود الآلية نيابةً عن المستخدم.'
+          : 'When linking an Instagram or Facebook account to the platform, we may receive data from Meta including: User ID, Account Name, Profile Picture, Incoming and Outgoing Messages, Comments on Posts, and Access Tokens. We use this data only to operate automation services and automated replies on behalf of the user.',
+      },
+      {
+        subtitle: isAr ? 'الاحتفاظ بالبيانات' : 'Data Retention',
+        text: isAr
+          ? 'نحتفظ ببيانات Meta فقط طالما أن الحساب مرتبط بالمنصة. عند إلغاء الربط أو حذف الحساب، يتم حذف رموز الوصول وجميع البيانات المرتبطة خلال مدة لا تتجاوز 30 يومًا.'
+          : 'We retain Meta data only as long as the account is linked to the platform. Upon unlinking or account deletion, access tokens and all associated data are deleted within a period not exceeding 30 days.',
+      },
+      {
+        subtitle: isAr ? 'مشاركة البيانات' : 'Data Sharing',
+        text: isAr
+          ? 'لا نقوم ببيع أو مشاركة بيانات Meta مع أطراف ثالثة، ونلتزم بسياسات حماية البيانات الصارمة.'
+          : 'We do not sell or share Meta data with third parties, and we adhere to strict data protection policies.',
       },
     ],
   },
