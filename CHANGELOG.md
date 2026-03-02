@@ -1,3 +1,10 @@
+## [1.10.1](https://github.com/omar-maasher/HOOD/compare/v1.10.0...v1.10.1) (2026-03-02)
+
+
+### Bug Fixes
+
+* restore essential scopes for Meta account discovery ([20d545c](https://github.com/omar-maasher/HOOD/commit/20d545c12c632803275206b56585bf0ed7a9d365))
+
 # [1.10.0](https://github.com/omar-maasher/HOOD/compare/v1.9.0...v1.10.0) (2026-03-01)
 
 
