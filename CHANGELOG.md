@@ -1,3 +1,10 @@
+# [1.13.0](https://github.com/omar-maasher/HOOD/compare/v1.12.1...v1.13.0) (2026-03-02)
+
+
+### Features
+
+* complete Meta integration fixes, compliance updates, and UI cleanup ([93c443e](https://github.com/omar-maasher/HOOD/commit/93c443ea7056bdbef40df17a1d5b9135e8236691))
+
 ## [1.12.1](https://github.com/omar-maasher/HOOD/compare/v1.12.0...v1.12.1) (2026-03-02)
 
 
