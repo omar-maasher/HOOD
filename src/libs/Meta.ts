@@ -10,17 +10,22 @@ export type MetaPlatform = 'instagram' | 'messenger' | 'whatsapp';
 const PLATFORM_SCOPES: Record<MetaPlatform, string[]> = {
   instagram: [
     'pages_show_list',
+    'pages_read_engagement',
     'pages_messaging',
     'instagram_basic',
     'instagram_manage_messages',
+    'public_profile',
   ],
   messenger: [
     'pages_show_list',
+    'pages_read_engagement',
     'pages_messaging',
+    'public_profile',
   ],
   whatsapp: [
     'whatsapp_business_management',
     'whatsapp_business_messaging',
+    'public_profile',
   ],
 };
 
