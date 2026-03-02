@@ -1,3 +1,15 @@
+# [1.12.0](https://github.com/omar-maasher/HOOD/compare/v1.11.0...v1.12.0) (2026-03-02)
+
+
+### Features
+
+* implement platform-specific Meta scopes with discovery essentials ([650b5f0](https://github.com/omar-maasher/HOOD/commit/650b5f0753b6b9ea6017cb0082c7bc05f1479a78))
+
+
+### Reverts
+
+* return Meta integration files to stable version 1.8.5 with compatibility fix ([fcf8499](https://github.com/omar-maasher/HOOD/commit/fcf8499670db34fffc8c54d4068b09a5119689e7))
+
 # [1.11.0](https://github.com/omar-maasher/HOOD/compare/v1.10.1...v1.11.0) (2026-03-02)
 
 
