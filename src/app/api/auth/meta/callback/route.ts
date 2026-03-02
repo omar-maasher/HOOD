@@ -112,86 +112,84 @@ export const GET = async (request: Request) => {
       // --- AUTO FETCH PAGES AND INSTAGRAM ACCOUNT ---
       try {
         // eslint-disable-next-line no-console
-        console.log('Starting Instagram account discovery...');
-        const pagesRes = await fetch(`https://graph.facebook.com/v21.0/me/accounts?access_token=${accessToken}`);
+        console.log('Starting Instagram account discovery with field expansion...');
+
+        // Fetch pages and their linked instagram accounts in one go
+        const pagesUrl = `https://graph.facebook.com/v21.0/me/accounts?fields=name,access_token,instagram_business_account{id,username,name}&access_token=${accessToken}`;
+        const pagesRes = await fetch(pagesUrl);
+
         if (!pagesRes.ok) {
           const error = await pagesRes.json();
 
-          console.error('Failed to fetch Facebook pages:', error);
+          console.error('Failed to fetch Facebook pages with IG accounts:', error);
           throw new Error('Failed to fetch Facebook pages');
         }
 
         const pagesData = await pagesRes.json();
+        const pages = pagesData.data || [];
+
         // eslint-disable-next-line no-console
-        console.log(`Found ${pagesData.data?.length || 0} pages to check.`);
+        console.log(`Found ${pages.length} pages associated with the user.`);
 
         let accountFound = false;
 
-        // Loop through all pages to see if they have an Instagram Business account connected
-        for (const page of pagesData.data || []) {
-          const pageToken = page.access_token;
+        for (const page of pages) {
           const pageId = page.id;
-          // eslint-disable-next-line no-console
-          console.log(`Checking page: ${page.name} (${pageId})`);
+          const pageToken = page.access_token;
+          const igAccount = page.instagram_business_account;
 
-          const igRes = await fetch(`https://graph.facebook.com/v21.0/${pageId}?fields=instagram_business_account&access_token=${pageToken}`);
-          if (igRes.ok) {
-            const igData = await igRes.json();
+          if (igAccount) {
+            const igAccountId = igAccount.id;
+            const igUsername = igAccount.username || igAccount.name;
+
             // eslint-disable-next-line no-console
-            console.log(`Page ${page.name} IG result:`, igData);
+            console.log(`Found linked Instagram account: ${igUsername} (${igAccountId}) on page ${page.name}`);
 
-            // If the page has an Instagram account connected
-            if (igData.instagram_business_account) {
-              const igAccountId = igData.instagram_business_account.id;
-              // eslint-disable-next-line no-console
-              console.log(`Found Instagram account: ${igAccountId}`);
+            const existingIg = await db.query.integrationSchema.findFirst({
+              where: and(
+                eq(integrationSchema.organizationId, orgId),
+                eq(integrationSchema.type, 'instagram'),
+              ),
+            });
 
-              const existingIg = await db.query.integrationSchema.findFirst({
-                where: and(
-                  eq(integrationSchema.organizationId, orgId),
-                  eq(integrationSchema.type, 'instagram'),
-                ),
-              });
-
-              if (existingIg) {
-                await db.update(integrationSchema)
-                  .set({
-                    accessToken: pageToken,
-                    providerId: igAccountId,
-                    config: JSON.stringify({ pageId, pageName: page.name }),
-                    status: 'active',
-                    updatedAt: new Date(),
-                  })
-                  .where(
-                    and(
-                      eq(integrationSchema.organizationId, orgId),
-                      eq(integrationSchema.type, 'instagram'),
-                    ),
-                  );
-              } else {
-                await db.insert(integrationSchema).values({
-                  organizationId: orgId,
-                  type: 'instagram',
-                  providerId: igAccountId,
+            if (existingIg) {
+              await db.update(integrationSchema)
+                .set({
                   accessToken: pageToken,
-                  config: JSON.stringify({ pageId, pageName: page.name }),
+                  providerId: igAccountId,
+                  config: JSON.stringify({ pageId, pageName: page.name, igUsername }),
                   status: 'active',
-                });
-              }
-
-              accountFound = true;
-              break;
+                  updatedAt: new Date(),
+                })
+                .where(
+                  and(
+                    eq(integrationSchema.organizationId, orgId),
+                    eq(integrationSchema.type, 'instagram'),
+                  ),
+                );
+            } else {
+              await db.insert(integrationSchema).values({
+                organizationId: orgId,
+                type: 'instagram',
+                providerId: igAccountId,
+                accessToken: pageToken,
+                config: JSON.stringify({ pageId, pageName: page.name, igUsername }),
+                status: 'active',
+              });
             }
-          } else {
-            const igError = await igRes.json();
 
-            console.error(`Failed to check IG for page ${pageId}:`, igError);
+            accountFound = true;
+            // For now we connect the first one we find
+            break;
+          } else {
+            // eslint-disable-next-line no-console
+            console.log(`Page "${page.name}" (${pageId}) has no linked Instagram Business account.`);
           }
         }
 
         if (!accountFound) {
-          console.warn('No Instagram Business Account was found linked to any of the connected pages.');
-          return NextResponse.redirect(new URL('/dashboard/integrations?error=no_instagram_account', request.url));
+          console.warn('Discovery finished: No Instagram Business Account was found.');
+          return NextResponse.redirect(new URL(`/dashboard/integrations?error=no_instagram_account&pages_found=${pages.length}`, request.url));
         }
       } catch (e) {
         console.error('Auto-connect Instagram Error:', e);
