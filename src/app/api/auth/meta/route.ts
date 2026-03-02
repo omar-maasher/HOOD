@@ -13,11 +13,11 @@ export const GET = async (request: Request) => {
   }
 
   const { searchParams } = new URL(request.url);
-  const platform = searchParams.get('platform');
+  const platform = searchParams.get('platform') as any; // Cast for now to match the new type
 
   // State can be used to pass the orgId safely
   const state = JSON.stringify({ orgId, userId, platform });
-  const authUrl = getMetaAuthUrl(Buffer.from(state).toString('base64'));
+  const authUrl = getMetaAuthUrl(Buffer.from(state).toString('base64'), platform || undefined);
 
   return NextResponse.redirect(authUrl);
 };
