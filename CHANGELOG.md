@@ -1,3 +1,10 @@
+## [1.12.1](https://github.com/omar-maasher/HOOD/compare/v1.12.0...v1.12.1) (2026-03-02)
+
+
+### Bug Fixes
+
+* maintain locale after Meta OAuth callback and support multi-language success messages ([ac0100e](https://github.com/omar-maasher/HOOD/commit/ac0100ec7f17fe3b939258df914805902d986e80))
+
 # [1.12.0](https://github.com/omar-maasher/HOOD/compare/v1.11.0...v1.12.0) (2026-03-02)
 
 
