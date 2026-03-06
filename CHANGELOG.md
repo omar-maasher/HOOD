@@ -1,3 +1,11 @@
+## [1.13.2](https://github.com/omar-maasher/HOOD/compare/v1.13.1...v1.13.2) (2026-03-06)
+
+
+### Bug Fixes
+
+* final meta webhook stabilization ([5ae537b](https://github.com/omar-maasher/HOOD/commit/5ae537b641957cbdc0b6271bd47bda35aa6ec866))
+* **webhook:** ensure all code paths return a value to fix build error ([15064d6](https://github.com/omar-maasher/HOOD/commit/15064d651b2726ba45e9c5439b7688fd00db181b))
+
 ## [1.13.1](https://github.com/omar-maasher/HOOD/compare/v1.13.0...v1.13.1) (2026-03-06)
 
 
