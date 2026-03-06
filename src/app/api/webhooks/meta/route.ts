@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/DB';
+import { logger } from '@/libs/Logger';
 import { aiSettingsSchema, integrationSchema, webhookEventSchema } from '@/models/Schema';
 
 export const GET = async (request: Request) => {
@@ -20,13 +21,13 @@ export const GET = async (request: Request) => {
 export const POST = async (request: Request) => {
   const body = await request.json();
 
-  // eslint-disable-next-line no-console
-  console.log('Received Meta Webhook:', JSON.stringify(body, null, 2));
+  logger.info({ body }, 'Received Meta Webhook');
 
   const entries = body.entry || [];
   const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL;
 
   if (!n8nWebhookUrl) {
+    logger.error('N8N_WEBHOOK_URL is not defined');
     return new NextResponse('OK', { status: 200 });
   }
 
@@ -37,30 +38,35 @@ export const POST = async (request: Request) => {
     const messaging = entry.messaging || [];
     const changes = entry.changes || [];
 
-    // Optimize: Fetch integration ONCE per entry instead of per message
-    const integrationPromise = db.query.integrationSchema.findFirst({
-      where: eq(integrationSchema.providerId, pageId),
-    }).then(async (integration) => {
-      if (!integration) {
-        return null;
-      }
+    // Use db.select instead of db.query for better TS reactivity to new schema members
+    const integrationPromise = db.select()
+      .from(integrationSchema)
+      .where(eq(integrationSchema.providerId, pageId))
+      .limit(1)
+      .then(async (results) => {
+        const integration = results[0];
+        if (!integration) {
+          return null;
+        }
 
-      const aiSettings = await db.query.aiSettingsSchema.findFirst({
-        where: eq(aiSettingsSchema.organizationId, integration.organizationId),
+        const aiSettingsResults = await db.select()
+          .from(aiSettingsSchema)
+          .where(eq(aiSettingsSchema.organizationId, integration.organizationId))
+          .limit(1);
+
+        const aiSettings = aiSettingsResults[0];
+
+        return {
+          organizationId: integration.organizationId,
+          integrationType: integration.type,
+          aiConfig: aiSettings || { isActive: 'false' },
+        };
       });
-
-      return {
-        organizationId: integration.organizationId,
-        integrationType: integration.type,
-        aiConfig: aiSettings || { isActive: 'false' },
-      };
-    });
 
     // --- 1. HANDLE MESSAGING (Instagram/Messenger) ---
     for (const event of messaging) {
       const mid = event.message?.mid;
 
-      // Skip echoes and other system events
       if (
         event.message?.is_echo
         || event.sender?.id === pageId
@@ -73,27 +79,26 @@ export const POST = async (request: Request) => {
       if (mid) {
         processingPromises.push((async () => {
           try {
-            // DEDUPLICATION: Check if we already processed this message ID in DB
-            const existing = await db.query.webhookEventSchema.findFirst({
-              where: eq(webhookEventSchema.mid, mid),
-            });
+            const existing = await db.select()
+              .from(webhookEventSchema)
+              .where(eq(webhookEventSchema.mid, mid))
+              .limit(1);
 
-            if (existing) {
-              // eslint-disable-next-line no-console
-              console.log(`Skipping duplicate message mid: ${mid}`);
+            if (existing.length > 0) {
+              logger.info({ mid }, 'Duplicate detected (DB)');
               return;
             }
 
-            // Insert immediately to lock the message ID
             try {
               await db.insert(webhookEventSchema).values({ mid });
             } catch {
-              // Duplicate insertion error (race condition)
-              return;
+              return; // Race condition
             }
 
             const context = await integrationPromise;
             const platform = body.object === 'page' ? 'messenger' : (body.object === 'instagram' ? 'instagram' : 'unknown');
+
+            logger.info({ platform, mid }, 'Forwarding to n8n');
 
             const response = await fetch(n8nWebhookUrl, {
               method: 'POST',
@@ -104,10 +109,11 @@ export const POST = async (request: Request) => {
                 context: context || { organizationId: '', integrationType: platform, aiConfig: { isActive: 'false' } },
               }),
             });
+
+            logger.info({ status: response.status }, 'n8n response');
             return response;
           } catch (error) {
-            console.error('Messaging processing error:', error);
-            return null;
+            logger.error({ error }, 'Processing error');
           }
         })());
       }
@@ -125,12 +131,12 @@ export const POST = async (request: Request) => {
       if (waMid) {
         processingPromises.push((async () => {
           try {
-            // DEDUPLICATION
-            const existing = await db.query.webhookEventSchema.findFirst({
-              where: eq(webhookEventSchema.mid, waMid),
-            });
+            const existing = await db.select()
+              .from(webhookEventSchema)
+              .where(eq(webhookEventSchema.mid, waMid))
+              .limit(1);
 
-            if (existing) {
+            if (existing.length > 0) {
               return;
             }
 
@@ -141,6 +147,9 @@ export const POST = async (request: Request) => {
             }
 
             const context = await integrationPromise;
+
+            logger.info({ platform: 'whatsapp', mid: waMid }, 'Forwarding to n8n');
+
             const response = await fetch(n8nWebhookUrl, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -150,25 +159,20 @@ export const POST = async (request: Request) => {
                 context: context || { organizationId: '', integrationType: 'whatsapp', aiConfig: { isActive: 'false' } },
               }),
             });
+            logger.info({ status: response.status }, 'n8n response (whatsapp)');
             return response;
           } catch (error) {
-            console.error('WhatsApp processing error:', error);
-            return null;
+            logger.error({ error }, 'WhatsApp error');
           }
         })());
       }
     }
   }
 
-  // CRITICAL: We respond TO META immediately to prevent retries (double replies)
-  // We do not await processingPromises here.
+  // Wait for processing to complete before responding
   if (processingPromises.length > 0) {
-    // Process in background
-    Promise.all(processingPromises).catch((err) => {
-      console.error('Background processing error:', err);
-    });
+    await Promise.all(processingPromises);
   }
 
-  // Acknowledge receipt to Meta immediately
   return new NextResponse('OK', { status: 200 });
 };
