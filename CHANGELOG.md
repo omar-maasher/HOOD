@@ -1,3 +1,10 @@
+## [1.13.1](https://github.com/omar-maasher/HOOD/compare/v1.13.0...v1.13.1) (2026-03-06)
+
+
+### Bug Fixes
+
+* resolve duplicate message replies and fix lint errors ([351011f](https://github.com/omar-maasher/HOOD/commit/351011fc54f410c29e309fb0bb1f27942accf26f))
+
 # [1.13.0](https://github.com/omar-maasher/HOOD/compare/v1.12.1...v1.13.0) (2026-03-02)
 
 
