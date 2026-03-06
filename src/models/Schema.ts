@@ -180,3 +180,9 @@ export const aiSettingsSchema = pgTable('ai_settings', {
     .notNull(),
   createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
 });
+
+export const webhookEventSchema = pgTable('webhook_event', {
+  id: serial('id').primaryKey(),
+  mid: text('mid').notNull().unique(),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+});

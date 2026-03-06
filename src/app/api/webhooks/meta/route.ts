@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/DB';
-import { aiSettingsSchema, integrationSchema } from '@/models/Schema';
+import { aiSettingsSchema, integrationSchema, webhookEventSchema } from '@/models/Schema';
 
 export const GET = async (request: Request) => {
   const { searchParams } = new URL(request.url);
@@ -16,10 +16,6 @@ export const GET = async (request: Request) => {
 
   return new NextResponse('Forbidden', { status: 403 });
 };
-
-// Simple in-memory cache to prevent duplicate processing of the same message ID (mid)
-const processedMids = new Set<string>();
-const MAX_CACHE_SIZE = 500;
 
 export const POST = async (request: Request) => {
   const body = await request.json();
@@ -64,13 +60,6 @@ export const POST = async (request: Request) => {
     for (const event of messaging) {
       const mid = event.message?.mid;
 
-      // DEDUPLICATION: Skip if we already processed this message ID
-      if (mid && processedMids.has(mid)) {
-        // eslint-disable-next-line no-console
-        console.log(`Skipping duplicate message mid: ${mid}`);
-        continue;
-      }
-
       // Skip echoes and other system events
       if (
         event.message?.is_echo
@@ -81,37 +70,47 @@ export const POST = async (request: Request) => {
         continue;
       }
 
-      // Add to cache
       if (mid) {
-        processedMids.add(mid);
-        if (processedMids.size > MAX_CACHE_SIZE) {
-          const firstItem = processedMids.values().next().value;
-          if (firstItem) {
-            processedMids.delete(firstItem);
+        processingPromises.push((async () => {
+          try {
+            // DEDUPLICATION: Check if we already processed this message ID in DB
+            const existing = await db.query.webhookEventSchema.findFirst({
+              where: eq(webhookEventSchema.mid, mid),
+            });
+
+            if (existing) {
+              // eslint-disable-next-line no-console
+              console.log(`Skipping duplicate message mid: ${mid}`);
+              return;
+            }
+
+            // Insert immediately to lock the message ID
+            try {
+              await db.insert(webhookEventSchema).values({ mid });
+            } catch {
+              // Duplicate insertion error (race condition)
+              return;
+            }
+
+            const context = await integrationPromise;
+            const platform = body.object === 'page' ? 'messenger' : (body.object === 'instagram' ? 'instagram' : 'unknown');
+
+            const response = await fetch(n8nWebhookUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                rawBody: { ...body, entry: [entry] },
+                platform,
+                context: context || { organizationId: '', integrationType: platform, aiConfig: { isActive: 'false' } },
+              }),
+            });
+            return response;
+          } catch (error) {
+            console.error('Messaging processing error:', error);
+            return null;
           }
-        }
+        })());
       }
-
-      processingPromises.push((async () => {
-        try {
-          const context = await integrationPromise;
-          const platform = body.object === 'page' ? 'messenger' : (body.object === 'instagram' ? 'instagram' : 'unknown');
-
-          const response = await fetch(n8nWebhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              rawBody: { ...body, entry: [entry] },
-              platform,
-              context: context || { organizationId: '', integrationType: platform, aiConfig: { isActive: 'false' } },
-            }),
-          });
-          return response;
-        } catch (error) {
-          console.error('Messaging processing error:', error);
-          return null; // Ensure all paths return a value
-        }
-      })());
     }
 
     // --- 2. HANDLE CHANGES (WhatsApp) ---
@@ -122,46 +121,54 @@ export const POST = async (request: Request) => {
       }
 
       const waMid = waValue.messages?.[0]?.id;
-      if (waMid && processedMids.has(waMid)) {
-        continue;
-      }
 
       if (waMid) {
-        processedMids.add(waMid);
-        if (processedMids.size > MAX_CACHE_SIZE) {
-          const firstItem = processedMids.values().next().value;
-          if (firstItem) {
-            processedMids.delete(firstItem);
-          }
-        }
-      }
+        processingPromises.push((async () => {
+          try {
+            // DEDUPLICATION
+            const existing = await db.query.webhookEventSchema.findFirst({
+              where: eq(webhookEventSchema.mid, waMid),
+            });
 
-      processingPromises.push((async () => {
-        try {
-          const context = await integrationPromise;
-          const response = await fetch(n8nWebhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              rawBody: { ...body, entry: [entry] },
-              platform: 'whatsapp',
-              context: context || { organizationId: '', integrationType: 'whatsapp', aiConfig: { isActive: 'false' } },
-            }),
-          });
-          return response;
-        } catch (error) {
-          console.error('WhatsApp processing error:', error);
-          return null; // Ensure all paths return a value
-        }
-      })());
+            if (existing) {
+              return;
+            }
+
+            try {
+              await db.insert(webhookEventSchema).values({ mid: waMid });
+            } catch {
+              return;
+            }
+
+            const context = await integrationPromise;
+            const response = await fetch(n8nWebhookUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                rawBody: { ...body, entry: [entry] },
+                platform: 'whatsapp',
+                context: context || { organizationId: '', integrationType: 'whatsapp', aiConfig: { isActive: 'false' } },
+              }),
+            });
+            return response;
+          } catch (error) {
+            console.error('WhatsApp processing error:', error);
+            return null;
+          }
+        })());
+      }
     }
   }
 
-  // Await all parallel n8n calls
+  // CRITICAL: We respond TO META immediately to prevent retries (double replies)
+  // We do not await processingPromises here.
   if (processingPromises.length > 0) {
-    await Promise.all(processingPromises);
+    // Process in background
+    Promise.all(processingPromises).catch((err) => {
+      console.error('Background processing error:', err);
+    });
   }
 
-  // Acknowledge receipt to Meta
+  // Acknowledge receipt to Meta immediately
   return new NextResponse('OK', { status: 200 });
 };
