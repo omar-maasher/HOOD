@@ -38,7 +38,6 @@ export const POST = async (request: Request) => {
     const messaging = entry.messaging || [];
     const changes = entry.changes || [];
 
-    // Use db.select instead of db.query for better TS reactivity to new schema members
     const integrationPromise = db.select()
       .from(integrationSchema)
       .where(eq(integrationSchema.providerId, pageId))
@@ -86,20 +85,20 @@ export const POST = async (request: Request) => {
 
             if (existing.length > 0) {
               logger.info({ mid }, 'Duplicate detected (DB)');
-              return;
+              return null;
             }
 
             try {
               await db.insert(webhookEventSchema).values({ mid });
             } catch {
-              return; // Race condition
+              return null; // Race condition
             }
 
             const context = await integrationPromise;
             const platform = body.object === 'page' ? 'messenger' : (body.object === 'instagram' ? 'instagram' : 'unknown');
 
             logger.info({ platform, mid }, 'Forwarding to n8n');
-
+            
             const response = await fetch(n8nWebhookUrl, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -109,11 +108,12 @@ export const POST = async (request: Request) => {
                 context: context || { organizationId: '', integrationType: platform, aiConfig: { isActive: 'false' } },
               }),
             });
-
+            
             logger.info({ status: response.status }, 'n8n response');
             return response;
           } catch (error) {
             logger.error({ error }, 'Processing error');
+            return null;
           }
         })());
       }
@@ -127,7 +127,7 @@ export const POST = async (request: Request) => {
       }
 
       const waMid = waValue.messages?.[0]?.id;
-
+      
       if (waMid) {
         processingPromises.push((async () => {
           try {
@@ -136,18 +136,16 @@ export const POST = async (request: Request) => {
               .where(eq(webhookEventSchema.mid, waMid))
               .limit(1);
 
-            if (existing.length > 0) {
-              return;
-            }
+            if (existing.length > 0) return null;
 
             try {
               await db.insert(webhookEventSchema).values({ mid: waMid });
             } catch {
-              return;
+              return null;
             }
 
             const context = await integrationPromise;
-
+            
             logger.info({ platform: 'whatsapp', mid: waMid }, 'Forwarding to n8n');
 
             const response = await fetch(n8nWebhookUrl, {
@@ -163,6 +161,7 @@ export const POST = async (request: Request) => {
             return response;
           } catch (error) {
             logger.error({ error }, 'WhatsApp error');
+            return null;
           }
         })());
       }
