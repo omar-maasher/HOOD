@@ -1,3 +1,10 @@
+## [1.14.1](https://github.com/omar-maasher/HOOD/compare/v1.14.0...v1.14.1) (2026-03-07)
+
+
+### Bug Fixes
+
+* complete whatsapp integration with oauth connection and sending logic ([44c2d28](https://github.com/omar-maasher/HOOD/commit/44c2d280736551b43cec649b13238735da1d5267))
+
 # [1.14.0](https://github.com/omar-maasher/HOOD/compare/v1.13.2...v1.14.0) (2026-03-07)
 
 
