@@ -1,3 +1,10 @@
+## [1.14.3](https://github.com/omar-maasher/HOOD/compare/v1.14.2...v1.14.3) (2026-03-07)
+
+
+### Bug Fixes
+
+* ensure whatsapp changes structure is correctly processed and sent to n8n ([698c91d](https://github.com/omar-maasher/HOOD/commit/698c91df38ff88bf9017c2b501c530f27fb30c2d))
+
 ## [1.14.2](https://github.com/omar-maasher/HOOD/compare/v1.14.1...v1.14.2) (2026-03-07)
 
 
