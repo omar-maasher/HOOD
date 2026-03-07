@@ -1,3 +1,10 @@
+## [1.14.10](https://github.com/omar-maasher/HOOD/compare/v1.14.9...v1.14.10) (2026-03-07)
+
+
+### Bug Fixes
+
+* resolve lint error for unused variable in webhook ([a7678a8](https://github.com/omar-maasher/HOOD/commit/a7678a81438b92ed4ae9b05158d41a19f76ea3ac))
+
 ## [1.14.9](https://github.com/omar-maasher/HOOD/compare/v1.14.8...v1.14.9) (2026-03-07)
 
 
