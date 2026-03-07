@@ -1,3 +1,10 @@
+## [1.14.7](https://github.com/omar-maasher/HOOD/compare/v1.14.6...v1.14.7) (2026-03-07)
+
+
+### Bug Fixes
+
+* update debug payload to read real events from database ([d4e2581](https://github.com/omar-maasher/HOOD/commit/d4e258181926181a4da3d47ad9ef3a1e7071ebf5))
+
 ## [1.14.6](https://github.com/omar-maasher/HOOD/compare/v1.14.5...v1.14.6) (2026-03-07)
 
 
