@@ -1,3 +1,10 @@
+## [1.14.8](https://github.com/omar-maasher/HOOD/compare/v1.14.7...v1.14.8) (2026-03-07)
+
+
+### Bug Fixes
+
+* force immediate db logging for incoming webhooks and disable cache on debug page ([40e98ce](https://github.com/omar-maasher/HOOD/commit/40e98ceac6c8a620f5031233e2d3f97bbb1f3dad))
+
 ## [1.14.7](https://github.com/omar-maasher/HOOD/compare/v1.14.6...v1.14.7) (2026-03-07)
 
 
