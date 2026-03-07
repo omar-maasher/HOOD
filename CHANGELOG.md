@@ -1,3 +1,10 @@
+## [1.14.13](https://github.com/omar-maasher/HOOD/compare/v1.14.12...v1.14.13) (2026-03-07)
+
+
+### Bug Fixes
+
+* update debug payload to expose environment variable status (masked) ([6fcba91](https://github.com/omar-maasher/HOOD/commit/6fcba91766f8657b7c10ba85ac00020d8e87dc23))
+
 ## [1.14.12](https://github.com/omar-maasher/HOOD/compare/v1.14.11...v1.14.12) (2026-03-07)
 
 
