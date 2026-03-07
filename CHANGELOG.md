@@ -1,3 +1,10 @@
+## [1.14.2](https://github.com/omar-maasher/HOOD/compare/v1.14.1...v1.14.2) (2026-03-07)
+
+
+### Bug Fixes
+
+* add webhook fallback for testing mode ([d5a7041](https://github.com/omar-maasher/HOOD/commit/d5a70410b940767c0ae76476ef2c4911c0832260))
+
 ## [1.14.1](https://github.com/omar-maasher/HOOD/compare/v1.14.0...v1.14.1) (2026-03-07)
 
 
