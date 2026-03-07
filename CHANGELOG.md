@@ -1,3 +1,10 @@
+## [1.14.4](https://github.com/omar-maasher/HOOD/compare/v1.14.3...v1.14.4) (2026-03-07)
+
+
+### Bug Fixes
+
+* add detailed logging for meta webhooks and fix whatsapp structure ([5c0246f](https://github.com/omar-maasher/HOOD/commit/5c0246f2f90c488f96bd7555ee95a3ddddf36365))
+
 ## [1.14.3](https://github.com/omar-maasher/HOOD/compare/v1.14.2...v1.14.3) (2026-03-07)
 
 
