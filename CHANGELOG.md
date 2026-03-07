@@ -1,3 +1,10 @@
+## [1.14.12](https://github.com/omar-maasher/HOOD/compare/v1.14.11...v1.14.12) (2026-03-07)
+
+
+### Bug Fixes
+
+* re-enable test fallback and ensure n8n delivery before responding ([de630c9](https://github.com/omar-maasher/HOOD/commit/de630c90aae9044436d0aca52e5ba7b3a9d9117e))
+
 ## [1.14.11](https://github.com/omar-maasher/HOOD/compare/v1.14.10...v1.14.11) (2026-03-07)
 
 
