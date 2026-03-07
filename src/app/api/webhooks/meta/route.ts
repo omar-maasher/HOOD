@@ -90,6 +90,8 @@ export const POST = async (request: Request) => {
           const context = await integrationPromise;
           const platform = body.object === 'page' ? 'messenger' : (body.object === 'instagram' ? 'instagram' : 'unknown');
 
+          logger.info({ platform, mid, senderId }, 'Forwarding messaging to n8n');
+
           return await fetch(n8nWebhookUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
