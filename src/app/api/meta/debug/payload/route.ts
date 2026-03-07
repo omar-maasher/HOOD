@@ -4,7 +4,21 @@ import { NextResponse } from 'next/server';
 import { db } from '@/libs/DB';
 import { webhookEventSchema } from '@/models/Schema';
 
-export const GET = async () => {
+export const GET = async (request: Request) => {
+  const { searchParams } = new URL(request.url);
+  const isPing = searchParams.get('ping') === 'true';
+
+  // إذا طلب المستخدم عمل "Ping" تجريبي
+  if (isPing) {
+    const rawId = `SELF_TEST_${Date.now()}`;
+    try {
+      await db.insert(webhookEventSchema).values({ mid: rawId });
+      return NextResponse.json({ status: 'success', message: 'Self-test entry created in DB!', mid: rawId });
+    } catch (e) {
+      return NextResponse.json({ status: 'error', message: 'Failed to write to DB', error: String(e) });
+    }
+  }
+
   try {
     const lastEvents = await db.select()
       .from(webhookEventSchema)
@@ -17,9 +31,7 @@ export const GET = async () => {
       received_count: lastEvents.length,
       latest_events: lastEvents,
     }, {
-      headers: {
-        'Cache-Control': 'no-store, max-age=0', // منع التخزين المؤقت تماماً
-      },
+      headers: { 'Cache-Control': 'no-store, max-age=0' },
     });
   } catch (error) {
     return NextResponse.json({ status: 'error', error: String(error) }, { status: 500 });
