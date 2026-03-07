@@ -1,3 +1,10 @@
+## [1.14.11](https://github.com/omar-maasher/HOOD/compare/v1.14.10...v1.14.11) (2026-03-07)
+
+
+### Bug Fixes
+
+* stabilize webhook with serverless execution safety and duplicate prevention ([4e6e78d](https://github.com/omar-maasher/HOOD/commit/4e6e78d3fbfbf92d171d58ed3922774fb93f3957))
+
 ## [1.14.10](https://github.com/omar-maasher/HOOD/compare/v1.14.9...v1.14.10) (2026-03-07)
 
 
