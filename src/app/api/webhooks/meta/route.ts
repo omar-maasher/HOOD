@@ -1,3 +1,6 @@
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+
 import { eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
@@ -20,6 +23,20 @@ export const GET = async (request: Request) => {
 
 export const POST = async (request: Request) => {
   const body = await request.json();
+
+  // DEBUG LOGGING TO FILE
+  try {
+    const logPath = path.join(process.cwd(), 'tmp', 'last_webhook_payload.json');
+    if (!fs.existsSync(path.join(process.cwd(), 'tmp'))) {
+      fs.mkdirSync(path.join(process.cwd(), 'tmp'));
+    }
+    fs.writeFileSync(logPath, JSON.stringify({
+      timestamp: new Date().toISOString(),
+      payload: body,
+    }, null, 2));
+  } catch (e) {
+    logger.error('Failed to write debug log file', e);
+  }
 
   logger.info({ body }, 'Received Meta Webhook');
 
