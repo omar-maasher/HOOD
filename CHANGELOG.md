@@ -1,3 +1,10 @@
+## [1.14.9](https://github.com/omar-maasher/HOOD/compare/v1.14.8...v1.14.9) (2026-03-07)
+
+
+### Bug Fixes
+
+* add self-test capability to debug endpoint ([88df0d7](https://github.com/omar-maasher/HOOD/commit/88df0d731f6e5b8d7c5f77233fcbba26572ba938))
+
 ## [1.14.8](https://github.com/omar-maasher/HOOD/compare/v1.14.7...v1.14.8) (2026-03-07)
 
 
