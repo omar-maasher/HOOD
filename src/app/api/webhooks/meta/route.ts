@@ -2,7 +2,6 @@ import { eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/DB';
-import { logger } from '@/libs/Logger';
 import { aiSettingsSchema, integrationSchema, webhookEventSchema } from '@/models/Schema';
 
 export const GET = async (request: Request) => {
@@ -19,96 +18,79 @@ export const GET = async (request: Request) => {
 };
 
 export const POST = async (request: Request) => {
-  const body = await request.json();
-
-  // 1. تسجل فوري في قاعدة البيانات لإثبات أن ميتا وصلت للسيرفر
-  // سنستخدم معرف (mid) يبدأ بـ RAW_ لتمييز الطلبات الخام
-  const rawId = `RAW_${Date.now()}`;
+  // 1. قراءة البيانات فوراً
+  let body;
   try {
-    await db.insert(webhookEventSchema).values({ mid: rawId });
-    logger.info({ rawId }, 'Incoming Webhook Registered');
-  } catch (err) {
-    logger.error({ err }, 'Failed to log raw webhook');
+    body = await request.json();
+  } catch {
+    return new NextResponse('Invalid JSON', { status: 400 });
   }
 
-  const entries = body.entry || [];
-  const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL;
+  // 2. تسجيل RAW ID فوراً لإثبات الوصول
+  const rawId = `RAW_${Date.now()}`;
+  db.insert(webhookEventSchema).values({ mid: rawId }).catch(() => null);
 
-  if (!n8nWebhookUrl) {
-    logger.error('N8N_WEBHOOK_URL missing');
-    return new NextResponse('OK', { status: 200 });
-  }
+  // 3. معالجة البيانات في "الخلفية" وعدم تعطيل الرد على ميتا
+  (async () => {
+    try {
+      const entries = body.entry || [];
+      const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL;
+      if (!n8nWebhookUrl) {
+        return;
+      }
 
-  const processingPromises: Promise<any>[] = [];
+      for (const entry of entries) {
+        const entryId = entry.id;
+        const messaging = entry.messaging || [];
+        const changes = entry.changes || [];
 
-  for (const entry of entries) {
-    const entryId = entry.id;
-    const messaging = entry.messaging || [];
-    const changes = entry.changes || [];
-
-    const integrationPromise = (async () => {
-      const results = await db.select().from(integrationSchema).where(eq(integrationSchema.providerId, entryId)).limit(1);
-      let integration = results[0];
-
-      if (!integration) {
-        const anyIntegration = await db.query.integrationSchema.findFirst();
-        if (anyIntegration) {
-          integration = anyIntegration;
-        } else {
-          return null;
+        // Lookup Integration
+        const results = await db.select().from(integrationSchema).where(eq(integrationSchema.providerId, entryId)).limit(1);
+        const integration = results[0] || (await db.query.integrationSchema.findFirst());
+        if (!integration) {
+          continue;
         }
-      }
 
-      const aiSettingsResults = await db.select().from(aiSettingsSchema).where(eq(aiSettingsSchema.organizationId, integration.organizationId)).limit(1);
-      return {
-        organizationId: integration.organizationId,
-        integrationType: integration.type,
-        aiConfig: aiSettingsResults[0] || { isActive: 'false' },
-      };
-    })();
+        const aiSettingsResults = await db.select().from(aiSettingsSchema).where(eq(aiSettingsSchema.organizationId, integration.organizationId)).limit(1);
+        const context = {
+          organizationId: integration.organizationId,
+          integrationType: integration.type,
+          aiConfig: aiSettingsResults[0] || { isActive: 'false' },
+        };
 
-    // --- 1. Messenger/Instagram ---
-    for (const event of messaging) {
-      const mid = event.message?.mid;
-      const senderId = event.sender?.id;
-      if (event.message?.is_echo || !mid) {
-        continue;
-      }
-
-      processingPromises.push((async () => {
-        const context = await integrationPromise;
-        await db.insert(webhookEventSchema).values({ mid }).catch(() => null);
-        return await fetch(n8nWebhookUrl!, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ rawBody: body, platform: 'messenger', senderId, context }),
-        });
-      })());
-    }
-
-    // --- 2. WhatsApp ---
-    for (const change of changes) {
-      if (!change.value?.messages) {
-        continue;
-      }
-      for (const msg of change.value.messages) {
-        const mid = msg.id;
-        const senderId = msg.from;
-        processingPromises.push((async () => {
-          const context = await integrationPromise;
-          // تسجيل الـ mid الحقيقي للرسالة
-          await db.insert(webhookEventSchema).values({ mid }).catch(() => null);
-          logger.info({ mid }, 'Forwarding WhatsApp to n8n');
-          return await fetch(n8nWebhookUrl!, {
+        // Handle Messenger
+        for (const event of messaging) {
+          if (event.message?.is_echo || !event.message?.mid) {
+            continue;
+          }
+          await db.insert(webhookEventSchema).values({ mid: event.message.mid }).catch(() => null);
+          fetch(n8nWebhookUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ rawBody: body, platform: 'whatsapp', senderId, context }),
-          });
-        })());
-      }
-    }
-  }
+            body: JSON.stringify({ rawBody: body, platform: 'messenger', senderId: event.sender?.id, context }),
+          }).catch(() => null);
+        }
 
-  await Promise.all(processingPromises);
+        // Handle WhatsApp
+        for (const change of changes) {
+          if (!change.value?.messages) {
+            continue;
+          }
+          for (const msg of change.value.messages) {
+            await db.insert(webhookEventSchema).values({ mid: msg.id }).catch(() => null);
+            fetch(n8nWebhookUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ rawBody: body, platform: 'whatsapp', senderId: msg.from, context }),
+            }).catch(() => null);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Background processing error:', err);
+    }
+  })();
+
+  // 4. الرد على ميتا بـ OK فوراً (أهم خطوة)
   return new NextResponse('OK', { status: 200 });
 };
