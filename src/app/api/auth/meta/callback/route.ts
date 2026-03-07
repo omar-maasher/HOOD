@@ -172,6 +172,59 @@ export const GET = async (request: Request) => {
       } catch (e) {
         console.error('Auto-connect Instagram Error:', e);
       }
+    } else if (platform === 'whatsapp') {
+      try {
+        const wabaRes = await fetch(`https://graph.facebook.com/v21.0/me/whatsapp_business_accounts?access_token=${accessToken}`);
+        if (wabaRes.ok) {
+          const wabaData = await wabaRes.json();
+          if (wabaData.data && wabaData.data.length > 0) {
+            const wabaId = wabaData.data[0].id; // The ID used in Webhooks
+
+            // Fetch Phone Numbers for this WABA to get the Phone Number ID (needed for Sending)
+            const phoneRes = await fetch(`https://graph.facebook.com/v21.0/${wabaId}/phone_numbers?access_token=${accessToken}`);
+            if (phoneRes.ok) {
+              const phoneData = await phoneRes.json();
+              if (phoneData.data && phoneData.data.length > 0) {
+                const phoneNumberId = phoneData.data[0].id;
+
+                const existingWa = await db.query.integrationSchema.findFirst({
+                  where: and(
+                    eq(integrationSchema.organizationId, orgId),
+                    eq(integrationSchema.type, 'whatsapp'),
+                  ),
+                });
+
+                if (existingWa) {
+                  await db.update(integrationSchema)
+                    .set({
+                      accessToken,
+                      providerId: wabaId,
+                      config: JSON.stringify({ phoneNumberId }),
+                      updatedAt: new Date(),
+                    })
+                    .where(
+                      and(
+                        eq(integrationSchema.organizationId, orgId),
+                        eq(integrationSchema.type, 'whatsapp'),
+                      ),
+                    );
+                } else {
+                  await db.insert(integrationSchema).values({
+                    organizationId: orgId,
+                    type: 'whatsapp',
+                    providerId: wabaId,
+                    accessToken,
+                    config: JSON.stringify({ phoneNumberId }),
+                    status: 'active',
+                  });
+                }
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Auto-connect WhatsApp Error:', e);
+      }
     }
 
     return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?success=connected`, request.url));

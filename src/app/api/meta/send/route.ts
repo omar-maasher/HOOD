@@ -78,7 +78,18 @@ export const POST = async (request: Request) => {
       }
 
       const token = platformIntegration.accessToken;
-      const phoneNumberId = platformIntegration.providerId;
+
+      let phoneNumberId = platformIntegration.providerId; // fallback
+      if (platformIntegration.config) {
+        try {
+          const configObj = JSON.parse(platformIntegration.config);
+          if (configObj.phoneNumberId) {
+            phoneNumberId = configObj.phoneNumberId;
+          }
+        } catch (e) {
+          console.error('Failed to parse WhatsApp integration config', e);
+        }
+      }
 
       if (!token || !phoneNumberId) {
         return NextResponse.json({ error: 'WhatsApp integration is missing token or Phone Number ID.' }, { status: 400 });
