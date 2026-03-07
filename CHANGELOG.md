@@ -1,3 +1,10 @@
+# [1.14.0](https://github.com/omar-maasher/HOOD/compare/v1.13.2...v1.14.0) (2026-03-07)
+
+
+### Features
+
+* enable whatsapp support for webhooks and messaging API ([dfff07e](https://github.com/omar-maasher/HOOD/commit/dfff07e028b240f529f5b488f4816093d89a927e))
+
 ## [1.13.2](https://github.com/omar-maasher/HOOD/compare/v1.13.1...v1.13.2) (2026-03-06)
 
 
