@@ -2,7 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/DB';
-import { sendInstagramMessage, sendMessengerMessage } from '@/libs/Meta';
+import { sendInstagramMessage, sendMessengerMessage, sendWhatsAppMessage } from '@/libs/Meta';
 import { integrationSchema } from '@/models/Schema';
 
 export const POST = async (request: Request) => {
@@ -72,6 +72,19 @@ export const POST = async (request: Request) => {
       }
 
       responseData = await sendMessengerMessage(pageId, recipientId, message, token);
+    } else if (platform === 'whatsapp') {
+      if (!platformIntegration) {
+        return NextResponse.json({ error: 'No WhatsApp integration found for this organization.' }, { status: 404 });
+      }
+
+      const token = platformIntegration.accessToken;
+      const phoneNumberId = platformIntegration.providerId;
+
+      if (!token || !phoneNumberId) {
+        return NextResponse.json({ error: 'WhatsApp integration is missing token or Phone Number ID.' }, { status: 400 });
+      }
+
+      responseData = await sendWhatsAppMessage(phoneNumberId, recipientId, message, token);
     } else {
       return NextResponse.json({ error: 'Unsupported platform specified.' }, { status: 400 });
     }

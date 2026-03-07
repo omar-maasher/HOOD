@@ -127,3 +127,40 @@ export const sendMessengerMessage = async (
 
   return response.json();
 };
+/**
+ * Send a message via the WhatsApp Business Cloud API.
+ */
+export const sendWhatsAppMessage = async (
+  phoneNumberId: string, // WhatsApp Phone Number ID (stored as providerId in DB)
+  recipientId: string, // Phone number (with country code, no +)
+  text: string,
+  accessToken: string, // System User Access Token
+) => {
+  const url = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${phoneNumberId}/messages`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to: recipientId,
+      type: 'text',
+      text: {
+        preview_url: false,
+        body: text,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    console.error('Failed to send WhatsApp message:', errorData);
+    throw new Error(`Meta API error (WhatsApp): ${JSON.stringify(errorData)}`);
+  }
+
+  return response.json();
+};

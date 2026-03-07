@@ -65,6 +65,7 @@ export const POST = async (request: Request) => {
     // --- 1. HANDLE MESSAGING (Instagram/Messenger) ---
     for (const event of messaging) {
       const mid = event.message?.mid;
+      const senderId = event.sender?.id;
 
       if (
         event.message?.is_echo
@@ -75,7 +76,7 @@ export const POST = async (request: Request) => {
         continue;
       }
 
-      if (mid) {
+      if (mid && senderId) {
         processingPromises.push((async () => {
           try {
             const existing = await db.select()
@@ -91,24 +92,25 @@ export const POST = async (request: Request) => {
             try {
               await db.insert(webhookEventSchema).values({ mid });
             } catch {
-              return null; // Race condition
+              return null;
             }
 
             const context = await integrationPromise;
             const platform = body.object === 'page' ? 'messenger' : (body.object === 'instagram' ? 'instagram' : 'unknown');
 
             logger.info({ platform, mid }, 'Forwarding to n8n');
-            
+
             const response = await fetch(n8nWebhookUrl, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 rawBody: { ...body, entry: [entry] },
                 platform,
+                senderId,
                 context: context || { organizationId: '', integrationType: platform, aiConfig: { isActive: 'false' } },
               }),
             });
-            
+
             logger.info({ status: response.status }, 'n8n response');
             return response;
           } catch (error) {
@@ -127,8 +129,9 @@ export const POST = async (request: Request) => {
       }
 
       const waMid = waValue.messages?.[0]?.id;
-      
-      if (waMid) {
+      const waSenderId = waValue.messages?.[0]?.from; // WhatsApp sender number
+
+      if (waMid && waSenderId) {
         processingPromises.push((async () => {
           try {
             const existing = await db.select()
@@ -136,7 +139,9 @@ export const POST = async (request: Request) => {
               .where(eq(webhookEventSchema.mid, waMid))
               .limit(1);
 
-            if (existing.length > 0) return null;
+            if (existing.length > 0) {
+              return null;
+            }
 
             try {
               await db.insert(webhookEventSchema).values({ mid: waMid });
@@ -145,7 +150,7 @@ export const POST = async (request: Request) => {
             }
 
             const context = await integrationPromise;
-            
+
             logger.info({ platform: 'whatsapp', mid: waMid }, 'Forwarding to n8n');
 
             const response = await fetch(n8nWebhookUrl, {
@@ -154,6 +159,7 @@ export const POST = async (request: Request) => {
               body: JSON.stringify({
                 rawBody: { ...body, entry: [entry] },
                 platform: 'whatsapp',
+                senderId: waSenderId,
                 context: context || { organizationId: '', integrationType: 'whatsapp', aiConfig: { isActive: 'false' } },
               }),
             });
@@ -168,7 +174,6 @@ export const POST = async (request: Request) => {
     }
   }
 
-  // Wait for processing to complete before responding
   if (processingPromises.length > 0) {
     await Promise.all(processingPromises);
   }
