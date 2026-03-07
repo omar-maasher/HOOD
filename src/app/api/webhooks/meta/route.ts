@@ -21,38 +21,36 @@ export const GET = async (request: Request) => {
 export const POST = async (request: Request) => {
   const body = await request.json();
 
-  // Log the body for debugging in server environment logs
-  logger.info({ body }, 'INCOMING_WEBHOOK_PAYLOAD');
-
-  logger.info({ body }, 'Received Meta Webhook');
+  // 1. تسجل فوري في قاعدة البيانات لإثبات أن ميتا وصلت للسيرفر
+  // سنستخدم معرف (mid) يبدأ بـ RAW_ لتمييز الطلبات الخام
+  const rawId = `RAW_${Date.now()}`;
+  try {
+    await db.insert(webhookEventSchema).values({ mid: rawId });
+    logger.info({ rawId }, 'Incoming Webhook Registered');
+  } catch (err) {
+    logger.error({ err }, 'Failed to log raw webhook');
+  }
 
   const entries = body.entry || [];
   const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL;
 
   if (!n8nWebhookUrl) {
-    logger.error('N8N_WEBHOOK_URL is not defined');
+    logger.error('N8N_WEBHOOK_URL missing');
     return new NextResponse('OK', { status: 200 });
   }
 
   const processingPromises: Promise<any>[] = [];
 
   for (const entry of entries) {
-    const entryId = entry.id; // WABA ID or Page ID
+    const entryId = entry.id;
     const messaging = entry.messaging || [];
     const changes = entry.changes || [];
 
-    // Lookup integration
     const integrationPromise = (async () => {
-      const results = await db.select()
-        .from(integrationSchema)
-        .where(eq(integrationSchema.providerId, entryId))
-        .limit(1);
-
+      const results = await db.select().from(integrationSchema).where(eq(integrationSchema.providerId, entryId)).limit(1);
       let integration = results[0];
 
-      // FALLBACK FOR TESTING/DEBUG: If ID doesn't match, pick the first one from DB
       if (!integration) {
-        logger.warn({ entryId }, 'No matching integration found. Using first available for testing.');
         const anyIntegration = await db.query.integrationSchema.findFirst();
         if (anyIntegration) {
           integration = anyIntegration;
@@ -61,11 +59,7 @@ export const POST = async (request: Request) => {
         }
       }
 
-      const aiSettingsResults = await db.select()
-        .from(aiSettingsSchema)
-        .where(eq(aiSettingsSchema.organizationId, integration.organizationId))
-        .limit(1);
-
+      const aiSettingsResults = await db.select().from(aiSettingsSchema).where(eq(aiSettingsSchema.organizationId, integration.organizationId)).limit(1);
       return {
         organizationId: integration.organizationId,
         integrationType: integration.type,
@@ -73,82 +67,43 @@ export const POST = async (request: Request) => {
       };
     })();
 
-    // --- 1. HANDLE MESSAGING (Instagram/Messenger) ---
+    // --- 1. Messenger/Instagram ---
     for (const event of messaging) {
       const mid = event.message?.mid;
       const senderId = event.sender?.id;
-
       if (event.message?.is_echo || !mid) {
         continue;
       }
 
       processingPromises.push((async () => {
-        try {
-          const existing = await db.select().from(webhookEventSchema).where(eq(webhookEventSchema.mid, mid)).limit(1);
-          if (existing.length > 0) {
-            return null;
-          }
-          await db.insert(webhookEventSchema).values({ mid }).catch(() => null);
-
-          const context = await integrationPromise;
-          const platform = body.object === 'page' ? 'messenger' : (body.object === 'instagram' ? 'instagram' : 'unknown');
-
-          logger.info({ platform, mid, senderId }, 'Forwarding messaging to n8n');
-
-          return await fetch(n8nWebhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              rawBody: { ...body, entry: [entry] },
-              platform,
-              senderId: senderId || 'unknown',
-              context: context || { organizationId: '', integrationType: platform, aiConfig: { isActive: 'false' } },
-            }),
-          });
-        } catch (error) {
-          logger.error({ error }, 'Messenger error');
-          return null;
-        }
+        const context = await integrationPromise;
+        await db.insert(webhookEventSchema).values({ mid }).catch(() => null);
+        return await fetch(n8nWebhookUrl!, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rawBody: body, platform: 'messenger', senderId, context }),
+        });
       })());
     }
 
-    // --- 2. HANDLE CHANGES (WhatsApp) ---
+    // --- 2. WhatsApp ---
     for (const change of changes) {
-      const value = change.value;
-      if (!value?.messages) {
+      if (!change.value?.messages) {
         continue;
       }
-
-      for (const msg of value.messages) {
+      for (const msg of change.value.messages) {
         const mid = msg.id;
         const senderId = msg.from;
-
         processingPromises.push((async () => {
-          try {
-            const existing = await db.select().from(webhookEventSchema).where(eq(webhookEventSchema.mid, mid)).limit(1);
-            if (existing.length > 0) {
-              return null;
-            }
-            await db.insert(webhookEventSchema).values({ mid }).catch(() => null);
-
-            const context = await integrationPromise;
-
-            logger.info({ mid, senderId }, 'Forwarding WhatsApp to n8n');
-
-            return await fetch(n8nWebhookUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                rawBody: { ...body, entry: [entry] },
-                platform: 'whatsapp',
-                senderId,
-                context: context || { organizationId: '', integrationType: 'whatsapp', aiConfig: { isActive: 'false' } },
-              }),
-            });
-          } catch (error) {
-            logger.error({ error }, 'WhatsApp error');
-            return null;
-          }
+          const context = await integrationPromise;
+          // تسجيل الـ mid الحقيقي للرسالة
+          await db.insert(webhookEventSchema).values({ mid }).catch(() => null);
+          logger.info({ mid }, 'Forwarding WhatsApp to n8n');
+          return await fetch(n8nWebhookUrl!, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rawBody: body, platform: 'whatsapp', senderId, context }),
+          });
         })());
       }
     }

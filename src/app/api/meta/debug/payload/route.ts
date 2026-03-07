@@ -6,24 +6,20 @@ import { webhookEventSchema } from '@/models/Schema';
 
 export const GET = async () => {
   try {
-    // جلب آخر 10 رسائل وصلت من ميتا وتم تسجيلها في القاعدة
     const lastEvents = await db.select()
       .from(webhookEventSchema)
       .orderBy(desc(webhookEventSchema.createdAt))
-      .limit(10);
-
-    if (lastEvents.length === 0) {
-      return NextResponse.json({
-        status: 'waiting',
-        message: 'No messages found in DB. Meta has NOT reached your server yet.',
-        hint: 'Ensure you added your phone number to \'Recipient Phone Numbers\' in Meta Dashboard.',
-      });
-    }
+      .limit(15);
 
     return NextResponse.json({
       status: 'success',
+      server_time: new Date().toISOString(),
       received_count: lastEvents.length,
       latest_events: lastEvents,
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, max-age=0', // منع التخزين المؤقت تماماً
+      },
     });
   } catch (error) {
     return NextResponse.json({ status: 'error', error: String(error) }, { status: 500 });
