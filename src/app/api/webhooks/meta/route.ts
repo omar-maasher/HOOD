@@ -21,35 +21,39 @@ export const GET = async (request: Request) => {
 export const POST = async (request: Request) => {
   const body = await request.json();
 
-  // Log everything for debugging
-  logger.info({ body }, 'WEBHOOK_RECEIVED');
+  // 1. تسجيل الطلب الخام فوراً للـ Debug
+  const rawId = `RAW_${Date.now()}`;
+  await db.insert(webhookEventSchema).values({ mid: rawId }).catch(() => null);
 
   const entries = body.entry || [];
   const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL;
 
   if (!n8nWebhookUrl) {
-    logger.error('N8N_WEBHOOK_URL is not defined');
     return new NextResponse('OK', { status: 200 });
   }
 
   const processingPromises: Promise<any>[] = [];
 
   for (const entry of entries) {
-    const entryId = entry.id; // Page ID or WABA ID
+    const entryId = entry.id;
     const messaging = entry.messaging || [];
     const changes = entry.changes || [];
 
-    // 1. Fetch Integration (Strict)
+    // البحث عن الربط
     const results = await db.select().from(integrationSchema).where(eq(integrationSchema.providerId, entryId)).limit(1);
-    const integration = results[0];
+    let integration = results[0];
 
-    // If no integration, we stop (Safe measure)
+    // --- FALLBACK FOR TESTING ---
+    // إذا كنت تجرب بدون ربط، سنأخذ أول منظمة موجودة في قاعدة البيانات لإرسال التجربة لـ N8N
     if (!integration) {
-      logger.warn({ entryId }, 'Unrecognized entry ID from Meta');
+      logger.info({ entryId }, 'No matching integration, using fallback for testing');
+      integration = await db.query.integrationSchema.findFirst();
+    }
+
+    if (!integration) {
       continue;
     }
 
-    // 2. Fetch AI Settings
     const aiSettingsResults = await db.select()
       .from(aiSettingsSchema)
       .where(eq(aiSettingsSchema.organizationId, integration.organizationId))
@@ -61,42 +65,35 @@ export const POST = async (request: Request) => {
       aiConfig: aiSettingsResults[0] || { isActive: 'false' },
     };
 
-    // --- Process Messenger/Instagram ---
+    // معالجة Messenger
     for (const event of messaging) {
       const mid = event.message?.mid;
-      const senderId = event.sender?.id;
-
       if (event.message?.is_echo || !mid) {
         continue;
       }
 
       processingPromises.push((async () => {
         try {
-          // Check for duplicates
-          const existing = await db.select().from(webhookEventSchema).where(eq(webhookEventSchema.mid, mid)).limit(1);
-          if (existing.length > 0) {
+          const exists = await db.select().from(webhookEventSchema).where(eq(webhookEventSchema.mid, mid)).limit(1);
+          if (exists.length > 0) {
             return null;
           }
 
-          // Save mid
           await db.insert(webhookEventSchema).values({ mid });
 
-          // Forward to n8n
-          const res = await fetch(n8nWebhookUrl, {
+          return await fetch(n8nWebhookUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ rawBody: body, platform: 'messenger', senderId, context }),
+            body: JSON.stringify({ rawBody: body, platform: 'messenger', senderId: event.sender?.id, context }),
           });
-          logger.info({ status: res.status, mid }, 'Forwarded to n8n');
-          return res;
         } catch (e) {
-          logger.error({ e, mid }, 'Processing failed');
+          logger.error('Messenger forward error', e);
           return null;
         }
       })());
     }
 
-    // --- Process WhatsApp ---
+    // معالجة WhatsApp
     for (const change of changes) {
       const messages = change.value?.messages || [];
       for (const msg of messages) {
@@ -105,26 +102,23 @@ export const POST = async (request: Request) => {
 
         processingPromises.push((async () => {
           try {
-            // Check for duplicates (mid is unique in WhatsApp)
-            const existing = await db.select().from(webhookEventSchema).where(eq(webhookEventSchema.mid, mid)).limit(1);
-            if (existing.length > 0) {
-              logger.info({ mid }, 'Duplicate message ignored');
+            const exists = await db.select().from(webhookEventSchema).where(eq(webhookEventSchema.mid, mid)).limit(1);
+            if (exists.length > 0) {
               return null;
             }
 
-            // Save mid
             await db.insert(webhookEventSchema).values({ mid });
 
-            // Forward to n8n
+            logger.info({ mid, senderId }, 'Forwarding WhatsApp message to n8n');
+
             const res = await fetch(n8nWebhookUrl, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ rawBody: body, platform: 'whatsapp', senderId, context }),
             });
-            logger.info({ status: res.status, mid }, 'WhatsApp forwarded to n8n');
             return res;
           } catch (e) {
-            logger.error({ e, mid }, 'WhatsApp forward failed');
+            logger.error('WhatsApp forward error', e);
             return null;
           }
         })());
@@ -132,7 +126,7 @@ export const POST = async (request: Request) => {
     }
   }
 
-  // WAIT for all processing to complete before responding (Ensures serverless execution)
+  // الانتظار لضمان عدم قتل العملية في Vercel قبل وصول الطلب لـ n8n
   if (processingPromises.length > 0) {
     await Promise.all(processingPromises);
   }
