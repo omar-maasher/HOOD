@@ -1,3 +1,10 @@
+## [1.15.2](https://github.com/omar-maasher/HOOD/compare/v1.15.1...v1.15.2) (2026-03-10)
+
+
+### Bug Fixes
+
+* improve error reporting in WhatsAppConnect ([19c4e3b](https://github.com/omar-maasher/HOOD/commit/19c4e3b34a10fc00e92f5f7d4f12f0f87280086f))
+
 ## [1.15.1](https://github.com/omar-maasher/HOOD/compare/v1.15.0...v1.15.1) (2026-03-10)
 
 
