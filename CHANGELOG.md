@@ -1,3 +1,10 @@
+## [1.14.14](https://github.com/omar-maasher/HOOD/compare/v1.14.13...v1.14.14) (2026-03-10)
+
+
+### Bug Fixes
+
+* resolve lint error for global Window interface augmentation ([2e7a7be](https://github.com/omar-maasher/HOOD/commit/2e7a7be2e496959594577896cc70e303e9255aae))
+
 ## [1.14.13](https://github.com/omar-maasher/HOOD/compare/v1.14.12...v1.14.13) (2026-03-07)
 
 
