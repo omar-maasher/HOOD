@@ -1,3 +1,10 @@
+## [1.15.1](https://github.com/omar-maasher/HOOD/compare/v1.15.0...v1.15.1) (2026-03-10)
+
+
+### Bug Fixes
+
+* resolve redirect_uri mismatch for WhatsApp JS SDK token exchange ([5b2ddb8](https://github.com/omar-maasher/HOOD/commit/5b2ddb8f5e8fed3390365b904726e03aa6aa5dda))
+
 # [1.15.0](https://github.com/omar-maasher/HOOD/compare/v1.14.14...v1.15.0) (2026-03-10)
 
 
