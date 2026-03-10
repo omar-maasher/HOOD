@@ -2,7 +2,7 @@ export const META_CONFIG = {
   appId: process.env.META_APP_ID,
   appSecret: process.env.META_APP_SECRET,
   redirectUri: process.env.NEXT_PUBLIC_META_REDIRECT_URI,
-  graphVersion: 'v25.0',
+  graphVersion: 'v21.0',
 };
 
 export type MetaPlatform = 'instagram' | 'messenger' | 'whatsapp';
@@ -178,12 +178,22 @@ export const sendWhatsAppMessage = async (
  * Fetch WhatsApp Business Accounts (WABA) for the current user.
  */
 export const getWabaAccounts = async (accessToken: string) => {
+  // Try direct edge first
   const url = `https://graph.facebook.com/${META_CONFIG.graphVersion}/me/whatsapp_business_accounts?access_token=${accessToken}`;
   const response = await fetch(url);
+
   if (!response.ok) {
-    const errData = await response.json().catch(() => ({}));
-    throw new Error(`Failed to fetch WABA accounts: ${JSON.stringify(errData.error || errData)}`);
+    // Fallback: Check if it's a field on /me
+    const fallbackUrl = `https://graph.facebook.com/${META_CONFIG.graphVersion}/me?fields=whatsapp_business_accounts&access_token=${accessToken}`;
+    const fbResponse = await fetch(fallbackUrl);
+    if (!fbResponse.ok) {
+      const errData = await fbResponse.json().catch(() => ({}));
+      throw new Error(`Failed to fetch WABA accounts: ${JSON.stringify(errData.error || errData)}`);
+    }
+    const data = await fbResponse.json();
+    return data.whatsapp_business_accounts || { data: [] };
   }
+
   return response.json();
 };
 
