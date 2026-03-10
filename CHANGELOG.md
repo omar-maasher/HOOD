@@ -1,3 +1,10 @@
+## [1.15.3](https://github.com/omar-maasher/HOOD/compare/v1.15.2...v1.15.3) (2026-03-10)
+
+
+### Bug Fixes
+
+* improve WhatsApp fetch error details and add explicit scopes ([f90f7db](https://github.com/omar-maasher/HOOD/commit/f90f7db30cc9f3468d737d00e6d9d9fa86a4431b))
+
 ## [1.15.2](https://github.com/omar-maasher/HOOD/compare/v1.15.1...v1.15.2) (2026-03-10)
 
 
