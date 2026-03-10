@@ -200,12 +200,18 @@ export const getWabaAccounts = async (accessToken: string) => {
     const bizRes = await fetch(bizUrl);
     if (bizRes.ok) {
       const bizData = await bizRes.json();
+      // eslint-disable-next-line no-console
+      console.log(`Found ${bizData.data?.length || 0} businesses for this user.`);
       for (const business of bizData.data || []) {
+        // eslint-disable-next-line no-console
+        console.log(`Checking business: ${business.name} (${business.id})`);
         const wabaUrl = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${business.id}/whatsapp_business_accounts?access_token=${accessToken}`;
         const wabaRes = await fetch(wabaUrl);
         if (wabaRes.ok) {
           const wabaData = await wabaRes.json();
           if (wabaData.data) {
+            // eslint-disable-next-line no-console
+            console.log(`Found ${wabaData.data.length} WABAs in business ${business.id}`);
             results.push(...wabaData.data);
           }
         }
