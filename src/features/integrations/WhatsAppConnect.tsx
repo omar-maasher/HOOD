@@ -36,7 +36,7 @@ export const WhatsAppConnect: React.FC<WhatsAppConnectProps> = ({ appId, isAr })
         appId,
         autoLogAppEvents: true,
         xfbml: true,
-        version: 'v21.0',
+        version: 'v25.0',
       });
       setSdkReady(true);
     };

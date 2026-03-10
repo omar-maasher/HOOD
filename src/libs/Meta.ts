@@ -2,7 +2,7 @@ export const META_CONFIG = {
   appId: process.env.META_APP_ID,
   appSecret: process.env.META_APP_SECRET,
   redirectUri: process.env.NEXT_PUBLIC_META_REDIRECT_URI,
-  graphVersion: 'v21.0',
+  graphVersion: 'v25.0',
 };
 
 export type MetaPlatform = 'instagram' | 'messenger' | 'whatsapp';
