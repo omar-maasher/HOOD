@@ -66,12 +66,14 @@ export const WhatsAppConnect: React.FC<WhatsAppConnectProps> = ({ appId, isAr })
         alert(isAr ? 'تم الربط بنجاح! تم ربط حساب واتساب أعمال بنجاح.' : 'Connected Successfully! WhatsApp Business account connected successfully.');
         router.refresh();
       } else {
-        throw new Error('Failed to register WABA');
+        const errorData = await res.json();
+        const errorMsg = errorData.error || 'Failed to register WABA';
+        throw new Error(errorMsg);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Registration error:', error);
       // eslint-disable-next-line no-alert
-      alert(isAr ? 'خطأ في الربط: حدث خطأ أثناء محاولة ربط الحساب.' : 'Connection Error: An error occurred while connecting the account.');
+      alert(`${isAr ? 'خطأ في الربط: ' : 'Connection Error: '} ${error.message || error}`);
     } finally {
       setLoading(false);
     }
