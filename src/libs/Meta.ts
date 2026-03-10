@@ -37,8 +37,18 @@ export const getMetaAuthUrl = (state: string, platform?: MetaPlatform) => {
   return `https://www.facebook.com/${META_CONFIG.graphVersion}/dialog/oauth?client_id=${META_CONFIG.appId}&redirect_uri=${META_CONFIG.redirectUri}&state=${state}&scope=${scopeString}`;
 };
 
-export const exchangeCodeForToken = async (code: string) => {
-  const url = `https://graph.facebook.com/${META_CONFIG.graphVersion}/oauth/access_token?client_id=${META_CONFIG.appId}&redirect_uri=${META_CONFIG.redirectUri}&client_secret=${META_CONFIG.appSecret}&code=${code}`;
+export const exchangeCodeForToken = async (code: string, redirectUri?: string) => {
+  // If redirectUri is explicitly passed as "", we use it (required for JS SDK exchange)
+  // Otherwise we use the default from config.
+  const rUri = redirectUri !== undefined ? redirectUri : META_CONFIG.redirectUri;
+
+  let url = `https://graph.facebook.com/${META_CONFIG.graphVersion}/oauth/access_token?client_id=${META_CONFIG.appId}&client_secret=${META_CONFIG.appSecret}&code=${code}`;
+
+  if (rUri) {
+    url += `&redirect_uri=${rUri}`;
+  } else if (redirectUri === '') {
+    url += `&redirect_uri=`;
+  }
 
   const response = await fetch(url);
   return response.json();

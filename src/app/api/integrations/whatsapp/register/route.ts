@@ -20,8 +20,8 @@ export const POST = async (request: Request) => {
       return NextResponse.json({ error: 'Code is required' }, { status: 400 });
     }
 
-    // 1. Exchange code for token
-    const tokenResponse = await exchangeCodeForToken(code);
+    // 1. Exchange code for token (using empty redirect_uri for JS SDK)
+    const tokenResponse = await exchangeCodeForToken(code, '');
     if (tokenResponse.error) {
       console.error('Meta Token Error:', tokenResponse.error);
       return NextResponse.json({ error: 'Token exchange failed' }, { status: 500 });
