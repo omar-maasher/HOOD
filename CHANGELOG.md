@@ -1,3 +1,10 @@
+## [1.15.4](https://github.com/omar-maasher/HOOD/compare/v1.15.3...v1.15.4) (2026-03-10)
+
+
+### Bug Fixes
+
+* update WABA fetch logic with fallback to handle nonexisting field error ([a6c06ae](https://github.com/omar-maasher/HOOD/commit/a6c06ae4abb17af2feffd7be4c9bf4ea80aa87ba))
+
 ## [1.15.3](https://github.com/omar-maasher/HOOD/compare/v1.15.2...v1.15.3) (2026-03-10)
 
 
