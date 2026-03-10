@@ -181,7 +181,8 @@ export const getWabaAccounts = async (accessToken: string) => {
   const url = `https://graph.facebook.com/${META_CONFIG.graphVersion}/me/whatsapp_business_accounts?access_token=${accessToken}`;
   const response = await fetch(url);
   if (!response.ok) {
-    throw new Error('Failed to fetch WABA accounts');
+    const errData = await response.json().catch(() => ({}));
+    throw new Error(`Failed to fetch WABA accounts: ${JSON.stringify(errData.error || errData)}`);
   }
   return response.json();
 };
@@ -193,7 +194,8 @@ export const getWabaPhoneNumbers = async (wabaId: string, accessToken: string) =
   const url = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${wabaId}/phone_numbers?access_token=${accessToken}`;
   const response = await fetch(url);
   if (!response.ok) {
-    throw new Error('Failed to fetch WABA phone numbers');
+    const errData = await response.json().catch(() => ({}));
+    throw new Error(`Failed to fetch WABA phone numbers: ${JSON.stringify(errData.error || errData)}`);
   }
   return response.json();
 };

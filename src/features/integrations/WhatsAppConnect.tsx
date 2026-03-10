@@ -101,6 +101,7 @@ export const WhatsAppConnect: React.FC<WhatsAppConnectProps> = ({ appId, isAr })
       config_id: process.env.NEXT_PUBLIC_META_WA_CONFIG_ID, // Use environment variable
       response_type: 'code',
       override_default_response_type: true,
+      scope: 'whatsapp_business_management,whatsapp_business_messaging,public_profile',
       extras: {
         setup_bridge: true, // Required for Coexistence
         sessionInfoVersion: '3',
