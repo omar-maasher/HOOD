@@ -101,9 +101,8 @@ export const WhatsAppConnect: React.FC<WhatsAppConnectProps> = ({ appId, isAr })
       override_default_response_type: true,
       extras: {
         setup_bridge: true, // Required for Coexistence
-        session_info: {
-          version: 3,
-        },
+        sessionInfoVersion: '3',
+        version: 'v3',
       },
     });
   };
