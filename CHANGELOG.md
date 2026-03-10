@@ -1,3 +1,10 @@
+## [1.15.5](https://github.com/omar-maasher/HOOD/compare/v1.15.4...v1.15.5) (2026-03-10)
+
+
+### Bug Fixes
+
+* implement fallback WABA discovery via Business Managers ([4afd69a](https://github.com/omar-maasher/HOOD/commit/4afd69a2762bef067609cab3acefbfc3a8538047))
+
 ## [1.15.4](https://github.com/omar-maasher/HOOD/compare/v1.15.3...v1.15.4) (2026-03-10)
 
 
