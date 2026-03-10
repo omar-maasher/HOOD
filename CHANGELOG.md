@@ -1,3 +1,10 @@
+# [1.15.0](https://github.com/omar-maasher/HOOD/compare/v1.14.14...v1.15.0) (2026-03-10)
+
+
+### Features
+
+* update Meta SDK and Graph API to v25.0 and fix window interface lint ([3fea871](https://github.com/omar-maasher/HOOD/commit/3fea871ea391af335715654da4033cb137a908d5))
+
 ## [1.14.14](https://github.com/omar-maasher/HOOD/compare/v1.14.13...v1.14.14) (2026-03-10)
 
 
