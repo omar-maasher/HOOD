@@ -1,3 +1,10 @@
+## [1.15.6](https://github.com/omar-maasher/HOOD/compare/v1.15.5...v1.15.6) (2026-03-10)
+
+
+### Bug Fixes
+
+* resolve lint errors and update WABA onboarding parameters ([46731df](https://github.com/omar-maasher/HOOD/commit/46731df60eff994f51120ec5549a6f36ad859c86))
+
 ## [1.15.5](https://github.com/omar-maasher/HOOD/compare/v1.15.4...v1.15.5) (2026-03-10)
 
 
