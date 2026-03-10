@@ -3,10 +3,13 @@ import { eq } from 'drizzle-orm';
 import { Info, Instagram, Link as LinkIcon, MessageSquare, Phone } from 'lucide-react';
 import { getLocale } from 'next-intl/server';
 
+import { WhatsAppConnect } from '@/features/integrations/WhatsAppConnect';
 import { db } from '@/libs/DB';
 import { integrationSchema } from '@/models/Schema';
 
 import { DisconnectButton } from './DisconnectButton';
+
+const META_APP_ID = process.env.META_APP_ID || '';
 
 export default async function IntegrationsPage(props: { searchParams: Promise<any> }) {
   const { orgId } = await auth();
@@ -147,13 +150,21 @@ export default async function IntegrationsPage(props: { searchParams: Promise<an
                       </div>
                     )
                   : (
-                      <a
-                        href={`/api/auth/meta?platform=${channel.key}&locale=${locale}`}
-                        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-4 font-bold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 active:scale-[0.98]"
-                      >
-                        <LinkIcon className="size-4" />
-                        {isAr ? 'ربط الحساب' : 'Connect Account'}
-                      </a>
+                      <>
+                        {channel.key === 'whatsapp'
+                          ? (
+                              <WhatsAppConnect appId={META_APP_ID} isAr={isAr} />
+                            )
+                          : (
+                              <a
+                                href={`/api/auth/meta?platform=${channel.key}&locale=${locale}`}
+                                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-4 font-bold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 active:scale-[0.98]"
+                              >
+                                <LinkIcon className="size-4" />
+                                {isAr ? 'ربط الحساب' : 'Connect Account'}
+                              </a>
+                            )}
+                      </>
                     )}
               </div>
             </div>

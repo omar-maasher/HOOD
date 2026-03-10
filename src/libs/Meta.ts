@@ -164,3 +164,57 @@ export const sendWhatsAppMessage = async (
 
   return response.json();
 };
+/**
+ * Fetch WhatsApp Business Accounts (WABA) for the current user.
+ */
+export const getWabaAccounts = async (accessToken: string) => {
+  const url = `https://graph.facebook.com/${META_CONFIG.graphVersion}/me/whatsapp_business_accounts?access_token=${accessToken}`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('Failed to fetch WABA accounts');
+  }
+  return response.json();
+};
+
+/**
+ * Fetch Phone Numbers for a specific WABA ID.
+ */
+export const getWabaPhoneNumbers = async (wabaId: string, accessToken: string) => {
+  const url = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${wabaId}/phone_numbers?access_token=${accessToken}`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('Failed to fetch WABA phone numbers');
+  }
+  return response.json();
+};
+
+/**
+ * Register a WABA account metadata in our database.
+ * This is usually called after the user completes the Embedded Signup.
+ */
+export const fetchWabaDetails = async (accessToken: string) => {
+  // 1. Get WABA ID
+  const wabaData = await getWabaAccounts(accessToken);
+  if (!wabaData.data || wabaData.data.length === 0) {
+    throw new Error('No WhatsApp Business Account found');
+  }
+
+  const wabaId = wabaData.data[0].id;
+  const wabaName = wabaData.data[0].name;
+
+  // 2. Get Phone Number ID
+  const phoneData = await getWabaPhoneNumbers(wabaId, accessToken);
+  if (!phoneData.data || phoneData.data.length === 0) {
+    throw new Error('No WhatsApp Phone Number found in this WABA');
+  }
+
+  const phoneNumberId = phoneData.data[0].id;
+  const displayPhoneNumber = phoneData.data[0].display_phone_number;
+
+  return {
+    wabaId,
+    wabaName,
+    phoneNumberId,
+    displayPhoneNumber,
+  };
+};
