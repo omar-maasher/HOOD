@@ -111,6 +111,7 @@ export const WhatsAppConnect: React.FC<WhatsAppConnectProps> = ({ appId, isAr })
         featureType: 'whatsapp_business_app_onboarding',
         sessionInfoVersion: '3',
         version: 'v3',
+        locale: isAr ? 'ar_AR' : 'en_US',
       },
     });
   };
