@@ -1,3 +1,10 @@
+# [1.16.0](https://github.com/omar-maasher/HOOD/compare/v1.15.6...v1.16.0) (2026-03-11)
+
+
+### Features
+
+* load Meta SDK in Arabic for Arabic users ([b5bc712](https://github.com/omar-maasher/HOOD/commit/b5bc712e9c56def482970cadd03251d27be9b416))
+
 ## [1.15.6](https://github.com/omar-maasher/HOOD/compare/v1.15.5...v1.15.6) (2026-03-10)
 
 
