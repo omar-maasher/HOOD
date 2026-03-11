@@ -26,10 +26,16 @@ export const WhatsAppConnect: React.FC<WhatsAppConnectProps> = ({ appId, isAr })
 
   useEffect(() => {
     // Load Meta SDK
-    if (window.FB) {
+    const sdkId = 'facebook-jssdk';
+    const existingScript = document.getElementById(sdkId);
+
+    if (window.FB && existingScript && existingScript.getAttribute('src')?.includes(isAr ? 'ar_AR' : 'en_US')) {
       setSdkReady(true);
       return;
     }
+
+    // If script exists but with wrong locale, we might need to reload, but FB SDK doesn't like being reloaded.
+    // However, for most cases, the initial load is what matters.
 
     window.fbAsyncInit = function () {
       window.FB.init({
@@ -41,17 +47,16 @@ export const WhatsAppConnect: React.FC<WhatsAppConnectProps> = ({ appId, isAr })
       setSdkReady(true);
     };
 
-    (function (d, s, id) {
-      const js = d.createElement(s) as any;
-      const fjs = d.getElementsByTagName(s)[0] as any;
-      if (d.getElementById(id)) {
-        return;
-      }
-      js.id = id;
-      js.src = 'https://connect.facebook.net/en_US/sdk.js';
-      fjs.parentNode.insertBefore(js, fjs);
-    }(document, 'script', 'facebook-jssdk'));
-  }, [appId]);
+    if (!existingScript) {
+      (function (d, s, id) {
+        const js = d.createElement(s) as any;
+        const fjs = d.getElementsByTagName(s)[0] as any;
+        js.id = id;
+        js.src = `https://connect.facebook.net/${isAr ? 'ar_AR' : 'en_US'}/sdk.js`;
+        fjs.parentNode.insertBefore(js, fjs);
+      }(document, 'script', sdkId));
+    }
+  }, [appId, isAr]);
 
   const handleCallback = async (code: string) => {
     try {
