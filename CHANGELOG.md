@@ -1,3 +1,10 @@
+# [1.17.0](https://github.com/omar-maasher/HOOD/compare/v1.16.0...v1.17.0) (2026-03-11)
+
+
+### Features
+
+* force Meta SDK locale to Arabic and pass locale param to login ([d50009d](https://github.com/omar-maasher/HOOD/commit/d50009d80a97e1417e6706bd3249bbc1a25d78b9))
+
 # [1.16.0](https://github.com/omar-maasher/HOOD/compare/v1.15.6...v1.16.0) (2026-03-11)
 
 
