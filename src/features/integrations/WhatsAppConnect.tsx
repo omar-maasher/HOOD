@@ -45,6 +45,7 @@ export const WhatsAppConnect: React.FC<WhatsAppConnectProps> = ({ appId, isAr })
     window.fbAsyncInit = function () {
       window.FB.init({
         appId,
+        cookie: true, // Required by Meta for session tracking between popup and page
         autoLogAppEvents: true,
         xfbml: true,
         version: 'v25.0',
@@ -113,9 +114,8 @@ export const WhatsAppConnect: React.FC<WhatsAppConnectProps> = ({ appId, isAr })
       override_default_response_type: true,
       scope: 'whatsapp_business_management,whatsapp_business_messaging,business_management,public_profile',
       extras: {
-        featureType: 'whatsapp_business_app_onboarding',
+        setup: {},
         sessionInfoVersion: '3',
-        version: 'v3',
       },
     });
   };
