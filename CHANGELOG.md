@@ -1,6 +1,18 @@
 # [1.16.0](https://github.com/omar-maasher/HOOD/compare/v1.15.9...v1.16.0) (2026-03-14)
 
 
+### Bug Fixes
+
+* trigger vercel deployment ([0643125](https://github.com/omar-maasher/HOOD/commit/0643125f73e17c712e43bea60b0fd03c89a0e99d))
+
+
+### Features
+
+* print detailed meta API responses to browser console for debugging ([63ce13c](https://github.com/omar-maasher/HOOD/commit/63ce13c67e4e32d23713ebe740fa838402304a25))
+
+# [1.16.0](https://github.com/omar-maasher/HOOD/compare/v1.15.9...v1.16.0) (2026-03-14)
+
+
 ### Features
 
 * print detailed meta API responses to browser console for debugging ([63ce13c](https://github.com/omar-maasher/HOOD/commit/63ce13c67e4e32d23713ebe740fa838402304a25))
