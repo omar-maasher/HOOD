@@ -288,7 +288,7 @@ export const fetchWabaDetails = async (accessToken: string) => {
   // 1. Get WABA ID
   const wabaData = await getWabaAccounts(accessToken);
   if (!wabaData.data || wabaData.data.length === 0) {
-    throw new Error('No WhatsApp Business Account found');
+    throw new Error('Could not extract any valid WhatsApp Business Account IDs from the provided Meta configuration. Please ensure the Business Account exists and has WhatsApp enabled.');
   }
 
   const wabaId = wabaData.data[0].id;
