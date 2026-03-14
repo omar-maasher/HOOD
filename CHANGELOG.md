@@ -5,6 +5,22 @@
 
 * change generic WABA error message ([eddebfe](https://github.com/omar-maasher/HOOD/commit/eddebfe01852d68c72e2e49d9a2db7c4eb8066f6))
 * trigger vercel deployment ([0643125](https://github.com/omar-maasher/HOOD/commit/0643125f73e17c712e43bea60b0fd03c89a0e99d))
+* use granular scoped client access token instead of system token override for WABA ID fetching ([875c14c](https://github.com/omar-maasher/HOOD/commit/875c14cbcf47dc34937b8c351032f0c66d3b2ec5))
+
+
+### Features
+
+* implement forced phone number registration request directly into the Meta onboarding pipeline ([598fe65](https://github.com/omar-maasher/HOOD/commit/598fe65f820f60fb6634e498c69e36aea8952240))
+* print detailed meta API responses to browser console for debugging ([63ce13c](https://github.com/omar-maasher/HOOD/commit/63ce13c67e4e32d23713ebe740fa838402304a25))
+* use debug_token as fallback to extract WABA target IDs from granular scopes ([76cf0d9](https://github.com/omar-maasher/HOOD/commit/76cf0d90e268ba4fb7bbd9070afb39a855774106))
+
+# [1.16.0](https://github.com/omar-maasher/HOOD/compare/v1.15.9...v1.16.0) (2026-03-14)
+
+
+### Bug Fixes
+
+* change generic WABA error message ([eddebfe](https://github.com/omar-maasher/HOOD/commit/eddebfe01852d68c72e2e49d9a2db7c4eb8066f6))
+* trigger vercel deployment ([0643125](https://github.com/omar-maasher/HOOD/commit/0643125f73e17c712e43bea60b0fd03c89a0e99d))
 
 
 ### Features
