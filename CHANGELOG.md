@@ -1,3 +1,10 @@
+## [1.15.9](https://github.com/omar-maasher/HOOD/compare/v1.15.8...v1.15.9) (2026-03-14)
+
+
+### Bug Fixes
+
+* disable sys user token upgrade and embed WABA debug info ([1961fa3](https://github.com/omar-maasher/HOOD/commit/1961fa369c3fc3d62c6b49c26ad6fb26d20f3904))
+
 ## [1.15.8](https://github.com/omar-maasher/HOOD/compare/v1.15.7...v1.15.8) (2026-03-14)
 
 
