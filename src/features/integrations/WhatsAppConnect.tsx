@@ -25,8 +25,19 @@ export const WhatsAppConnect: React.FC<WhatsAppConnectProps> = ({ appId, isAr })
   const [sdkReady, setSdkReady] = useState(false);
 
   useEffect(() => {
-    // Load Meta SDK
-    if (window.FB) {
+    // Load Meta SDK flexibly based on locale
+    const sdkId = 'facebook-jssdk';
+    const targetLocale = isAr ? 'ar_AR' : 'en_US';
+    const existingScript = document.getElementById(sdkId);
+
+    if (existingScript && !existingScript.getAttribute('src')?.includes(targetLocale)) {
+      existingScript.remove();
+      delete (window as any).FB;
+      delete (window as any).fbAsyncInit;
+      setSdkReady(false);
+    }
+
+    if (window.FB && document.getElementById(sdkId)) {
       setSdkReady(true);
       return;
     }
@@ -41,17 +52,16 @@ export const WhatsAppConnect: React.FC<WhatsAppConnectProps> = ({ appId, isAr })
       setSdkReady(true);
     };
 
-    (function (d, s, id) {
-      const js = d.createElement(s) as any;
-      const fjs = d.getElementsByTagName(s)[0] as any;
-      if (d.getElementById(id)) {
-        return;
-      }
-      js.id = id;
-      js.src = 'https://connect.facebook.net/en_US/sdk.js';
-      fjs.parentNode.insertBefore(js, fjs);
-    }(document, 'script', 'facebook-jssdk'));
-  }, [appId]);
+    if (!document.getElementById(sdkId)) {
+      (function (d, s, id) {
+        const js = d.createElement(s) as any;
+        const fjs = d.getElementsByTagName(s)[0] as any;
+        js.id = id;
+        js.src = `https://connect.facebook.net/${targetLocale}/sdk.js`;
+        fjs.parentNode.insertBefore(js, fjs);
+      }(document, 'script', sdkId));
+    }
+  }, [appId, isAr]);
 
   const handleCallback = async (code: string) => {
     try {
@@ -112,6 +122,7 @@ export const WhatsAppConnect: React.FC<WhatsAppConnectProps> = ({ appId, isAr })
 
   return (
     <Button
+      type="button"
       onClick={launchWhatsAppSignup}
       disabled={loading || !sdkReady}
       className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 py-4 font-bold text-white shadow-lg shadow-emerald-500/20 transition-all hover:bg-emerald-700 active:scale-[0.98]"

@@ -18,11 +18,14 @@ const PLATFORM_SCOPES: Record<MetaPlatform, string[]> = {
   messenger: [
     'pages_show_list',
     'pages_messaging',
+    'pages_read_engagement',
+    'pages_messaging_subscriptions',
     'public_profile',
   ],
   whatsapp: [
     'whatsapp_business_management',
     'whatsapp_business_messaging',
+    'business_management',
     'public_profile',
   ],
 };
