@@ -242,9 +242,8 @@ export const getWabaAccounts = async (accessToken: string) => {
       const wabaScope = debugResJson.data.granular_scopes.find((s: any) => s.scope === 'whatsapp_business_management');
       if (wabaScope && wabaScope.target_ids) {
         for (const targetId of wabaScope.target_ids) {
-          // Verify if it's a valid WABA by fetching it using the System Token (or fallback to client token)
-          const validToken = META_CONFIG.systemUserToken || accessToken;
-          const checkWabaUrl = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${targetId}?access_token=${validToken}`;
+          // Verify if it's a valid WABA by fetching it using the client's token which has the granular scope
+          const checkWabaUrl = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${targetId}?access_token=${accessToken}`;
           const checkWabaRes = await fetch(checkWabaUrl);
           const checkWabaResJson = await checkWabaRes.json();
           debugData[`waba_verify_${targetId}`] = checkWabaResJson;
@@ -273,8 +272,7 @@ export const getWabaAccounts = async (accessToken: string) => {
  * Fetch Phone Numbers for a specific WABA ID.
  */
 export const getWabaPhoneNumbers = async (wabaId: string, accessToken: string) => {
-  const validToken = META_CONFIG.systemUserToken || accessToken;
-  const url = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${wabaId}/phone_numbers?access_token=${validToken}`;
+  const url = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${wabaId}/phone_numbers?access_token=${accessToken}`;
   const response = await fetch(url);
   if (!response.ok) {
     const errData = await response.json().catch(() => ({}));
@@ -308,12 +306,11 @@ export const fetchWabaDetails = async (accessToken: string) => {
 
   // 3. Register the Phone Number with Meta (Required to start sending messages)
   try {
-    const validToken = META_CONFIG.systemUserToken || accessToken;
     const registerUrl = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${phoneNumberId}/register`;
     const registerRes = await fetch(registerUrl, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${validToken}`,
+        'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
