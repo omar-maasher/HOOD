@@ -21,6 +21,9 @@ export const GET = async (request: Request) => {
 export const POST = async (request: Request) => {
   const body = await request.json();
 
+  // Print raw webhook to Vercel logs to verify Meta is sending data
+  logger.info({ webhookBody: body }, 'Incoming Meta Webhook');
+
   // 1. تسجيل الطلب الخام فوراً للـ Debug
   const rawId = `RAW_${Date.now()}`;
   await db.insert(webhookEventSchema).values({ mid: rawId }).catch(() => null);
