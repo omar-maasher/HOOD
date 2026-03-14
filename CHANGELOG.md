@@ -1,3 +1,10 @@
+## [1.15.7](https://github.com/omar-maasher/HOOD/compare/v1.15.6...v1.15.7) (2026-03-14)
+
+
+### Bug Fixes
+
+* resolve messenger scopes and prevent whatsapp embed crash ([62302f5](https://github.com/omar-maasher/HOOD/commit/62302f5cf6384e75be6e5b244d841a3813e11b7f))
+
 ## [1.15.6](https://github.com/omar-maasher/HOOD/compare/v1.15.5...v1.15.6) (2026-03-10)
 
 
