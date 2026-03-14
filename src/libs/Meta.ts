@@ -182,53 +182,58 @@ export const sendWhatsAppMessage = async (
  */
 export const getWabaAccounts = async (accessToken: string) => {
   const results: any[] = [];
+  const debugData: any = {};
 
   try {
     // 1. Try direct edge first
     const directUrl = `https://graph.facebook.com/${META_CONFIG.graphVersion}/me/whatsapp_business_accounts?access_token=${accessToken}`;
     const directRes = await fetch(directUrl);
-    if (directRes.ok) {
-      const data = await directRes.json();
-      if (data.data) {
-        results.push(...data.data);
-      }
+    const directResJson = await directRes.json();
+    debugData.direct = directResJson;
+
+    if (directRes.ok && directResJson.data) {
+      results.push(...directResJson.data);
     }
   } catch (e) {
     console.error('Direct WABA fetch failed, trying businesses...', e);
+    debugData.directError = String(e);
   }
 
   // 2. Fallback: Search through Business Managers (Very common for Embedded Signup)
   try {
     const bizUrl = `https://graph.facebook.com/${META_CONFIG.graphVersion}/me/businesses?access_token=${accessToken}`;
     const bizRes = await fetch(bizUrl);
-    if (bizRes.ok) {
-      const bizData = await bizRes.json();
+    const bizResJson = await bizRes.json();
+    debugData.biz = bizResJson;
+
+    if (bizRes.ok && bizResJson.data) {
       // eslint-disable-next-line no-console
-      console.log(`Found ${bizData.data?.length || 0} businesses for this user.`);
-      for (const business of bizData.data || []) {
+      console.log(`Found ${bizResJson.data.length} businesses for this user.`);
+      for (const business of bizResJson.data) {
         // eslint-disable-next-line no-console
         console.log(`Checking business: ${business.name} (${business.id})`);
         const wabaUrl = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${business.id}/whatsapp_business_accounts?access_token=${accessToken}`;
         const wabaRes = await fetch(wabaUrl);
-        if (wabaRes.ok) {
-          const wabaData = await wabaRes.json();
-          if (wabaData.data) {
-            // eslint-disable-next-line no-console
-            console.log(`Found ${wabaData.data.length} WABAs in business ${business.id}`);
-            results.push(...wabaData.data);
-          }
+        const wabaResJson = await wabaRes.json();
+        debugData[`waba_biz_${business.id}`] = wabaResJson;
+
+        if (wabaRes.ok && wabaResJson.data) {
+          // eslint-disable-next-line no-console
+          console.log(`Found ${wabaResJson.data.length} WABAs in business ${business.id}`);
+          results.push(...wabaResJson.data);
         }
       }
     }
   } catch (e) {
     console.error('Business-based WABA fetch failed', e);
+    debugData.bizError = String(e);
   }
 
   // Remove duplicates by ID
   const uniqueResults = Array.from(new Map(results.map(item => [item.id, item])).values());
 
   if (uniqueResults.length === 0) {
-    throw new Error('No WhatsApp Business Accounts found. Please ensure you have completed the Meta onboarding and granted permissions.');
+    throw new Error(`WABA Error. Debug info: ${JSON.stringify(debugData)}`);
   }
 
   return { data: uniqueResults };
