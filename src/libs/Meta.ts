@@ -229,8 +229,36 @@ export const getWabaAccounts = async (accessToken: string) => {
     debugData.bizError = String(e);
   }
 
+  // 3. Fallback 3: Debug the Token itself to find any associated WABA or Business IDs
+  try {
+    const debugUrl = `https://graph.facebook.com/${META_CONFIG.graphVersion}/debug_token?input_token=${accessToken}&access_token=${META_CONFIG.appId}|${META_CONFIG.appSecret}`;
+    const debugRes = await fetch(debugUrl);
+    const debugResJson = await debugRes.json();
+    debugData.tokenDebug = debugResJson;
+
+    // Some Embedded Signup tokens inherently grant access to granular IDs
+    if (debugRes.ok && debugResJson.data && debugResJson.data.granular_scopes) {
+      const wabaScope = debugResJson.data.granular_scopes.find((s: any) => s.scope === 'whatsapp_business_management');
+      if (wabaScope && wabaScope.target_ids) {
+        for (const targetId of wabaScope.target_ids) {
+          // Verify if it's a valid WABA by fetching it
+          const checkWabaUrl = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${targetId}?access_token=${accessToken}`;
+          const checkWabaRes = await fetch(checkWabaUrl);
+          const checkWabaResJson = await checkWabaRes.json();
+          debugData[`waba_verify_${targetId}`] = checkWabaResJson;
+          if (checkWabaRes.ok && checkWabaResJson.id) {
+            results.push(checkWabaResJson);
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.error('Token debug failed', e);
+    debugData.tokenDebugError = String(e);
+  }
+
   // Remove duplicates by ID
-  const uniqueResults = Array.from(new Map(results.map(item => [item.id, item])).values());
+  const uniqueResults = Array.from(new Map(results.map(item => [item?.id || item, item])).values());
 
   if (uniqueResults.length === 0) {
     throw new Error(`WABA Error. Debug info: ${JSON.stringify(debugData)}`);
