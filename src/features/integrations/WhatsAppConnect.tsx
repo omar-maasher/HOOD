@@ -78,13 +78,16 @@ export const WhatsAppConnect: React.FC<WhatsAppConnectProps> = ({ appId, isAr })
         router.refresh();
       } else {
         const errorData = await res.json();
+
+        console.error('META API FULL RESPONSE FROM SERVER:', errorData);
+
         const errorMsg = errorData.error || 'Failed to register WABA';
         throw new Error(errorMsg);
       }
     } catch (error: any) {
-      console.error('Registration error:', error);
+      console.error('Registration error details:', error);
       // eslint-disable-next-line no-alert
-      alert(`${isAr ? 'خطأ في الربط: ' : 'Connection Error: '} ${error.message || error}`);
+      alert(`${isAr ? 'خطأ في الربط (قم بمراجعة الكونسول للتفاصيل): ' : 'Connection Error (Check console for details): '} ${error.message || error}`);
     } finally {
       setLoading(false);
     }

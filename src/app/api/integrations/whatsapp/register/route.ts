@@ -70,8 +70,11 @@ export const POST = async (request: Request) => {
     }
 
     return NextResponse.json({ success: true, details: wabaDetails });
-  } catch (error) {
-    console.error('WhatsApp Registration Error:', error);
-    return NextResponse.json({ error: String(error) }, { status: 500 });
+  } catch (error: any) {
+    console.error('WhatsApp Registration Error \n==============\n', error, '\n==============');
+    return NextResponse.json({
+      error: error?.message || String(error),
+      fullError: error,
+    }, { status: 500 });
   }
 };
