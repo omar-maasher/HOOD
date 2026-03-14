@@ -2,6 +2,7 @@ export const META_CONFIG = {
   appId: process.env.META_APP_ID,
   appSecret: process.env.META_APP_SECRET,
   redirectUri: process.env.NEXT_PUBLIC_META_REDIRECT_URI,
+  systemUserToken: process.env.META_SYSTEM_USER_TOKEN,
   graphVersion: 'v21.0',
 };
 
@@ -241,8 +242,9 @@ export const getWabaAccounts = async (accessToken: string) => {
       const wabaScope = debugResJson.data.granular_scopes.find((s: any) => s.scope === 'whatsapp_business_management');
       if (wabaScope && wabaScope.target_ids) {
         for (const targetId of wabaScope.target_ids) {
-          // Verify if it's a valid WABA by fetching it
-          const checkWabaUrl = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${targetId}?access_token=${accessToken}`;
+          // Verify if it's a valid WABA by fetching it using the System Token (or fallback to client token)
+          const validToken = META_CONFIG.systemUserToken || accessToken;
+          const checkWabaUrl = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${targetId}?access_token=${validToken}`;
           const checkWabaRes = await fetch(checkWabaUrl);
           const checkWabaResJson = await checkWabaRes.json();
           debugData[`waba_verify_${targetId}`] = checkWabaResJson;
@@ -271,7 +273,8 @@ export const getWabaAccounts = async (accessToken: string) => {
  * Fetch Phone Numbers for a specific WABA ID.
  */
 export const getWabaPhoneNumbers = async (wabaId: string, accessToken: string) => {
-  const url = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${wabaId}/phone_numbers?access_token=${accessToken}`;
+  const validToken = META_CONFIG.systemUserToken || accessToken;
+  const url = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${wabaId}/phone_numbers?access_token=${validToken}`;
   const response = await fetch(url);
   if (!response.ok) {
     const errData = await response.json().catch(() => ({}));
@@ -302,6 +305,30 @@ export const fetchWabaDetails = async (accessToken: string) => {
 
   const phoneNumberId = phoneData.data[0].id;
   const displayPhoneNumber = phoneData.data[0].display_phone_number;
+
+  // 3. Register the Phone Number with Meta (Required to start sending messages)
+  try {
+    const validToken = META_CONFIG.systemUserToken || accessToken;
+    const registerUrl = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${phoneNumberId}/register`;
+    const registerRes = await fetch(registerUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${validToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        pin: '123456', // Meta requires a 6-digit PIN for initial number registration
+      }),
+    });
+
+    if (!registerRes.ok) {
+      const errorData = await registerRes.json().catch(() => ({}));
+      console.warn('Phone number registration warn/error:', errorData); // Don't throw, it might be already registered
+    }
+  } catch (err) {
+    console.error('Failed to execute phone number registration API:', err);
+  }
 
   return {
     wabaId,
