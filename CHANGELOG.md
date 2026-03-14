@@ -1,3 +1,10 @@
+# [1.16.0](https://github.com/omar-maasher/HOOD/compare/v1.15.9...v1.16.0) (2026-03-14)
+
+
+### Features
+
+* print detailed meta API responses to browser console for debugging ([63ce13c](https://github.com/omar-maasher/HOOD/commit/63ce13c67e4e32d23713ebe740fa838402304a25))
+
 ## [1.15.9](https://github.com/omar-maasher/HOOD/compare/v1.15.8...v1.15.9) (2026-03-14)
 
 
