@@ -1,3 +1,10 @@
+## [1.15.8](https://github.com/omar-maasher/HOOD/compare/v1.15.7...v1.15.8) (2026-03-14)
+
+
+### Bug Fixes
+
+* re-introduce WhatsApp business manager discovery and fix embedded flow args ([92cba37](https://github.com/omar-maasher/HOOD/commit/92cba37a0b2738b0a4a3f92d1b63cd4a59f05195))
+
 ## [1.15.7](https://github.com/omar-maasher/HOOD/compare/v1.15.6...v1.15.7) (2026-03-14)
 
 
