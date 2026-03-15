@@ -271,9 +271,15 @@ export const POST = async (request: Request) => {
       // 2. Instagram Comments / Mentions
       if (field === 'comments' || field === 'mentions') {
         const commentId = value?.id || `CMT_${Date.now()}`;
-        const senderId = value?.from?.id;
+        const senderId = value?.from?.id as string;
         const senderName = value?.from?.username || value?.from?.name;
         const text = value?.text || value?.message || '';
+
+        // منع التكرار (الصدى): إذا كان الشخص الذي علق هو نفسه صاحب الحساب/البوت
+        if (senderId === integration.providerId) {
+          logger.info({ senderId, providerId: integration.providerId }, '[WEBHOOK] Skipping self-comment (echo)');
+          continue;
+        }
 
         processingPromises.push((async () => {
           try {
