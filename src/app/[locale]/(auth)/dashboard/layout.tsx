@@ -1,5 +1,5 @@
 import { Calendar, Crown, Home, LayoutTemplate, MessageSquare, Puzzle, Settings, ShoppingBag, Sparkles, Store, Users } from 'lucide-react';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 
 import {
@@ -23,8 +23,6 @@ export async function generateMetadata(props: { params: { locale: string } }) {
 
 export default function DashboardLayout(props: { children: React.ReactNode }) {
   const t = useTranslations('DashboardLayout');
-  const locale = useLocale();
-  const isAr = locale === 'ar';
 
   const menu = [
     {
@@ -34,37 +32,37 @@ export default function DashboardLayout(props: { children: React.ReactNode }) {
     },
     {
       href: '/dashboard/products',
-      label: isAr ? 'المنتجات' : 'Products',
+      label: t('products'),
       icon: <ShoppingBag className="size-4" />,
     },
     {
       href: '/dashboard/leads',
-      label: isAr ? 'العملاء' : 'Leads',
+      label: t('leads'),
       icon: <MessageSquare className="size-4" />,
     },
     {
       href: '/dashboard/bookings',
-      label: isAr ? 'الحجوزات' : 'Bookings',
+      label: t('bookings'),
       icon: <Calendar className="size-4" />,
     },
     {
       href: '#',
-      label: isAr ? 'الإعدادات' : 'Settings',
+      label: t('settings'),
       icon: <Settings className="size-4" />,
       children: [
         {
           href: '/dashboard/subscription',
-          label: isAr ? 'الاشتراك' : 'Subscription',
+          label: t('subscription'),
           icon: <Crown className="size-4" />,
         },
         {
           href: '/dashboard/business',
-          label: isAr ? 'بيانات النشاط' : 'Business Settings',
+          label: t('business'),
           icon: <Store className="size-4" />,
         },
         {
           href: '/dashboard/ai-settings',
-          label: isAr ? 'الذكاء الاصطناعي' : 'AI Settings',
+          label: t('ai_settings'),
           icon: <Sparkles className="size-4" />,
         },
         {
@@ -74,7 +72,7 @@ export default function DashboardLayout(props: { children: React.ReactNode }) {
         },
         {
           href: '/dashboard/whatsapp-templates',
-          label: isAr ? 'قوالب الواتساب' : 'WA Templates',
+          label: t('whatsapp_templates'),
           icon: <LayoutTemplate className="size-4" />,
         },
         {
@@ -84,7 +82,7 @@ export default function DashboardLayout(props: { children: React.ReactNode }) {
         },
         {
           href: '/dashboard/organization-profile',
-          label: isAr ? 'إعدادات المنظمة' : 'Org Settings',
+          label: t('org_settings'),
           icon: <Settings className="size-4" />,
         },
       ],
