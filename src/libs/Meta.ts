@@ -50,7 +50,7 @@ const handleMetaError = (error: any) => {
     case 131047:
       throw new Error('PAYMENT_REQUIRED: Missing valid payment method to start outbound conversation.');
     default:
-      throw new Error(`META_ERROR: ${metaError.message}${metaError.error_data ? ` - ${JSON.stringify(metaError.error_data)}` : ''}`);
+      throw new Error(`META_ERROR: ${metaError.message}`);
   }
 };
 
@@ -442,7 +442,14 @@ export const createWaTemplate = async (input: CreateWaTemplateInput) => {
     components.push({ type: 'HEADER', format: 'TEXT', text: headerText });
   }
 
-  components.push({ type: 'BODY', text: bodyText });
+  const bodyComponent: any = { type: 'BODY', text: bodyText };
+  // Detect variables like {{1}}, {{2}} and add examples (required by Meta)
+  const matches = bodyText.match(/\{\{\d+\}\}/g);
+  if (matches && matches.length > 0) {
+    const examples = matches.map(() => 'نموذج'); // Sample text for each variable
+    bodyComponent.example = { body_text: [examples] };
+  }
+  components.push(bodyComponent);
 
   if (footerText) {
     components.push({ type: 'FOOTER', text: footerText });
