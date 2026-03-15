@@ -9,6 +9,7 @@ import {
   Send,
   X,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import React, { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,7 @@ export default function SendMessageModal({
   lead: any;
   onClose: () => void;
 }) {
+  const t = useTranslations('SendMessage');
   const [loading, setLoading] = useState(false);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -78,10 +80,10 @@ export default function SendMessageModal({
         templateName: messageType === 'template' ? selectedTemplate?.name : undefined,
         language: messageType === 'template' ? selectedTemplate?.language : undefined,
       });
-      setSuccess('تم إرسال الرسالة بنجاح!');
+      setSuccess(t('success'));
       setTimeout(onClose, 2000);
     } catch (err: any) {
-      setError(err.message || 'فشل في إرسال الرسالة');
+      setError(err.message || t('error_default'));
     } finally {
       setLoading(false);
     }
@@ -98,10 +100,11 @@ export default function SendMessageModal({
             </div>
             <div>
               <h2 className="text-lg font-black tracking-tight">
-                إرسال رسالة إلى
+                {t('title')}
+                {' '}
                 {lead.name}
               </h2>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">التواصل المباشر</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{t('subtitle')}</p>
             </div>
           </div>
           <Button variant="ghost" size="icon" onClick={onClose} className="rounded-xl hover:bg-red-50 hover:text-red-500">
@@ -112,7 +115,7 @@ export default function SendMessageModal({
         <div className="flex-1 space-y-6 overflow-y-auto p-6 text-start">
           {/* Platform Toggle */}
           <div className="space-y-2">
-            <Label className="px-1 text-sm font-black">المنصة</Label>
+            <Label className="px-1 text-sm font-black">{t('platform_label')}</Label>
             <div className="grid grid-cols-3 gap-2">
               {(['whatsapp', 'instagram', 'messenger'] as const).map(p => (
                 <button
@@ -124,7 +127,9 @@ export default function SendMessageModal({
                       : 'border-muted bg-muted/10 opacity-50 grayscale hover:opacity-100'
                   }`}
                 >
-                  <span className="text-xs font-black capitalize">{p === 'whatsapp' ? 'واتساب' : p}</span>
+                  <span className="text-xs font-black capitalize">
+                    {p === 'whatsapp' ? t('whatsapp') : p}
+                  </span>
                 </button>
               ))}
             </div>
@@ -133,7 +138,7 @@ export default function SendMessageModal({
           {/* Mode Select (WA only) */}
           {platform === 'whatsapp' && (
             <div className="space-y-2">
-              <Label className="px-1 text-sm font-black">نوع الرسالة</Label>
+              <Label className="px-1 text-sm font-black">{t('type_label')}</Label>
               <div className="flex gap-2 rounded-2xl bg-muted/20 p-1">
                 <button
                   onClick={() => setMessageType('text')}
@@ -141,7 +146,7 @@ export default function SendMessageModal({
                     messageType === 'text' ? 'bg-card shadow-sm' : 'text-muted-foreground'
                   }`}
                 >
-                  نص عادي
+                  {t('type_text')}
                 </button>
                 <button
                   onClick={() => setMessageType('template')}
@@ -149,7 +154,7 @@ export default function SendMessageModal({
                     messageType === 'template' ? 'bg-card shadow-sm' : 'text-muted-foreground'
                   }`}
                 >
-                  قالب (Template)
+                  {t('type_template')}
                 </button>
               </div>
             </div>
@@ -159,35 +164,35 @@ export default function SendMessageModal({
           {messageType === 'text'
             ? (
                 <div className="space-y-2">
-                  <Label className="px-1 text-sm font-black">محتوى الرسالة</Label>
+                  <Label className="px-1 text-sm font-black">{t('message_label')}</Label>
                   <textarea
                     rows={4}
-                    placeholder="اكتب رسالتك هنا..."
+                    placeholder={t('message_placeholder')}
                     className="w-full resize-none rounded-2xl border-none bg-muted/30 p-4 text-sm font-medium shadow-inner outline-none focus:ring-2 focus:ring-primary"
                     value={messageText}
                     onChange={e => setMessageText(e.target.value)}
                   />
                   <p className="px-1 text-[10px] italic text-muted-foreground">
-                    * بالنسبة لواتساب، يرسل النص العادي فقط للمحادثات النشطة خلال آخر 24 ساعة.
+                    {t('text_note')}
                   </p>
                 </div>
               )
             : (
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label className="px-1 text-sm font-black">اختر القالب</Label>
+                    <Label className="px-1 text-sm font-black">{t('template_label')}</Label>
                     {loadingTemplates
                       ? (
                           <div className="flex items-center gap-2 p-4 text-xs italic text-muted-foreground">
                             <Loader2 className="size-4 animate-spin" />
                             {' '}
-                            جاري تحميل القوالب...
+                            {t('loading_templates')}
                           </div>
                         )
                       : templates.length === 0
                         ? (
                             <div className="rounded-2xl border border-dashed p-6 text-center text-xs font-medium text-muted-foreground">
-                              لا يوجد قوالب معتمدة حالياً.
+                              {t('no_templates')}
                             </div>
                           )
                         : (
@@ -221,7 +226,7 @@ export default function SendMessageModal({
                         <span className="flex items-center gap-1.5 text-[10px] font-black uppercase text-slate-400">
                           <LayoutTemplate className="size-3" />
                           {' '}
-                          معاينة القالب
+                          {t('preview_label')}
                         </span>
                         <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[8px] font-bold uppercase tracking-tighter text-emerald-600">
                           Approved
@@ -262,14 +267,14 @@ export default function SendMessageModal({
                   <>
                     <Loader2 className="mr-2 size-5 animate-spin" />
                     {' '}
-                    جاري الإرسال...
+                    {t('sending')}
                   </>
                 )
               : (
                   <>
                     <Send className="ml-2 size-5" />
                     {' '}
-                    إرسال الرسالة
+                    {t('send')}
                   </>
                 )}
           </Button>
