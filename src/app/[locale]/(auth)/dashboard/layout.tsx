@@ -1,4 +1,4 @@
-import { Calendar, Crown, Home, MessageSquare, Puzzle, Settings, ShoppingBag, Sparkles, Store, Users } from 'lucide-react';
+import { Calendar, Crown, Home, LayoutTemplate, MessageSquare, Puzzle, Settings, ShoppingBag, Sparkles, Store, Users } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 
@@ -71,6 +71,11 @@ export default function DashboardLayout(props: { children: React.ReactNode }) {
           href: '/dashboard/integrations',
           label: t('integrations'),
           icon: <Puzzle className="size-4" />,
+        },
+        {
+          href: '/dashboard/whatsapp-templates',
+          label: isAr ? 'قوالب الواتساب' : 'WA Templates',
+          icon: <LayoutTemplate className="size-4" />,
         },
         {
           href: '/dashboard/organization-profile/organization-members',

@@ -186,3 +186,20 @@ export const webhookEventSchema = pgTable('webhook_event', {
   mid: text('mid').notNull().unique(),
   createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
 });
+
+export const waTemplateSchema = pgTable('wa_template', {
+  id: serial('id').primaryKey(),
+  organizationId: text('organization_id').notNull().references(() => organizationSchema.id),
+  name: text('name').notNull(), // snake_case, unique per WABA
+  language: text('language').default('ar').notNull(), // e.g. ar, en_US
+  category: text('category').notNull(), // MARKETING | UTILITY
+  headerText: text('header_text'), // optional text header
+  bodyText: text('body_text').notNull(),
+  footerText: text('footer_text'),
+  buttons: jsonb('buttons').$type<Array<{ type: 'URL' | 'PHONE_NUMBER' | 'QUICK_REPLY'; text: string; url?: string; phone_number?: string }>>(),
+  metaStatus: text('meta_status').default('PENDING'), // PENDING | APPROVED | REJECTED | PAUSED
+  metaTemplateId: text('meta_template_id'), // returned by Meta after creation
+  rejectedReason: text('rejected_reason'),
+  updatedAt: timestamp('updated_at', { mode: 'date' }).defaultNow().$onUpdate(() => new Date()).notNull(),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+});

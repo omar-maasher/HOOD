@@ -413,3 +413,95 @@ export const fetchWabaDetails = async ({
     displayPhoneNumber,
   };
 };
+
+// ─── WhatsApp Template Management ────────────────────────────────────────────
+
+export type WaTemplateButton =
+  | { type: 'URL'; text: string; url: string }
+  | { type: 'PHONE_NUMBER'; text: string; phone_number: string }
+  | { type: 'QUICK_REPLY'; text: string };
+
+export type CreateWaTemplateInput = {
+  wabaId: string;
+  accessToken: string;
+  name: string; // snake_case
+  language: string; // 'ar' | 'en_US'
+  category: 'MARKETING' | 'UTILITY';
+  headerText?: string;
+  bodyText: string;
+  footerText?: string;
+  buttons?: WaTemplateButton[];
+};
+
+export const createWaTemplate = async (input: CreateWaTemplateInput) => {
+  const { wabaId, accessToken, name, language, category, headerText, bodyText, footerText, buttons } = input;
+
+  const components: any[] = [];
+
+  if (headerText) {
+    components.push({ type: 'HEADER', format: 'TEXT', text: headerText });
+  }
+
+  components.push({ type: 'BODY', text: bodyText });
+
+  if (footerText) {
+    components.push({ type: 'FOOTER', text: footerText });
+  }
+
+  if (buttons && buttons.length > 0) {
+    components.push({
+      type: 'BUTTONS',
+      buttons: buttons.map((b) => {
+        if (b.type === 'URL') {
+          return { type: 'URL', text: b.text, url: b.url };
+        }
+        if (b.type === 'PHONE_NUMBER') {
+          return { type: 'PHONE_NUMBER', text: b.text, phone_number: b.phone_number };
+        }
+        return { type: 'QUICK_REPLY', text: b.text };
+      }),
+    });
+  }
+
+  const url = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${wabaId}/message_templates`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ name, language, category, components }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    handleMetaError(data);
+  }
+  return data; // { id, status }
+};
+
+export const listWaTemplates = async (wabaId: string, accessToken: string) => {
+  const url = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${wabaId}/message_templates?fields=id,name,status,category,language,components,rejected_reason&limit=50`;
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    handleMetaError(data);
+  }
+  return data; // { data: [...templates] }
+};
+
+export const deleteWaTemplate = async (wabaId: string, templateName: string, accessToken: string) => {
+  const params = new URLSearchParams({ name: templateName });
+  const url = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${wabaId}/message_templates?${params.toString()}`;
+  const res = await fetch(url, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    handleMetaError(data);
+  }
+  return data;
+};
