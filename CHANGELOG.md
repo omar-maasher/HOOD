@@ -5,6 +5,31 @@
 
 * add detailed webhook diagnostic logging to trace N8N forwarding failure ([0a7bb14](https://github.com/omar-maasher/HOOD/commit/0a7bb148c1e833fb4bc4e68e77742300852cf911))
 * change generic WABA error message ([eddebfe](https://github.com/omar-maasher/HOOD/commit/eddebfe01852d68c72e2e49d9a2db7c4eb8066f6))
+* hide WhatsApp connect button after linking, match button style to other platforms ([a8aa6e0](https://github.com/omar-maasher/HOOD/commit/a8aa6e0af8affc2454a26c2e45b2a0295314e112))
+* show webhook fix button even when WhatsApp is already connected ([ac63f79](https://github.com/omar-maasher/HOOD/commit/ac63f79d6bd4afb407f3aff0cc84c3eeae5abd57))
+* trigger vercel deployment ([0643125](https://github.com/omar-maasher/HOOD/commit/0643125f73e17c712e43bea60b0fd03c89a0e99d))
+* use App Access Token for WABA subscribed_apps call with fallback chain ([bdff101](https://github.com/omar-maasher/HOOD/commit/bdff10148092a242eb32b5905ccc4ff640c64041))
+* use granular scoped client access token instead of system token override for WABA ID fetching ([875c14c](https://github.com/omar-maasher/HOOD/commit/875c14cbcf47dc34937b8c351032f0c66d3b2ec5))
+
+
+### Features
+
+* add fix webhook subscription button to WhatsAppConnect for existing integrations ([2c5f35d](https://github.com/omar-maasher/HOOD/commit/2c5f35db1316df02bf6841474ce2903639c25c58))
+* add resubscribe endpoint to fix WABA webhook subscriptions for existing integrations ([2960070](https://github.com/omar-maasher/HOOD/commit/29600705878cc00757e665b7cff7ebf66b49bbe4))
+* force WABA subscribed_apps registration during Embedded Signup to solve missing webhooks ([afc4a80](https://github.com/omar-maasher/HOOD/commit/afc4a80e6bab8d871c430db2861765165a1ecbc0))
+* implement forced phone number registration request directly into the Meta onboarding pipeline ([598fe65](https://github.com/omar-maasher/HOOD/commit/598fe65f820f60fb6634e498c69e36aea8952240))
+* log raw webhooks from Meta to logger for debugging N8N forwarding ([2221cf4](https://github.com/omar-maasher/HOOD/commit/2221cf46155b34631ce676859f3eb3497ad54d41))
+* print detailed meta API responses to browser console for debugging ([63ce13c](https://github.com/omar-maasher/HOOD/commit/63ce13c67e4e32d23713ebe740fa838402304a25))
+* smart handling of Meta API error codes and exact WABA targeting ([e80c9a0](https://github.com/omar-maasher/HOOD/commit/e80c9a0eced1a120be511b2c609654eb230572d4))
+* use debug_token as fallback to extract WABA target IDs from granular scopes ([76cf0d9](https://github.com/omar-maasher/HOOD/commit/76cf0d90e268ba4fb7bbd9070afb39a855774106))
+
+# [1.16.0](https://github.com/omar-maasher/HOOD/compare/v1.15.9...v1.16.0) (2026-03-15)
+
+
+### Bug Fixes
+
+* add detailed webhook diagnostic logging to trace N8N forwarding failure ([0a7bb14](https://github.com/omar-maasher/HOOD/commit/0a7bb148c1e833fb4bc4e68e77742300852cf911))
+* change generic WABA error message ([eddebfe](https://github.com/omar-maasher/HOOD/commit/eddebfe01852d68c72e2e49d9a2db7c4eb8066f6))
 * show webhook fix button even when WhatsApp is already connected ([ac63f79](https://github.com/omar-maasher/HOOD/commit/ac63f79d6bd4afb407f3aff0cc84c3eeae5abd57))
 * trigger vercel deployment ([0643125](https://github.com/omar-maasher/HOOD/commit/0643125f73e17c712e43bea60b0fd03c89a0e99d))
 * use App Access Token for WABA subscribed_apps call with fallback chain ([bdff101](https://github.com/omar-maasher/HOOD/commit/bdff10148092a242eb32b5905ccc4ff640c64041))
