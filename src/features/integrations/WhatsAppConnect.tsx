@@ -93,6 +93,26 @@ export const WhatsAppConnect: React.FC<WhatsAppConnectProps> = ({ appId, isAr })
     }
   };
 
+  const handleResubscribe = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/integrations/whatsapp/resubscribe', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        // eslint-disable-next-line no-alert
+        alert(isAr ? `تم تفعيل استقبال الرسائل بنجاح! WABA: ${data.wabaId}` : `Webhook subscription fixed! WABA: ${data.wabaId}`);
+      } else {
+        // eslint-disable-next-line no-alert
+        alert(`${isAr ? 'فشل الإصلاح: ' : 'Fix failed: '} ${JSON.stringify(data.details || data.error)}`);
+      }
+    } catch (e: any) {
+      // eslint-disable-next-line no-alert
+      alert(`Error: ${e.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const launchWhatsAppSignup = () => {
     if (!sdkReady) {
       return;
@@ -124,14 +144,26 @@ export const WhatsAppConnect: React.FC<WhatsAppConnectProps> = ({ appId, isAr })
   };
 
   return (
-    <Button
-      type="button"
-      onClick={launchWhatsAppSignup}
-      disabled={loading || !sdkReady}
-      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 py-4 font-bold text-white shadow-lg shadow-emerald-500/20 transition-all hover:bg-emerald-700 active:scale-[0.98]"
-    >
-      {loading ? <Loader2 className="size-4 animate-spin" /> : <LinkIcon className="size-4" />}
-      {isAr ? 'ربط واتساب (Embedded)' : 'Connect WhatsApp (Embedded)'}
-    </Button>
+    <div className="flex w-full flex-col gap-2">
+      <Button
+        type="button"
+        onClick={launchWhatsAppSignup}
+        disabled={loading || !sdkReady}
+        className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 py-4 font-bold text-white shadow-lg shadow-emerald-500/20 transition-all hover:bg-emerald-700 active:scale-[0.98]"
+      >
+        {loading ? <Loader2 className="size-4 animate-spin" /> : <LinkIcon className="size-4" />}
+        {isAr ? 'ربط واتساب (Embedded)' : 'Connect WhatsApp (Embedded)'}
+      </Button>
+      <Button
+        type="button"
+        onClick={handleResubscribe}
+        disabled={loading}
+        variant="outline"
+        className="flex w-full items-center justify-center gap-2 rounded-2xl border-emerald-300 px-6 py-3 text-sm text-emerald-700 transition-all hover:bg-emerald-50"
+      >
+        {loading ? <Loader2 className="size-4 animate-spin" /> : null}
+        {isAr ? '🔧 إصلاح استقبال الرسائل (للأرقام المربوطة)' : '🔧 Fix Webhook Subscription (existing numbers)'}
+      </Button>
+    </div>
   );
 };
