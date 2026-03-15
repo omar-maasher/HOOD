@@ -95,9 +95,20 @@ export const POST = async (request: Request) => {
   await db.insert(webhookEventSchema).values({ mid: rawId }).catch(() => null);
 
   const entries = body.entry || [];
-  const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL;
 
-  logger.info({ entryCount: entries.length, hasN8nUrl: !!n8nWebhookUrl }, '[WEBHOOK DEBUG] Received body');
+  // 3 Distinct Webhooks for n8n
+  const n8nUrls = {
+    whatsapp: process.env.N8N_WHATSAPP_WEBHOOK_URL || process.env.N8N_WEBHOOK_URL,
+    instagram: process.env.N8N_INSTAGRAM_WEBHOOK_URL || process.env.N8N_WEBHOOK_URL,
+    messenger: process.env.N8N_MESSENGER_WEBHOOK_URL || process.env.N8N_WEBHOOK_URL,
+  };
+
+  logger.info({
+    entryCount: entries.length,
+    hasWhatsAppUrl: !!n8nUrls.whatsapp,
+    hasInstagramUrl: !!n8nUrls.instagram,
+    hasMessengerUrl: !!n8nUrls.messenger,
+  }, '[WEBHOOK DEBUG] Received body');
 
   const processingPromises: Promise<any>[] = [];
 
@@ -190,11 +201,12 @@ export const POST = async (request: Request) => {
           // Auto-create/update lead with real name and username
           await upsertLead(orgId, senderId, platform, finalName, finalUsername);
 
-          if (!n8nWebhookUrl) {
+          const targetUrl = n8nUrls[platform];
+          if (!targetUrl) {
             return null;
           }
 
-          return await fetch(n8nWebhookUrl, {
+          return await fetch(targetUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -241,11 +253,12 @@ export const POST = async (request: Request) => {
 
             logger.info({ mid, senderId }, '[WEBHOOK DEBUG] Forwarding WhatsApp message to n8n');
 
-            if (!n8nWebhookUrl) {
+            const targetUrl = n8nUrls.whatsapp;
+            if (!targetUrl) {
               return null;
             }
 
-            const res = await fetch(n8nWebhookUrl, {
+            const res = await fetch(targetUrl, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ rawBody: body, platform: 'whatsapp', senderId, context }),
