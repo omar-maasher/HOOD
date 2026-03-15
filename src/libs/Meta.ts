@@ -553,3 +553,46 @@ export const sendWaTemplate = async (
 
   return response.json();
 };
+
+/**
+ * Detect whether a messaging event is from Instagram or Messenger
+ */
+export function detectMessagingPlatform(mid: string): 'instagram' | 'messenger' {
+  if (mid?.startsWith('m_')) {
+    return 'messenger';
+  }
+  return 'instagram';
+}
+
+/**
+ * Fetch the sender's profile from Meta Graph API.
+ */
+export async function getSenderProfile(
+  senderId: string,
+  platform: 'messenger' | 'instagram',
+  accessToken: string,
+): Promise<{ name: string; username: string } | null> {
+  try {
+    const fields = platform === 'instagram' ? 'name,username' : 'name,first_name,last_name';
+    const url = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${senderId}?fields=${fields}&access_token=${accessToken}`;
+
+    const res = await fetch(url);
+    if (!res.ok) {
+      return null;
+    }
+
+    const data = await res.json();
+    if (platform === 'instagram') {
+      return {
+        name: data.name || data.username || senderId,
+        username: data.username || senderId,
+      };
+    }
+
+    const fullName = data.name || `${data.first_name || ''} ${data.last_name || ''}`.trim() || senderId;
+    return { name: fullName, username: senderId };
+  } catch (e) {
+    logger.error({ e, senderId, platform }, 'Failed to fetch sender profile from Meta');
+    return null;
+  }
+}

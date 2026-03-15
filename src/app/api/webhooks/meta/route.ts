@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/DB';
 import { logger } from '@/libs/Logger';
+import { detectMessagingPlatform, getSenderProfile } from '@/libs/Meta';
 import { aiSettingsSchema, integrationSchema, leadSchema, organizationSchema, webhookEventSchema } from '@/models/Schema';
 
 export const GET = async (request: Request) => {
@@ -22,26 +23,61 @@ export const GET = async (request: Request) => {
  * Upsert a lead when we receive a new incoming message.
  * If a lead with the same contactMethod already exists in this org, skip insertion.
  */
-async function upsertLead(orgId: string, contactMethod: string, source: string, name?: string) {
+async function upsertLead(orgId: string, externalId: string, source: string, name?: string, username?: string) {
   try {
     // Ensure org row exists
     await db.insert(organizationSchema).values({ id: orgId }).onConflictDoNothing();
 
-    // Search for existing lead with same contact
+    // Search for existing lead with same external ID (PSID)
     const existing = await db.query.leadSchema.findFirst({
       where: (lead, { and, eq: eqFn }) =>
-        and(eqFn(lead.organizationId, orgId), eqFn(lead.contactMethod, contactMethod)),
+        and(eqFn(lead.organizationId, orgId), eqFn(lead.externalId, externalId)),
     });
 
-    if (!existing) {
+    // Fallback for old leads that only have contactMethod (ID)
+    const legacy = !existing
+      ? await db.query.leadSchema.findFirst({
+        where: (lead, { and, eq: eqFn }) =>
+          and(eqFn(lead.organizationId, orgId), eqFn(lead.contactMethod, externalId)),
+      })
+      : null;
+
+    if (!existing && !legacy) {
       await db.insert(leadSchema).values({
         organizationId: orgId,
-        name: name || contactMethod, // fallback to phone/id if no name
-        contactMethod,
-        source,
+        name: name || username || externalId,
+        contactMethod: username || externalId,
+        username: username || null,
+        externalId,
+        source: source as any,
         status: 'new',
       });
-      logger.info({ orgId, contactMethod, source }, '[WEBHOOK] New lead auto-created');
+      logger.info({ orgId, externalId, source }, '[WEBHOOK] New lead auto-created');
+    } else {
+      const match = existing || legacy;
+      if (!match) {
+        return;
+      }
+
+      const updates: any = {};
+      if (name && (match.name === match.contactMethod || !match.name)) {
+        updates.name = name;
+      }
+      if (username && !match.username) {
+        updates.username = username;
+      }
+      if (externalId && !match.externalId) {
+        updates.externalId = externalId;
+      }
+      if (username && match.contactMethod === externalId) {
+        updates.contactMethod = username;
+      }
+
+      if (Object.keys(updates).length > 0) {
+        await db.update(leadSchema)
+          .set(updates)
+          .where(eq(leadSchema.id, match.id));
+      }
     }
   } catch (e) {
     logger.error(e, '[WEBHOOK] Failed to upsert lead');
@@ -132,19 +168,27 @@ export const POST = async (request: Request) => {
       }
 
       const senderId = event.sender?.id as string;
-      const platform = integration.type === 'instagram' ? 'instagram' : 'messenger';
-
-      // Auto-create lead for this sender
-      processingPromises.push(upsertLead(orgId, senderId, platform));
+      // Detect platform based on MID format
+      const platform = detectMessagingPlatform(mid);
 
       processingPromises.push((async () => {
         try {
-          const exists = await db.select().from(webhookEventSchema).where(eq(webhookEventSchema.mid, mid)).limit(1);
-          if (exists.length > 0) {
+          const exists = await db.query.webhookEventSchema.findFirst({
+            where: eq(webhookEventSchema.mid, mid),
+          });
+          if (exists) {
             return null;
           }
 
           await db.insert(webhookEventSchema).values({ mid });
+
+          // Fetch profile info (Name/Username)
+          const profile = await getSenderProfile(senderId, platform, integration.accessToken || '');
+          const finalName = profile?.name || senderId;
+          const finalUsername = platform === 'instagram' ? (profile?.username || senderId) : senderId;
+
+          // Auto-create/update lead with real name and username
+          await upsertLead(orgId, senderId, platform, finalName, finalUsername);
 
           if (!n8nWebhookUrl) {
             return null;
@@ -153,7 +197,14 @@ export const POST = async (request: Request) => {
           return await fetch(n8nWebhookUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ rawBody: body, platform, senderId, context }),
+            body: JSON.stringify({
+              rawBody: body,
+              platform,
+              senderId,
+              username: finalUsername,
+              name: finalName,
+              context,
+            }),
           });
         } catch (e) {
           logger.error('Messenger/IG forward error', e);

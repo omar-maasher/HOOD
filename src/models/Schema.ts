@@ -128,6 +128,8 @@ export const leadSchema = pgTable('lead', {
     .references(() => organizationSchema.id),
   name: text('name').notNull(),
   contactMethod: text('contact_method').notNull(),
+  username: text('username'), // Social handle (@user)
+  externalId: text('external_id'), // Meta PSID / WBA ID for lookups
   source: text('source').default('whatsapp').notNull(),
   status: text('status').default('new').notNull(),
   notes: text('notes'),
