@@ -277,6 +277,17 @@ export const POST = async (request: Request) => {
 
         processingPromises.push((async () => {
           try {
+            // منع التكرار: نتحقق إذا كان معرف التعليق معالج مسبقاً
+            const exists = await db.query.webhookEventSchema.findFirst({
+              where: eq(webhookEventSchema.mid, commentId),
+            });
+            if (exists) {
+              return null;
+            }
+
+            // تسجيل المعرف لمنع معالجته مرة أخرى
+            await db.insert(webhookEventSchema).values({ mid: commentId });
+
             if (senderId) {
               await upsertLead(orgId, senderId, 'instagram', senderName, senderName);
             }
