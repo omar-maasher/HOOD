@@ -29,8 +29,29 @@ const PLATFORM_SCOPES: Record<MetaPlatform, string[]> = {
     'whatsapp_business_management',
     'whatsapp_business_messaging',
     'business_management',
-    'public_profile',
   ],
+};
+
+const handleMetaError = (error: any) => {
+  const metaError = error?.error;
+
+  if (!metaError) {
+    throw new Error('Unknown Meta API error');
+  }
+
+  // Handle common Meta API specific error codes cleanly
+  switch (metaError.code) {
+    case 190:
+      throw new Error('META_TOKEN_EXPIRED: Please reconnect your Meta account.');
+    case 200:
+      throw new Error('USER_BLOCKED_BOT: The user has blocked this bot or page.');
+    case 131030:
+      throw new Error('PHONE_NOT_REGISTERED: The phone number is not registered or linked properly.');
+    case 131047:
+      throw new Error('PAYMENT_REQUIRED: Missing valid payment method to start outbound conversation.');
+    default:
+      throw new Error(`META_ERROR: ${metaError.message}`);
+  }
 };
 
 export const getMetaAuthUrl = (state: string, platform?: MetaPlatform) => {
@@ -38,9 +59,14 @@ export const getMetaAuthUrl = (state: string, platform?: MetaPlatform) => {
     ? PLATFORM_SCOPES[platform]
     : [...new Set(Object.values(PLATFORM_SCOPES).flat())];
 
-  const scopeString = scopes.join(',');
+  const params = new URLSearchParams({
+    client_id: META_CONFIG.appId || '',
+    redirect_uri: META_CONFIG.redirectUri || '',
+    state,
+    scope: scopes.join(','),
+  });
 
-  return `https://www.facebook.com/${META_CONFIG.graphVersion}/dialog/oauth?client_id=${META_CONFIG.appId}&redirect_uri=${META_CONFIG.redirectUri}&state=${state}&scope=${scopeString}`;
+  return `https://www.facebook.com/${META_CONFIG.graphVersion}/dialog/oauth?${params.toString()}`;
 };
 
 export const exchangeCodeForToken = async (code: string, redirectUri?: string) => {
@@ -48,13 +74,17 @@ export const exchangeCodeForToken = async (code: string, redirectUri?: string) =
   // Otherwise we use the default from config.
   const rUri = redirectUri !== undefined ? redirectUri : META_CONFIG.redirectUri;
 
-  let url = `https://graph.facebook.com/${META_CONFIG.graphVersion}/oauth/access_token?client_id=${META_CONFIG.appId}&client_secret=${META_CONFIG.appSecret}&code=${code}`;
+  const params = new URLSearchParams({
+    client_id: META_CONFIG.appId || '',
+    client_secret: META_CONFIG.appSecret || '',
+    code,
+  });
 
-  if (rUri) {
-    url += `&redirect_uri=${rUri}`;
-  } else if (redirectUri === '') {
-    url += `&redirect_uri=`;
+  if (rUri || redirectUri === '') {
+    params.append('redirect_uri', rUri || '');
   }
+
+  const url = `https://graph.facebook.com/${META_CONFIG.graphVersion}/oauth/access_token?${params.toString()}`;
 
   const response = await fetch(url);
   return response.json();
@@ -105,8 +135,8 @@ export const sendInstagramMessage = async (
 
   if (!response.ok) {
     const errorData = await response.json();
-    console.error('Failed to send Instagram message:', errorData);
-    throw new Error(`Meta API error: ${JSON.stringify(errorData)}`);
+    logger.error({ errorData }, 'Failed to send Instagram message');
+    handleMetaError(errorData);
   }
 
   return response.json();
@@ -137,12 +167,13 @@ export const sendMessengerMessage = async (
 
   if (!response.ok) {
     const errorData = await response.json();
-    console.error('Failed to send Messenger message:', errorData);
-    throw new Error(`Meta API error: ${JSON.stringify(errorData)}`);
+    logger.error({ errorData }, 'Failed to send Messenger message');
+    handleMetaError(errorData);
   }
 
   return response.json();
 };
+
 /**
  * Send a message via the WhatsApp Business Cloud API.
  */
@@ -174,8 +205,8 @@ export const sendWhatsAppMessage = async (
 
   if (!response.ok) {
     const errorData = await response.json();
-    console.error('Failed to send WhatsApp message:', errorData);
-    throw new Error(`Meta API error (WhatsApp): ${JSON.stringify(errorData)}`);
+    logger.error({ errorData }, 'Failed to send WhatsApp message');
+    handleMetaError(errorData);
   }
 
   return response.json();
@@ -287,24 +318,48 @@ export const getWabaPhoneNumbers = async (wabaId: string, accessToken: string) =
  * Register a WABA account metadata in our database.
  * This is usually called after the user completes the Embedded Signup.
  */
-export const fetchWabaDetails = async (accessToken: string) => {
-  // 1. Get WABA ID
-  const wabaData = await getWabaAccounts(accessToken);
-  if (!wabaData.data || wabaData.data.length === 0) {
-    throw new Error('Could not extract any valid WhatsApp Business Account IDs from the provided Meta configuration. Please ensure the Business Account exists and has WhatsApp enabled.');
+export const fetchWabaDetails = async ({
+  accessToken,
+  wabaId: providedWabaId,
+  phoneNumberId: providedPhoneNumberId,
+  pin,
+}: {
+  accessToken: string;
+  wabaId?: string;
+  phoneNumberId?: string;
+  pin: string;
+}) => {
+  let wabaId = providedWabaId;
+  let wabaName = 'WhatsApp Business Account';
+
+  // 1. Get WABA ID if not provided
+  if (!wabaId) {
+    const wabaData = await getWabaAccounts(accessToken);
+    if (!wabaData.data || wabaData.data.length === 0) {
+      throw new Error('Could not extract any valid WhatsApp Business Account IDs from the provided Meta configuration. Please ensure the Business Account exists and has WhatsApp enabled.');
+    }
+    wabaId = wabaData.data[0].id;
+    wabaName = wabaData.data[0].name || wabaName;
+  } else {
+    // Alternatively, we could fetch exactly this wabaId to get its name, but it's optional
   }
 
-  const wabaId = wabaData.data[0].id;
-  const wabaName = wabaData.data[0].name;
-
-  // 2. Get Phone Number ID
-  const phoneData = await getWabaPhoneNumbers(wabaId, accessToken);
+  // 2. Get Phone Number ID if not provided, else verify it exists
+  const phoneData = await getWabaPhoneNumbers(wabaId as string, accessToken);
   if (!phoneData.data || phoneData.data.length === 0) {
     throw new Error('No WhatsApp Phone Number found in this WABA');
   }
 
-  const phoneNumberId = phoneData.data[0].id;
-  const displayPhoneNumber = phoneData.data[0].display_phone_number;
+  const phoneObj = providedPhoneNumberId
+    ? phoneData.data.find((p: any) => p.id === providedPhoneNumberId)
+    : phoneData.data[0];
+
+  if (!phoneObj) {
+    throw new Error('Requested Phone number ID not found in the selected WABA');
+  }
+
+  const phoneNumberId = phoneObj.id;
+  const displayPhoneNumber = phoneObj.display_phone_number;
 
   // 3. Register the Phone Number with Meta (Required to start sending messages)
   try {
@@ -317,7 +372,7 @@ export const fetchWabaDetails = async (accessToken: string) => {
       },
       body: JSON.stringify({
         messaging_product: 'whatsapp',
-        pin: '123456', // Meta requires a 6-digit PIN for initial number registration
+        pin, // Use dynamically generated or user-provided PIN
       }),
     });
 

@@ -64,12 +64,12 @@ export const WhatsAppConnect: React.FC<WhatsAppConnectProps> = ({ appId, isAr })
     }
   }, [appId, isAr]);
 
-  const handleCallback = async (code: string) => {
+  const handleCallback = async (code: string, wabaId?: string, phoneNumberId?: string) => {
     try {
       const res = await fetch('/api/integrations/whatsapp/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ code, wabaId, phoneNumberId }),
       });
 
       if (res.ok) {
@@ -115,7 +115,7 @@ export const WhatsAppConnect: React.FC<WhatsAppConnectProps> = ({ appId, isAr })
       config_id: process.env.NEXT_PUBLIC_META_WA_CONFIG_ID, // Use environment variable
       response_type: 'code',
       override_default_response_type: true,
-      scope: 'whatsapp_business_management,whatsapp_business_messaging,business_management,public_profile',
+      scope: 'whatsapp_business_management,whatsapp_business_messaging,business_management',
       extras: {
         setup: {},
         sessionInfoVersion: '3',

@@ -14,7 +14,7 @@ export const POST = async (request: Request) => {
   }
 
   try {
-    const { code } = await request.json();
+    const { code, wabaId, phoneNumberId } = await request.json();
 
     if (!code) {
       return NextResponse.json({ error: 'Code is required' }, { status: 400 });
@@ -31,10 +31,13 @@ export const POST = async (request: Request) => {
     // In fact, upgrading them via fb_exchange_token can cause permission loss.
     const accessToken = tokenResponse.access_token;
 
-    // 3. Fetch WABA and Phone details
-    const wabaDetails = await fetchWabaDetails(accessToken);
+    // 3. Generate a secure, unique PIN for the Embedded Signup Registration
+    const pin = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // 4. Save Integration in DB
+    // 4. Fetch WABA and Phone details
+    const wabaDetails = await fetchWabaDetails({ accessToken, wabaId, phoneNumberId, pin });
+
+    // 5. Save Integration in DB
     const existing = await db.query.integrationSchema.findFirst({
       where: and(
         eq(integrationSchema.organizationId, orgId),
@@ -51,6 +54,7 @@ export const POST = async (request: Request) => {
         phoneNumberId: wabaDetails.phoneNumberId,
         displayPhoneNumber: wabaDetails.displayPhoneNumber,
         wabaName: wabaDetails.wabaName,
+        pin,
       }),
       status: 'active',
       updatedAt: new Date(),
