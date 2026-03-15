@@ -2,7 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/DB';
-import { sendInstagramMessage, sendMessengerMessage, sendWhatsAppMessage } from '@/libs/Meta';
+import { replyToInstagramComment, sendInstagramMessage, sendMessengerMessage, sendWhatsAppMessage } from '@/libs/Meta';
 import { integrationSchema } from '@/models/Schema';
 
 export const POST = async (request: Request) => {
@@ -17,10 +17,11 @@ export const POST = async (request: Request) => {
     }
 
     const body = await request.json();
-    const { platform, orgId, recipientId, message } = body;
+    const { platform, orgId, recipientId, message, commentId } = body;
 
-    if (!platform || !orgId || !recipientId || !message) {
-      return NextResponse.json({ error: 'Missing required fields: platform, orgId, recipientId, message' }, { status: 400 });
+    // recipientId is optional if commentId is provided for Instagram
+    if (!platform || !orgId || (!recipientId && !commentId) || !message) {
+      return NextResponse.json({ error: 'Missing required fields: platform, orgId, message and (recipientId or commentId)' }, { status: 400 });
     }
 
     // 2. Fetch the specific integration (Page Token)
@@ -58,7 +59,12 @@ export const POST = async (request: Request) => {
         return NextResponse.json({ error: 'Instagram integration is missing token or account ID.' }, { status: 400 });
       }
 
-      responseData = await sendInstagramMessage(pageIdForSending, recipientId, message, token);
+      if (commentId) {
+        // If commentId is provided, we reply to a comment instead of sending a DM
+        responseData = await replyToInstagramComment(commentId, message, token);
+      } else if (recipientId) {
+        responseData = await sendInstagramMessage(pageIdForSending, recipientId, message, token);
+      }
     } else if (platform === 'messenger') {
       if (!platformIntegration) {
         return NextResponse.json({ error: 'No Messenger integration found for this organization.' }, { status: 404 });

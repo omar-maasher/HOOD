@@ -143,6 +143,37 @@ export const sendInstagramMessage = async (
 };
 
 /**
+ * Reply to a comment on Instagram via the Graph API.
+ * Docs: https://developers.facebook.com/docs/instagram-api/reference/ig-comment/replies#creating
+ */
+export const replyToInstagramComment = async (
+  commentId: string,
+  text: string,
+  accessToken: string,
+) => {
+  const url = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${commentId}/replies`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      message: text,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    logger.error({ errorData, commentId }, 'Failed to reply to Instagram comment');
+    handleMetaError(errorData);
+  }
+
+  return response.json();
+};
+
+/**
  * Send a message via the Messenger API for Facebook Pages.
  */
 export const sendMessengerMessage = async (
