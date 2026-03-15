@@ -225,48 +225,83 @@ export const POST = async (request: Request) => {
       })());
     }
 
-    // معالجة WhatsApp
-    logger.info({ changesCount: changes.length }, '[WEBHOOK DEBUG] Processing WhatsApp changes');
+    // معالجة WhatsApp و Instagram Comments
+    logger.info({ changesCount: changes.length }, '[WEBHOOK DEBUG] Processing Meta changes (WA/IG)');
     for (const change of changes) {
-      const messages = change.value?.messages || [];
-      const contacts = change.value?.contacts || [];
-      logger.info({ messagesCount: messages.length, field: change.field }, '[WEBHOOK DEBUG] Change entry');
-      for (const msg of messages) {
-        const mid = msg.id;
-        const senderId = msg.from as string; // phone number e.g. "966501234567"
+      const field = change.field;
+      const value = change.value;
 
-        // Try to get the sender's name from contacts array in the webhook payload
-        const contactInfo = contacts.find((c: any) => c.wa_id === senderId);
-        const senderName = contactInfo?.profile?.name;
+      // 1. WhatsApp Messages
+      if (field === 'messages') {
+        const messages = value?.messages || [];
+        const contacts = value?.contacts || [];
+        for (const msg of messages) {
+          const mid = msg.id;
+          const senderId = msg.from as string;
+          const contactInfo = contacts.find((c: any) => c.wa_id === senderId);
+          const senderName = contactInfo?.profile?.name;
 
-        // Auto-create lead
-        processingPromises.push(upsertLead(orgId, senderId, 'whatsapp', senderName));
+          processingPromises.push(upsertLead(orgId, senderId, 'whatsapp', senderName));
+          processingPromises.push((async () => {
+            try {
+              const exists = await db.query.webhookEventSchema.findFirst({ where: eq(webhookEventSchema.mid, mid) });
+              if (exists) {
+                return null;
+              }
+              await db.insert(webhookEventSchema).values({ mid });
+
+              const targetUrl = n8nUrls.whatsapp;
+              if (!targetUrl) {
+                return null;
+              }
+
+              return await fetch(targetUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rawBody: body, platform: 'whatsapp', eventType: 'message', senderId, context }),
+              });
+            } catch (e) {
+              logger.error('WhatsApp forward error', e);
+              return null;
+            }
+          })());
+        }
+      }
+
+      // 2. Instagram Comments / Mentions
+      if (field === 'comments' || field === 'mentions') {
+        const commentId = value?.id || `CMT_${Date.now()}`;
+        const senderId = value?.from?.id;
+        const senderName = value?.from?.username || value?.from?.name;
+        const text = value?.text || value?.message || '';
 
         processingPromises.push((async () => {
           try {
-            const exists = await db.select().from(webhookEventSchema).where(eq(webhookEventSchema.mid, mid)).limit(1);
-            if (exists.length > 0) {
-              return null;
+            if (senderId) {
+              await upsertLead(orgId, senderId, 'instagram', senderName, senderName);
             }
 
-            await db.insert(webhookEventSchema).values({ mid });
-
-            logger.info({ mid, senderId }, '[WEBHOOK DEBUG] Forwarding WhatsApp message to n8n');
-
-            const targetUrl = n8nUrls.whatsapp;
+            const targetUrl = n8nUrls.instagram;
             if (!targetUrl) {
               return null;
             }
 
-            const res = await fetch(targetUrl, {
+            return await fetch(targetUrl, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ rawBody: body, platform: 'whatsapp', senderId, context }),
+              body: JSON.stringify({
+                rawBody: body,
+                platform: 'instagram',
+                eventType: field, // 'comments' or 'mentions'
+                commentId,
+                senderId,
+                username: senderName,
+                text,
+                context,
+              }),
             });
-            logger.info({ status: res.status, ok: res.ok }, '[WEBHOOK DEBUG] N8N forward response');
-            return res;
           } catch (e) {
-            logger.error('WhatsApp forward error', e);
+            logger.error('Instagram comment forward error', e);
             return null;
           }
         })());
