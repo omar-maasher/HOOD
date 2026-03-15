@@ -1,3 +1,5 @@
+import { logger } from './Logger';
+
 export const META_CONFIG = {
   appId: process.env.META_APP_ID,
   appSecret: process.env.META_APP_SECRET,
@@ -321,10 +323,32 @@ export const fetchWabaDetails = async (accessToken: string) => {
 
     if (!registerRes.ok) {
       const errorData = await registerRes.json().catch(() => ({}));
-      console.warn('Phone number registration warn/error:', errorData); // Don't throw, it might be already registered
+      logger.warn({ errorData }, 'Phone number registration warn/error:'); // Don't throw, it might be already registered
     }
   } catch (err) {
-    console.error('Failed to execute phone number registration API:', err);
+    logger.error(err, 'Failed to execute phone number registration API');
+  }
+
+  // 4. Subscribe the App to the WABA Webhooks
+  try {
+    const validToken = META_CONFIG.systemUserToken || accessToken;
+    const subscribeUrl = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${wabaId}/subscribed_apps`;
+    const subscribeRes = await fetch(subscribeUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${validToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!subscribeRes.ok) {
+      const errorData = await subscribeRes.json().catch(() => ({}));
+      logger.warn({ errorData }, 'WABA Subscribed Apps warn/error');
+    } else {
+      logger.info({ wabaId }, 'Successfully subscribed app to WABA webhooks');
+    }
+  } catch (err) {
+    logger.error(err, 'Failed to execute WABA subscribed apps API');
   }
 
   return {
