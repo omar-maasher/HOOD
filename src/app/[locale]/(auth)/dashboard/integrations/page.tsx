@@ -145,8 +145,13 @@ export default async function IntegrationsPage(props: { searchParams: Promise<an
               <div className="mt-8 border-t border-dashed pt-6">
                 {isConnected
                   ? (
-                      <div className="flex items-center justify-start">
-                        <DisconnectButton channelKey={channel.key} />
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center justify-start">
+                          <DisconnectButton channelKey={channel.key} />
+                        </div>
+                        {channel.key === 'whatsapp' && (
+                          <WhatsAppConnect appId={META_APP_ID} isAr={isAr} />
+                        )}
                       </div>
                     )
                   : (
