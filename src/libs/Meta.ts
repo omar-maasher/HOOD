@@ -15,6 +15,7 @@ const PLATFORM_SCOPES: Record<MetaPlatform, string[]> = {
     'pages_show_list',
     'instagram_basic',
     'instagram_manage_messages',
+    'instagram_manage_comments',
     'public_profile',
     'pages_read_engagement', // Needed to see the link between page and IG
   ],
