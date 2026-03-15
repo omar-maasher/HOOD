@@ -50,7 +50,7 @@ const handleMetaError = (error: any) => {
     case 131047:
       throw new Error('PAYMENT_REQUIRED: Missing valid payment method to start outbound conversation.');
     default:
-      throw new Error(`META_ERROR: ${metaError.message}`);
+      throw new Error(`META_ERROR: ${metaError.message}${metaError.error_data ? ` - ${JSON.stringify(metaError.error_data)}` : ''}`);
   }
 };
 
