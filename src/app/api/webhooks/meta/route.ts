@@ -31,7 +31,10 @@ export const POST = async (request: Request) => {
   const entries = body.entry || [];
   const n8nWebhookUrl = process.env.N8N_WEBHOOK_URL;
 
+  logger.info({ entryCount: entries.length, hasN8nUrl: !!n8nWebhookUrl }, '[WEBHOOK DEBUG] Received body');
+
   if (!n8nWebhookUrl) {
+    logger.warn('[WEBHOOK DEBUG] N8N_WEBHOOK_URL is not set — aborting forwarding');
     return new NextResponse('OK', { status: 200 });
   }
 
@@ -46,11 +49,15 @@ export const POST = async (request: Request) => {
     const results = await db.select().from(integrationSchema).where(eq(integrationSchema.providerId, entryId)).limit(1);
     let integration = results[0];
 
+    logger.info({ entryId, foundIntegration: !!integration }, '[WEBHOOK DEBUG] DB lookup by providerId');
+
     // --- FALLBACK FOR TESTING ---
-    // إذا كنت تجرب بدون ربط، سنأخذ أول منظمة موجودة في قاعدة البيانات لإرسال التجربة لـ N8N
     if (!integration) {
-      logger.info({ entryId }, 'No matching integration, using fallback for testing');
-      integration = await db.query.integrationSchema.findFirst();
+      logger.info({ entryId }, '[WEBHOOK DEBUG] No matching integration by ID, using fallback (first whatsapp integration)');
+      integration = await db.query.integrationSchema.findFirst({
+        where: eq(integrationSchema.type, 'whatsapp'),
+      });
+      logger.info({ fallbackOrgId: integration?.organizationId }, '[WEBHOOK DEBUG] Fallback integration found');
     }
 
     if (!integration) {
@@ -97,8 +104,10 @@ export const POST = async (request: Request) => {
     }
 
     // معالجة WhatsApp
+    logger.info({ changesCount: changes.length }, '[WEBHOOK DEBUG] Processing WhatsApp changes');
     for (const change of changes) {
       const messages = change.value?.messages || [];
+      logger.info({ messagesCount: messages.length, field: change.field }, '[WEBHOOK DEBUG] Change entry');
       for (const msg of messages) {
         const mid = msg.id;
         const senderId = msg.from;
@@ -112,13 +121,14 @@ export const POST = async (request: Request) => {
 
             await db.insert(webhookEventSchema).values({ mid });
 
-            logger.info({ mid, senderId }, 'Forwarding WhatsApp message to n8n');
+            logger.info({ mid, senderId }, '[WEBHOOK DEBUG] Forwarding WhatsApp message to n8n');
 
             const res = await fetch(n8nWebhookUrl, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ rawBody: body, platform: 'whatsapp', senderId, context }),
             });
+            logger.info({ status: res.status, ok: res.ok }, '[WEBHOOK DEBUG] N8N forward response');
             return res;
           } catch (e) {
             logger.error('WhatsApp forward error', e);
