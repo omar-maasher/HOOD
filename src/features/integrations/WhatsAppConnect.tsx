@@ -131,10 +131,10 @@ export const WhatsAppConnect: React.FC<WhatsAppConnectProps> = ({ appId, isAr })
       type="button"
       onClick={launchWhatsAppSignup}
       disabled={loading || !sdkReady}
-      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-6 py-4 font-bold text-white shadow-lg shadow-emerald-500/20 transition-all hover:bg-emerald-700 active:scale-[0.98]"
+      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-4 font-bold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 active:scale-[0.98]"
     >
       {loading ? <Loader2 className="size-4 animate-spin" /> : <LinkIcon className="size-4" />}
-      {isAr ? 'ربط واتساب (Embedded)' : 'Connect WhatsApp (Embedded)'}
+      {isAr ? 'ربط الحساب' : 'Connect Account'}
     </Button>
   );
 };
