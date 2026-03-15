@@ -70,22 +70,44 @@ export const POST = async (request: Request) => {
     const messaging = entry.messaging || [];
     const changes = entry.changes || [];
 
-    // البحث عن الربط
+    // البحث عن الربط — يبحث في جميع الأنواع
     const results = await db.select().from(integrationSchema).where(eq(integrationSchema.providerId, entryId)).limit(1);
     let integration = results[0];
 
     logger.info({ entryId, foundIntegration: !!integration }, '[WEBHOOK DEBUG] DB lookup by providerId');
 
-    // --- FALLBACK FOR TESTING ---
+    // --- FALLBACK: Try to detect platform from payload shape, then pick best integration ---
     if (!integration) {
-      logger.info({ entryId }, '[WEBHOOK DEBUG] No matching integration by ID, using fallback (first whatsapp integration)');
-      integration = await db.query.integrationSchema.findFirst({
-        where: eq(integrationSchema.type, 'whatsapp'),
-      });
-      logger.info({ fallbackOrgId: integration?.organizationId }, '[WEBHOOK DEBUG] Fallback integration found');
+      const hasMessaging = messaging.length > 0; // messenger/instagram send via entry.messaging
+      const hasChanges = changes.length > 0; // whatsapp sends via entry.changes
+
+      if (hasMessaging) {
+        // Try messenger integration first, then instagram
+        integration = await db.query.integrationSchema.findFirst({
+          where: eq(integrationSchema.type, 'messenger'),
+        });
+        if (!integration) {
+          integration = await db.query.integrationSchema.findFirst({
+            where: eq(integrationSchema.type, 'instagram'),
+          });
+        }
+        logger.info({ fallbackType: integration?.type, entryId }, '[WEBHOOK DEBUG] Fallback: messaging event → trying messenger/instagram');
+      } else if (hasChanges) {
+        integration = await db.query.integrationSchema.findFirst({
+          where: eq(integrationSchema.type, 'whatsapp'),
+        });
+        logger.info({ fallbackType: integration?.type, entryId }, '[WEBHOOK DEBUG] Fallback: changes event → trying whatsapp');
+      }
+
+      // Last resort: pick any integration
+      if (!integration) {
+        integration = await db.query.integrationSchema.findFirst();
+        logger.info({ fallbackType: integration?.type, entryId }, '[WEBHOOK DEBUG] Last-resort fallback integration');
+      }
     }
 
     if (!integration) {
+      logger.warn({ entryId }, '[WEBHOOK DEBUG] No integration found, skipping entry');
       continue;
     }
 
