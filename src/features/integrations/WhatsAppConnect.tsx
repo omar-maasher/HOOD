@@ -4,8 +4,6 @@ import { Link as LinkIcon, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 
-import { Button } from '@/components/ui/button';
-
 declare global {
   // eslint-disable-next-line ts/consistent-type-definitions
   interface Window {
@@ -127,14 +125,14 @@ export const WhatsAppConnect: React.FC<WhatsAppConnectProps> = ({ appId, isAr })
   };
 
   return (
-    <Button
+    <button
       type="button"
       onClick={launchWhatsAppSignup}
       disabled={loading || !sdkReady}
-      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-4 font-bold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 active:scale-[0.98]"
+      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-4 font-bold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
     >
       {loading ? <Loader2 className="size-4 animate-spin" /> : <LinkIcon className="size-4" />}
       {isAr ? 'ربط الحساب' : 'Connect Account'}
-    </Button>
+    </button>
   );
 };
