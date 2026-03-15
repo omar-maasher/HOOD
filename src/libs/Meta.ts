@@ -512,3 +512,44 @@ export const deleteWaTemplate = async (wabaId: string, templateName: string, acc
   }
   return data;
 };
+
+/**
+ * Send a template-based message via the WhatsApp Business Cloud API.
+ */
+export const sendWaTemplate = async (
+  phoneNumberId: string,
+  recipientId: string,
+  templateName: string,
+  languageCode: string,
+  accessToken: string,
+  components?: any[], // optional variable values
+) => {
+  const url = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${phoneNumberId}/messages`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to: recipientId,
+      type: 'template',
+      template: {
+        name: templateName,
+        language: { code: languageCode },
+        components,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    logger.error({ errorData }, 'Failed to send WhatsApp template message');
+    handleMetaError(errorData);
+  }
+
+  return response.json();
+};

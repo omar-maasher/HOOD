@@ -9,6 +9,7 @@ import {
   Phone,
   Plus,
   Search,
+  Send,
   Trash2,
   TrendingUp,
   UserCheck,
@@ -40,6 +41,7 @@ import {
 } from '@/components/ui/table';
 
 import { createLead, deleteLead, updateLead } from './actions';
+import SendMessageModal from './SendMessageModal';
 
 export default function LeadsClient({ initialLeads }: { initialLeads: any[] }) {
   const locale = useLocale();
@@ -58,6 +60,8 @@ export default function LeadsClient({ initialLeads }: { initialLeads: any[] }) {
   });
 
   const [editingLeadId, setEditingLeadId] = useState<number | null>(null);
+  const [isMessageModalOpen, setIsMessageModalOpen] = useState(false);
+  const [selectedLeadForMessage, setSelectedLeadForMessage] = useState<any>(null);
 
   const handleOpenModal = () => {
     setEditingLeadId(null);
@@ -78,6 +82,11 @@ export default function LeadsClient({ initialLeads }: { initialLeads: any[] }) {
   };
 
   const handleCloseModal = () => setIsModalOpen(false);
+
+  const handleOpenMessageModal = (lead: any) => {
+    setSelectedLeadForMessage(lead);
+    setIsMessageModalOpen(true);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -274,6 +283,10 @@ export default function LeadsClient({ initialLeads }: { initialLeads: any[] }) {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="min-w-[160px] rounded-2xl border-muted/50 p-2 shadow-2xl">
+                            <DropdownMenuItem onClick={() => handleOpenMessageModal(lead)} className="flex cursor-pointer gap-3 rounded-xl py-3 text-sm font-bold hover:bg-primary/5 hover:text-primary focus:bg-primary/5 focus:text-primary">
+                              <Send className="size-4" />
+                              إرسال رسالة
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleEdit(lead)} className="flex cursor-pointer gap-3 rounded-xl py-3 text-sm font-bold hover:bg-primary/5 hover:text-primary focus:bg-primary/5 focus:text-primary">
                               <Edit className="size-4" />
                               مراجعة العميل
@@ -396,6 +409,13 @@ export default function LeadsClient({ initialLeads }: { initialLeads: any[] }) {
             </form>
           </div>
         </div>
+      )}
+      {/* Messaging Modal */}
+      {isMessageModalOpen && selectedLeadForMessage && (
+        <SendMessageModal
+          lead={selectedLeadForMessage}
+          onClose={() => setIsMessageModalOpen(false)}
+        />
       )}
     </div>
   );
