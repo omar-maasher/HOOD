@@ -20,6 +20,8 @@ const isProtectedRoute = createRouteMatcher([
   '/:locale/dashboard(.*)',
   '/onboarding(.*)',
   '/:locale/onboarding(.*)',
+  '/admin(.*)',
+  '/:locale/admin(.*)',
 ]);
 
 export default function middleware(
