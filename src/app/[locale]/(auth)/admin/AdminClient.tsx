@@ -1,6 +1,7 @@
 'use client';
 
 import { Building2, Crown, MessageSquare, Puzzle, Users } from 'lucide-react';
+import * as React from 'react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -20,6 +21,12 @@ type AdminStats = {
 };
 
 export function AdminClient({ stats, organizations }: { stats: AdminStats; organizations: any[] }) {
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const statCards = [
     {
       title: 'Total Organizations',
@@ -96,7 +103,7 @@ export function AdminClient({ stats, organizations }: { stats: AdminStats; organ
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {organizations.map(org => (
+                {organizations?.map(org => (
                   <TableRow key={org.id} className="transition-colors hover:bg-muted/30">
                     <TableCell className="font-mono text-xs font-medium">{org.id}</TableCell>
                     <TableCell>
@@ -114,11 +121,11 @@ export function AdminClient({ stats, organizations }: { stats: AdminStats; organ
                       </div>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {new Date(org.createdAt).toLocaleDateString()}
+                      {mounted ? new Date(org.createdAt).toLocaleDateString() : '...'}
                     </TableCell>
                   </TableRow>
                 ))}
-                {organizations.length === 0 && (
+                {(!organizations || organizations.length === 0) && (
                   <TableRow>
                     <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
                       No organizations found.
