@@ -139,7 +139,8 @@
     "subscription": "Subscription",
     "business": "Business Settings",
     "whatsapp_templates": "WA Templates",
-    "org_settings": "Org Settings"
+    "org_settings": "Org Settings",
+    "super_admin": "Super Admin"
   },
   "Products": {
     "title": "Product Management",
@@ -565,5 +566,16 @@
     "saving": "Saving...",
     "saved": "Saved",
     "save": "Save Data"
+  },
+  "Admin": {
+    "title": "Super Admin Dashboard",
+    "total_orgs": "Total Organizations",
+    "active_subs": "Active Subscriptions",
+    "global_leads": "Global Leads",
+    "meta_integrations": "Meta Integrations",
+    "org_id": "Organization ID",
+    "plan": "Plan",
+    "status": "Status",
+    "created_at": "Created At"
   }
 }

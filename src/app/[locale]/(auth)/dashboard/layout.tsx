@@ -1,5 +1,5 @@
-import { Calendar, Crown, Home, LayoutTemplate, MessageSquare, Puzzle, Settings, ShoppingBag, Sparkles, Store, Users } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { currentUser } from '@clerk/nextjs/server';
+import { Calendar, Crown, Home, LayoutTemplate, MessageSquare, Puzzle, Settings, ShieldAlert, ShoppingBag, Sparkles, Store, Users } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
 import {
@@ -21,8 +21,12 @@ export async function generateMetadata(props: { params: { locale: string } }) {
   };
 }
 
-export default function DashboardLayout(props: { children: React.ReactNode }) {
-  const t = useTranslations('DashboardLayout');
+export default async function DashboardLayout(props: { children: React.ReactNode }) {
+  const user = await currentUser();
+  const superAdminEmails = process.env.SUPER_ADMIN_EMAILS?.split(',') || [];
+  const isSuperAdmin = user?.emailAddresses.some(e => superAdminEmails.includes(e.emailAddress));
+
+  const t = await getTranslations('DashboardLayout');
 
   const menu = [
     {
@@ -30,6 +34,13 @@ export default function DashboardLayout(props: { children: React.ReactNode }) {
       label: t('home'),
       icon: <Home className="size-4" />,
     },
+    ...(isSuperAdmin
+      ? [{
+          href: '/admin',
+          label: 'Super Admin',
+          icon: <ShieldAlert className="size-4 text-red-500" />,
+        }]
+      : []),
     {
       href: '/dashboard/products',
       label: t('products'),

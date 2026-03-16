@@ -144,7 +144,8 @@
     "subscription": "الاشتراك",
     "business": "بيانات النشاط",
     "whatsapp_templates": "قوالب الواتساب",
-    "org_settings": "إعدادات المنظمة"
+    "org_settings": "إعدادات المنظمة",
+    "super_admin": "الإدارة العليا"
   },
   "Products": {
     "title": "إدارة المنتجات",
@@ -579,5 +580,16 @@
     "saving": "جاري الحفظ",
     "saved": "تم الحفظ",
     "save": "حفظ البيانات"
+  },
+  "Admin": {
+    "title": "لوحة الإدارة العليا",
+    "total_orgs": "إجمالي المنظمات",
+    "active_subs": "الاشتراكات النشطة",
+    "global_leads": "إجمالي العملاء",
+    "meta_integrations": "ربط ميتا",
+    "org_id": "معرف المنظمة",
+    "plan": "الخطة",
+    "status": "الحالة",
+    "created_at": "تاريخ الإنشاء"
   }
 }
