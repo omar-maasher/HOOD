@@ -47,8 +47,10 @@ export async function getAllOrganizations() {
     .orderBy(desc(organizationSchema.createdAt));
 
   return orgs.map(org => ({
-    ...org,
-    createdAt: org.createdAt.toISOString(),
-    updatedAt: org.updatedAt.toISOString(),
+    id: org.id,
+    planId: org.planId,
+    stripeSubscriptionStatus: org.stripeSubscriptionStatus,
+    createdAt: org.createdAt instanceof Date ? org.createdAt.toISOString() : String(org.createdAt),
+    updatedAt: org.updatedAt instanceof Date ? org.updatedAt.toISOString() : String(org.updatedAt),
   }));
 }
