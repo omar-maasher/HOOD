@@ -4,11 +4,19 @@ import { currentUser } from '@clerk/nextjs/server';
 import { count, desc, eq } from 'drizzle-orm';
 
 import { db } from '@/libs/DB';
-import { integrationSchema, leadSchema, organizationSchema, productSchema } from '@/models/Schema';
+import {
+  aiSettingsSchema,
+  bookingSchema,
+  businessProfileSchema,
+  integrationSchema,
+  leadSchema,
+  organizationSchema,
+  productSchema,
+  waTemplateSchema,
+} from '@/models/Schema';
 
 /**
  * Security Check: Ensures the caller is a Super Admin.
- * You can define super admin emails in your .env
  */
 async function checkSuperAdmin() {
   const user = await currentUser();
@@ -26,7 +34,6 @@ export async function getAdminStats() {
   const [leadCount] = await db.select({ value: count() }).from(leadSchema);
   const [integrationCount] = await db.select({ value: count() }).from(integrationSchema);
 
-  // Get subscription counts
   const [activeSubs] = await db.select({ value: count() })
     .from(organizationSchema)
     .where(eq(organizationSchema.stripeSubscriptionStatus, 'active'));
@@ -42,7 +49,6 @@ export async function getAdminStats() {
 export async function getAllOrganizations() {
   await checkSuperAdmin();
 
-  // Aggregate counts using subqueries or separate queries for simplicity/safety
   const orgs = await db.select()
     .from(organizationSchema)
     .orderBy(desc(organizationSchema.createdAt));
@@ -51,9 +57,11 @@ export async function getAllOrganizations() {
     const [leadResult] = await db.select({ value: count() }).from(leadSchema).where(eq(leadSchema.organizationId, org.id));
     const [productResult] = await db.select({ value: count() }).from(productSchema).where(eq(productSchema.organizationId, org.id));
     const [integrationResult] = await db.select({ value: count() }).from(integrationSchema).where(eq(integrationSchema.organizationId, org.id));
+    const [businessProfile] = await db.select({ name: businessProfileSchema.businessName }).from(businessProfileSchema).where(eq(businessProfileSchema.organizationId, org.id));
 
     return {
       id: org.id,
+      businessName: businessProfile?.name || 'Unnamed Business',
       planId: org.planId,
       stripeSubscriptionStatus: org.stripeSubscriptionStatus,
       createdAt: org.createdAt instanceof Date ? org.createdAt.toISOString() : String(org.createdAt),
@@ -77,6 +85,68 @@ export async function updateOrganizationSubscription(orgId: string, planId: stri
       updatedAt: new Date(),
     })
     .where(eq(organizationSchema.id, orgId));
+
+  return { success: true };
+}
+
+export async function deleteOrganization(orgId: string) {
+  await checkSuperAdmin();
+
+  // Order of deletion to respect foreign keys (if CASCADE is not fully set in DB)
+  await db.delete(leadSchema).where(eq(leadSchema.organizationId, orgId));
+  await db.delete(productSchema).where(eq(productSchema.organizationId, orgId));
+  await db.delete(integrationSchema).where(eq(integrationSchema.organizationId, orgId));
+  await db.delete(businessProfileSchema).where(eq(businessProfileSchema.organizationId, orgId));
+  await db.delete(aiSettingsSchema).where(eq(aiSettingsSchema.organizationId, orgId));
+  await db.delete(bookingSchema).where(eq(bookingSchema.organizationId, orgId));
+  await db.delete(waTemplateSchema).where(eq(waTemplateSchema.organizationId, orgId));
+
+  // Finally delete the organization
+  await db.delete(organizationSchema)
+    .where(eq(organizationSchema.id, orgId));
+
+  return { success: true };
+}
+
+export async function getOrganizationDeepSettings(orgId: string) {
+  await checkSuperAdmin();
+
+  const [aiSettings] = await db.select().from(aiSettingsSchema).where(eq(aiSettingsSchema.organizationId, orgId));
+  const [profile] = await db.select().from(businessProfileSchema).where(eq(businessProfileSchema.organizationId, orgId));
+
+  return {
+    ai: aiSettings || null,
+    profile: profile || null,
+  };
+}
+
+export async function updateOrganizationDeepSettings(orgId: string, data: {
+  botName?: string;
+  systemPrompt?: string;
+  businessName?: string;
+  businessDescription?: string;
+}) {
+  await checkSuperAdmin();
+
+  if (data.botName !== undefined || data.systemPrompt !== undefined) {
+    await db.update(aiSettingsSchema)
+      .set({
+        ...(data.botName !== undefined && { botName: data.botName }),
+        ...(data.systemPrompt !== undefined && { systemPrompt: data.systemPrompt }),
+        updatedAt: new Date(),
+      })
+      .where(eq(aiSettingsSchema.organizationId, orgId));
+  }
+
+  if (data.businessName !== undefined || data.businessDescription !== undefined) {
+    await db.update(businessProfileSchema)
+      .set({
+        ...(data.businessName !== undefined && { businessName: data.businessName }),
+        ...(data.businessDescription !== undefined && { businessDescription: data.businessDescription }),
+        updatedAt: new Date(),
+      })
+      .where(eq(businessProfileSchema.organizationId, orgId));
+  }
 
   return { success: true };
 }

@@ -1,7 +1,7 @@
 import { Bot, Building2, CalendarCheck, Check, Crown, Megaphone, MessageSquare, Radio, ShieldCheck, Users, Zap } from 'lucide-react';
 import { getLocale } from 'next-intl/server';
 
-import { PLAN_ID, PricingPlanList } from '@/utils/AppConfig';
+import { PLAN_ID } from '@/utils/AppConfig';
 
 export default async function SubscriptionPage() {
   const locale = await getLocale();
@@ -9,6 +9,8 @@ export default async function SubscriptionPage() {
 
   let currentPlanId: string = PLAN_ID.FREE;
   let subscriptionStatus = isAr ? 'حساب أساسي' : 'Basic Account';
+  let currentOrgId: string | null | undefined = null;
+  const whatsappNumber = '966524318721'; // حدث هذا الرقم برقمك الحقيقي
 
   try {
     const { auth } = await import('@clerk/nextjs/server');
@@ -17,29 +19,26 @@ export default async function SubscriptionPage() {
     const { organizationSchema } = await import('@/models/Schema');
 
     const { orgId } = await auth();
+    currentOrgId = orgId;
 
     if (orgId && db) {
       const orgData = await db.query.organizationSchema.findFirst({
         where: eq(organizationSchema.id, orgId),
       });
 
-      if (orgData?.stripeSubscriptionPriceId) {
-        const priceId = orgData.stripeSubscriptionPriceId;
-        const premiumPriceIds = [PricingPlanList.premium?.devPriceId, PricingPlanList.premium?.prodPriceId, PricingPlanList.premium?.testPriceId];
-        const enterprisePriceIds = [PricingPlanList.enterprise?.devPriceId, PricingPlanList.enterprise?.prodPriceId, PricingPlanList.enterprise?.testPriceId];
-
-        if (premiumPriceIds.includes(priceId)) {
+      if (orgData) {
+        if (orgData.planId === PLAN_ID.PREMIUM) {
           currentPlanId = PLAN_ID.PREMIUM;
-        } else if (enterprisePriceIds.includes(priceId)) {
+        } else if (orgData.planId === PLAN_ID.ENTERPRISE) {
           currentPlanId = PLAN_ID.ENTERPRISE;
         }
 
         if (orgData.stripeSubscriptionStatus === 'active') {
-          subscriptionStatus = isAr ? 'نشط' : 'Active';
+          subscriptionStatus = isAr ? 'نشط (دفع يدوي)' : 'Active (Manual)';
         } else if (orgData.stripeSubscriptionStatus === 'trialing') {
           subscriptionStatus = isAr ? 'فترة تجريبية' : 'Trial';
         } else {
-          subscriptionStatus = orgData.stripeSubscriptionStatus || (isAr ? 'غير نشط' : 'Inactive');
+          subscriptionStatus = isAr ? 'غير نشط' : 'Inactive';
         }
       }
     }
@@ -136,9 +135,9 @@ export default async function SubscriptionPage() {
                 {' '}
                 {plans.find(p => p.id === currentPlanId)?.name}
               </h3>
-              <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider ${subscriptionStatus === (isAr ? 'نشط' : 'Active') || subscriptionStatus === (isAr ? 'فترة تجريبية' : 'Trial') || subscriptionStatus === (isAr ? 'حساب أساسي' : 'Basic Account')
+              <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider ${subscriptionStatus.includes(isAr ? 'نشط' : 'Active') || subscriptionStatus === (isAr ? 'فترة تجريبية' : 'Trial') || subscriptionStatus === (isAr ? 'حساب أساسي' : 'Basic Account')
                 ? 'bg-emerald-100 text-emerald-700'
-                : 'bg-gray-200 text-gray-600'
+                : 'bg-gray-100 text-gray-600'
               }`}
               >
                 {subscriptionStatus}
@@ -252,16 +251,22 @@ export default async function SubscriptionPage() {
                       </div>
                     )
                   : (
-                      <button
-                        type="button"
+                      <a
+                        href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
+                          isAr
+                            ? `أهلاً، أرغب في تفعيل باقة (${plan.name}) لحسابي.\nمعرف المنظمة: ${currentOrgId}`
+                            : `Hello, I want to activate (${plan.name}) for my account.\nOrg ID: ${currentOrgId}`,
+                        )}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className={`flex h-12 w-full items-center justify-center gap-2 rounded-2xl font-bold transition-all active:scale-95 ${plan.popular
-                          ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90'
+                          ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200 hover:bg-emerald-700'
                           : 'bg-muted text-foreground hover:bg-muted/80'
                         }`}
                       >
-                        <Zap className="size-4" />
-                        {currentPlanId === PLAN_ID.FREE ? (isAr ? 'ترقية الآن' : 'Upgrade Now') : (isAr ? 'تغيير الباقة' : 'Change Plan')}
-                      </button>
+                        <MessageSquare className="size-4" />
+                        {isAr ? 'تواصل للتفعيل' : 'Contact to Activate'}
+                      </a>
                     )}
               </div>
             </div>

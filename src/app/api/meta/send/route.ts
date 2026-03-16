@@ -3,7 +3,8 @@ import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/DB';
 import { replyToInstagramComment, sendInstagramMessage, sendMessengerMessage, sendWhatsAppMessage } from '@/libs/Meta';
-import { integrationSchema } from '@/models/Schema';
+import { integrationSchema, organizationSchema } from '@/models/Schema';
+import { PLAN_ID } from '@/utils/AppConfig';
 
 export const POST = async (request: Request) => {
   try {
@@ -22,6 +23,23 @@ export const POST = async (request: Request) => {
     // recipientId is optional if commentId is provided for Instagram
     if (!platform || !orgId || (!recipientId && !commentId) || !message) {
       return NextResponse.json({ error: 'Missing required fields: platform, orgId, message and (recipientId or commentId)' }, { status: 400 });
+    }
+
+    // 1.5 Check for branding requirements based on plan
+    let finalMessage = message;
+    try {
+      const org = await db.query.organizationSchema.findFirst({
+        where: eq(organizationSchema.id, orgId),
+      });
+
+      if (!org?.planId || org.planId === PLAN_ID.FREE) {
+        // Simple detection for Arabic characters
+        const isArabic = /[\u0600-\u06FF]/.test(message);
+        const footer = isArabic ? 'مدعوم بواسطة HoodTrading' : 'Powered by HoodTrading';
+        finalMessage = `${message}\n\n${footer}`;
+      }
+    } catch (e) {
+      console.error('Failed to check org plan for branding', e);
     }
 
     // 2. Fetch the specific integration (Page Token)
@@ -61,9 +79,9 @@ export const POST = async (request: Request) => {
 
       if (commentId) {
         // If commentId is provided, we reply to a comment instead of sending a DM
-        responseData = await replyToInstagramComment(commentId, message, token);
+        responseData = await replyToInstagramComment(commentId, finalMessage, token);
       } else if (recipientId) {
-        responseData = await sendInstagramMessage(pageIdForSending, recipientId, message, token);
+        responseData = await sendInstagramMessage(pageIdForSending, recipientId, finalMessage, token);
       }
     } else if (platform === 'messenger') {
       if (!platformIntegration) {
@@ -77,7 +95,7 @@ export const POST = async (request: Request) => {
         return NextResponse.json({ error: 'Messenger integration is missing token or ID.' }, { status: 400 });
       }
 
-      responseData = await sendMessengerMessage(pageId, recipientId, message, token);
+      responseData = await sendMessengerMessage(pageId, recipientId, finalMessage, token);
     } else if (platform === 'whatsapp') {
       if (!platformIntegration) {
         return NextResponse.json({ error: 'No WhatsApp integration found for this organization.' }, { status: 404 });
@@ -101,7 +119,7 @@ export const POST = async (request: Request) => {
         return NextResponse.json({ error: 'WhatsApp integration is missing token or Phone Number ID.' }, { status: 400 });
       }
 
-      responseData = await sendWhatsAppMessage(phoneNumberId, recipientId, message, token);
+      responseData = await sendWhatsAppMessage(phoneNumberId, recipientId, finalMessage, token);
     } else {
       return NextResponse.json({ error: 'Unsupported platform specified.' }, { status: 400 });
     }
