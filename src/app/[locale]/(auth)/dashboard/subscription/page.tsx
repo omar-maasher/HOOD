@@ -102,6 +102,10 @@ export default async function SubscriptionPage() {
     },
   ];
 
+  const { Env } = await import('@/libs/Env');
+  const { createCheckoutSession } = await import('@/features/billing/actions');
+  const { PricingPlanList } = await import('@/utils/AppConfig');
+
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 pb-20">
       {/* Header Section */}
@@ -162,6 +166,8 @@ export default async function SubscriptionPage() {
         {plans.map((plan) => {
           const isCurrentPlan = plan.id === currentPlanId;
           const Icon = plan.icon;
+          const planConfig = PricingPlanList[plan.id];
+          const stripePriceId = Env.BILLING_PLAN_ENV === 'prod' ? planConfig?.prodPriceId : (Env.BILLING_PLAN_ENV === 'test' ? planConfig?.testPriceId : planConfig?.devPriceId);
 
           return (
             <div
@@ -242,7 +248,7 @@ export default async function SubscriptionPage() {
               </div>
 
               {/* CTA Button */}
-              <div className="p-8 pt-0">
+              <div className="flex flex-col gap-3 p-8 pt-0">
                 {isCurrentPlan
                   ? (
                       <div className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 font-bold text-emerald-700">
@@ -251,22 +257,42 @@ export default async function SubscriptionPage() {
                       </div>
                     )
                   : (
-                      <a
-                        href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
-                          isAr
-                            ? `أهلاً، أرغب في تفعيل باقة (${plan.name}) لحسابي.\nمعرف المنظمة: ${currentOrgId}`
-                            : `Hello, I want to activate (${plan.name}) for my account.\nOrg ID: ${currentOrgId}`,
-                        )}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`flex h-12 w-full items-center justify-center gap-2 rounded-2xl font-bold transition-all active:scale-95 ${plan.popular
-                          ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200 hover:bg-emerald-700'
-                          : 'bg-muted text-foreground hover:bg-muted/80'
-                        }`}
-                      >
-                        <MessageSquare className="size-4" />
-                        {isAr ? 'تواصل للتفعيل' : 'Contact to Activate'}
-                      </a>
+                      <>
+                        {/* Stripe Official Activation (Hidden if no key) */}
+                        {Env.STRIPE_SECRET_KEY && stripePriceId && (
+                          <form action={async () => {
+                            'use server';
+                            await createCheckoutSession(stripePriceId!);
+                          }}
+                          >
+                            <button
+                              type="submit"
+                              className={`flex h-12 w-full items-center justify-center gap-2 rounded-2xl font-bold transition-all active:scale-95 ${plan.popular
+                                ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90'
+                                : 'bg-foreground text-background hover:bg-foreground/90'
+                              }`}
+                            >
+                              <Zap className="size-4" />
+                              {isAr ? 'دفع عبر البطاقة' : 'Pay with Card'}
+                            </button>
+                          </form>
+                        )}
+
+                        {/* WhatsApp Manual Activation */}
+                        <a
+                          href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
+                            isAr
+                              ? `أهلاً، أرغب في تفعيل باقة (${plan.name}) لحسابي.\nمعرف المنظمة: ${currentOrgId}`
+                              : `Hello, I want to activate (${plan.name}) for my account.\nOrg ID: ${currentOrgId}`,
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 font-bold text-white transition-all hover:bg-emerald-700 active:scale-95"
+                        >
+                          <MessageSquare className="size-4" />
+                          {isAr ? 'تفعيل يدوي (واتساب)' : 'Manual Activation (WhatsApp)'}
+                        </a>
+                      </>
                     )}
               </div>
             </div>
