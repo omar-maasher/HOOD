@@ -12,7 +12,7 @@ import { integrationSchema, leadSchema, organizationSchema } from '@/models/Sche
  */
 async function checkSuperAdmin() {
   const user = await currentUser();
-  const emails = process.env.SUPER_ADMIN_EMAILS?.split(',') || [];
+  const emails = (process.env.SUPER_ADMIN_EMAILS || '').split(',').map(e => e.trim()).filter(Boolean);
 
   if (!user || !user.emailAddresses.some(e => emails.includes(e.emailAddress))) {
     throw new Error('Unauthorized: Super Admin access required');
@@ -27,22 +27,28 @@ export async function getAdminStats() {
   const [integrationCount] = await db.select({ value: count() }).from(integrationSchema);
 
   // Get subscription counts
-  const activeSubs = await db.select({ value: count() })
+  const [activeSubs] = await db.select({ value: count() })
     .from(organizationSchema)
     .where(eq(organizationSchema.stripeSubscriptionStatus, 'active'));
 
   return {
-    totalOrgs: orgCount?.value || 0,
-    totalLeads: leadCount?.value || 0,
-    totalIntegrations: integrationCount?.value || 0,
-    activeSubscriptions: activeSubs[0]?.value || 0,
+    totalOrgs: Number(orgCount?.value || 0),
+    totalLeads: Number(leadCount?.value || 0),
+    totalIntegrations: Number(integrationCount?.value || 0),
+    activeSubscriptions: Number(activeSubs?.value || 0),
   };
 }
 
 export async function getAllOrganizations() {
   await checkSuperAdmin();
 
-  return db.select()
+  const orgs = await db.select()
     .from(organizationSchema)
     .orderBy(desc(organizationSchema.createdAt));
+
+  return orgs.map(org => ({
+    ...org,
+    createdAt: org.createdAt.toISOString(),
+    updatedAt: org.updatedAt.toISOString(),
+  }));
 }

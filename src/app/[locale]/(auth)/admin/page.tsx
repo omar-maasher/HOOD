@@ -6,7 +6,7 @@ import { AdminClient } from './AdminClient';
 
 export default async function AdminPage() {
   const user = await currentUser();
-  const emails = process.env.SUPER_ADMIN_EMAILS?.split(',') || [];
+  const emails = (process.env.SUPER_ADMIN_EMAILS || '').split(',').map(e => e.trim()).filter(Boolean);
 
   if (!user || !user.emailAddresses.some(e => emails.includes(e.emailAddress))) {
     redirect('/dashboard');
