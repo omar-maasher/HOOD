@@ -33,9 +33,11 @@ export const POST = async (request: Request) => {
       });
 
       if (!org?.planId || org.planId === PLAN_ID.FREE) {
-        // Simple detection for Arabic characters
+        // Use italics and special formatting to make it look like a "small gray" footer
         const isArabic = /[\u0600-\u06FF]/.test(message);
-        const footer = isArabic ? 'مدعوم بواسطة HoodTrading' : 'Powered by HoodTrading';
+        const footer = isArabic
+          ? '_— مدعوم بواسطة HoodTrading_'
+          : '_— ᴘᴏᴡᴇʀᴇᴅ ʙʏ ʜᴏᴏᴅᴛʀᴀᴅɪɴɢ_';
         finalMessage = `${message}\n\n${footer}`;
       }
     } catch (e) {
