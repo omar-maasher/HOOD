@@ -41,6 +41,7 @@ export const POST = async (req: Request) => {
     // Check DB for global setting first, then fallback to Env
     const globalSettings = await db.query.globalSettingsSchema.findMany();
     const dbN8nUrl = globalSettings.find(s => s.key === 'N8N_WEBHOOK_URL')?.value;
+    const globalPrompt = globalSettings.find(s => s.key === 'SITE_SYSTEM_PROMPT')?.value;
 
     const n8nUrl = dbN8nUrl || process.env.N8N_CHAT_WEBHOOK_URL || process.env.N8N_WEBHOOK_URL;
 
@@ -62,6 +63,7 @@ export const POST = async (req: Request) => {
               aiConfig: settings || null,
               businessInfo: businessInfo || '',
               faqs: settings?.faqs || [],
+              globalPrompt: globalPrompt || '',
             },
           }),
         });

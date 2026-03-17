@@ -222,29 +222,65 @@ export function AdminClient({ stats, organizations, globalSettings }: { stats: A
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="space-y-2">
-              <label htmlFor="global-n8n-url" className="text-[11px] font-black uppercase tracking-wider text-blue-800/60">رابط N8n للشات (Site Webhook)</label>
+          <div className="grid gap-8 md:grid-cols-2">
+            {/* N8N URL */}
+            <div className="space-y-4">
+              <label htmlFor="global-n8n-url" className="flex items-center gap-2 text-[11px] font-black uppercase tracking-wider text-blue-800/60">
+                <RefreshCcw className="size-3" />
+                رابط N8n للشات (Site Webhook)
+              </label>
               <div className="flex gap-2">
                 <Input
                   defaultValue={globalData.N8N_WEBHOOK_URL}
                   placeholder="https://n8n.example.com/webhook/..."
-                  className="rounded-xl border-blue-100 bg-white/80 focus:ring-blue-500"
+                  className="h-11 rounded-xl border-blue-100 bg-white/80 font-medium focus:ring-blue-500"
                   id="global-n8n-url"
                 />
                 <Button
                   size="sm"
-                  className="rounded-xl bg-blue-600 px-4 font-bold hover:bg-blue-700"
+                  className="h-11 rounded-xl bg-blue-600 px-6 font-bold shadow-lg shadow-blue-200 hover:bg-blue-700"
                   disabled={isSavingGlobal}
                   onClick={() => {
                     const val = (document.getElementById('global-n8n-url') as HTMLInputElement).value;
                     handleUpdateGlobal('N8N_WEBHOOK_URL', val);
                   }}
                 >
-                  {isSavingGlobal ? <RefreshCcw className="size-4 animate-spin" /> : 'حفظ'}
+                  {isSavingGlobal ? <RefreshCcw className="size-4 animate-spin" /> : 'حفظ الرابط'}
                 </Button>
               </div>
               <p className="text-[10px] font-medium leading-relaxed text-blue-600/60">هذا الرابط سيتحكم في شات الصفحة الرئيسية للموقع بشكل كامل.</p>
+            </div>
+
+            {/* Global Prompt */}
+            <div className="space-y-4">
+              <label htmlFor="global-system-prompt" className="flex items-center gap-2 text-[11px] font-black uppercase tracking-wider text-blue-800/60">
+                <Sparkles className="size-3" />
+                توجيهات النظام العامة (Global System Prompt)
+              </label>
+              <div className="flex flex-col gap-2">
+                <Textarea
+                  defaultValue={globalData.SITE_SYSTEM_PROMPT}
+                  placeholder="أنت مساعد هود تريندينج الذكي، مهمتك هي..."
+                  className="min-h-[100px] rounded-xl border-blue-100 bg-white/80 text-xs font-medium leading-relaxed focus:ring-blue-500"
+                  id="global-system-prompt"
+                />
+                <div className="flex justify-end">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-10 rounded-xl border-blue-200 px-6 font-bold hover:bg-blue-50"
+                    disabled={isSavingGlobal}
+                    onClick={() => {
+                      const val = (document.getElementById('global-system-prompt') as HTMLTextAreaElement).value;
+                      handleUpdateGlobal('SITE_SYSTEM_PROMPT', val);
+                    }}
+                  >
+                    {isSavingGlobal ? <RefreshCcw className="mr-2 size-3 animate-spin" /> : <ShieldCheck className="mr-2 size-3" />}
+                    حفظ التوجيهات
+                  </Button>
+                </div>
+              </div>
+              <p className="text-[10px] font-medium leading-relaxed text-blue-600/60">هذه التعليمات سيتم إرسالها لـ N8n لتوجه ردود الشات في الموقع.</p>
             </div>
           </div>
         </CardContent>
