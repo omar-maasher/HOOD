@@ -27,101 +27,54 @@ export const POST = async (req: Request) => {
       where: eq(businessProfileSchema.organizationId, settings.organizationId),
     });
 
-    // 3. Prepare System Prompt
-    const faqsText = settings.faqs?.map(f => `Q: ${f.question}\nA: ${f.answer}`).join('\n') || '';
+    // 3. Prepare Context for N8n
     const businessInfo = profile
       ? `اسم النشاط: ${profile.businessName}\nالوصف: ${profile.businessDescription}\nساعات العمل: ${profile.workingHours}\nالعنوان: ${profile.address}`
       : '';
 
-    const systemPrompt = `
-      ${settings.systemPrompt || 'أنت مساعد ذكي ومحترف لهود تريندينج.'}
-      الأسلوب (Tone): ${settings.tone || 'friendly'}
-      
-      معلومات النشاط التجاري:
-      ${businessInfo}
-      
-      الأسئلة الشائعة (FAQs):
-      ${faqsText}
-      
-      تعليمات الرد:
-      - كن موجزاً وودوداً.
-      - أجب بنفس لغة المستخدم (عربية أو إنجليزية).
-      - استخدم المعلومات المتاحة في الأسئلة الشائعة (FAQs) للإجابة إذا كانت ذات صلة.
-      - إذا سأل عن شيء لا تعرفه، وجهه للتواصل عبر الواتساب أو اطلب منه ترك تفاصيله.
-      - التزم بحدود 3 جُمل في الرد الواحد ما لم تكن المعلومات تتطلب أكثر.
-    `;
-
-    // 4. Check for n8n integration
+    // 4. Try N8n Integration
     const n8nUrl = process.env.N8N_CHAT_WEBHOOK_URL || process.env.N8N_WEBHOOK_URL;
 
-    if (n8nUrl) {
-      try {
-        const n8nRes = await fetch(n8nUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            message,
-            platform: 'website',
-            senderId: 'website_visitor',
-            context: {
-              organizationId: settings.organizationId,
-              aiConfig: settings,
-              businessInfo,
-              faqs: settings.faqs,
-            },
-          }),
-        });
+    if (!n8nUrl) {
+      return NextResponse.json({
+        reply: 'N8n Webhook is not configured.',
+      }, { status: 200 });
+    }
 
-        if (n8nRes.ok) {
-          const n8nData = await n8nRes.json();
-          // Expecting n8n to return { reply: "..." } or { output: "..." }
-          const reply = n8nData.reply || n8nData.output || n8nData.response;
-          if (reply) {
-            return NextResponse.json({ reply });
-          }
+    try {
+      const n8nRes = await fetch(n8nUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message,
+          platform: 'website',
+          senderId: 'website_visitor',
+          context: {
+            organizationId: settings.organizationId,
+            aiConfig: settings,
+            businessInfo,
+            faqs: settings.faqs,
+          },
+        }),
+      });
+
+      if (n8nRes.ok) {
+        const n8nData = await n8nRes.json();
+        const reply = n8nData.reply || n8nData.output || n8nData.response;
+        if (reply) {
+          return NextResponse.json({ reply });
         }
-      } catch (error) {
-        console.error('n8n forwarding failed, falling back to OpenAI:', error);
       }
-    }
 
-    // 5. Fallback to OpenAI (using fetch)
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
       return NextResponse.json({
-        reply: 'AI Chat is not configured (Missing API Keys in .env).',
+        reply: 'عذراً، لم أتمكن من الحصول على رد من النظام حالياً.',
+      }, { status: 200 });
+    } catch (error) {
+      console.error('n8n forwarding failed:', error);
+      return NextResponse.json({
+        reply: 'عذراً، حدث خطأ في الاتصال بنظام المعالجة (N8n).',
       }, { status: 200 });
     }
-
-    const aiRes = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: message },
-        ],
-        temperature: 0.7,
-        max_tokens: 500,
-      }),
-    });
-
-    if (!aiRes.ok) {
-      const errorData = await aiRes.json();
-      console.error('OpenAI API Error:', errorData);
-      return NextResponse.json({
-        reply: 'حدث خطأ في معالجة طلبك عبر الذكاء الاصطناعي.',
-      }, { status: 200 });
-    }
-
-    const aiData = await aiRes.json();
-    const reply = aiData.choices?.[0]?.message?.content || 'لم أتمكن من الحصول على رد مفيد حالياً.';
-
-    return NextResponse.json({ reply });
   } catch (error) {
     console.error('Chat API Error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
