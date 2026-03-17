@@ -13,15 +13,25 @@ export const POST = async (req: Request) => {
       return NextResponse.json({ error: 'Message is required' }, { status: 400 });
     }
 
-    // 1. Get default AI settings
-    const settings = await db.query.aiSettingsSchema.findFirst();
+    // Attempt to get settings if they exist
+    let settings = null;
+    try {
+      settings = await db.query.aiSettingsSchema.findFirst();
+    } catch (e) {
+      logger.error(e, 'Failed to fetch AI settings from DB');
+    }
 
-    // 2. Fetch business profile
-    const profile = settings
-      ? await db.query.businessProfileSchema.findFirst({
-        where: eq(businessProfileSchema.organizationId, settings.organizationId),
-      })
-      : null;
+    // Fetch business profile
+    let profile = null;
+    if (settings) {
+      try {
+        profile = await db.query.businessProfileSchema.findFirst({
+          where: eq(businessProfileSchema.organizationId, settings.organizationId),
+        });
+      } catch (e) {
+        logger.error(e, 'Failed to fetch business profile');
+      }
+    }
 
     const businessInfo = profile
       ? `اسم النشاط: ${profile.businessName}\nالوصف: ${profile.businessDescription}\nساعات العمل: ${profile.workingHours}\nالعنوان: ${profile.address}`
@@ -29,8 +39,6 @@ export const POST = async (req: Request) => {
 
     // 3. Try N8n Integration
     const n8nUrl = process.env.N8N_CHAT_WEBHOOK_URL || process.env.N8N_WEBHOOK_URL;
-
-    logger.info({ n8nUrl }, 'Attempting to contact N8n');
 
     if (n8nUrl) {
       try {
@@ -56,21 +64,25 @@ export const POST = async (req: Request) => {
           if (reply) {
             return NextResponse.json({ reply });
           }
+        } else {
+          const errText = await n8nRes.text();
+          logger.error({ status: n8nRes.status, errText }, 'n8n responded with error');
         }
       } catch (error) {
-        logger.error(error, 'n8n forwarding failed');
+        logger.error(error, 'n8n connection failed');
       }
     }
 
-    // 4. Fallback if n8n is not set or failed
-    if (!settings || settings.isActive !== 'true') {
+    // If we reach here, it means N8n failed or was not configured
+    // We only show "Offline" if settings are missing OR explicitly inactive
+    if (!n8nUrl && (!settings || settings.isActive !== 'true')) {
       return NextResponse.json({
-        reply: 'عذراً، المساعد غير متصل حالياً. يمكنك المحاولة لاحقاً.',
+        reply: 'عذراً، نظام المحادثة غير مكتمل الإعداد (رابط n8n مفقود والبوت غير مفعل في القاعدة).',
       }, { status: 200 });
     }
 
     return NextResponse.json({
-      reply: 'عذراً، لم أتمكن من الحصول على رد من النظام حالياً.',
+      reply: 'عذراً، فشل الاتصال بنظام n8n. يرجى التأكد من تشغيل الـ Workflow ومن صحة الرابط.',
     }, { status: 200 });
   } catch (error) {
     logger.error(error, 'Chat API Error');
