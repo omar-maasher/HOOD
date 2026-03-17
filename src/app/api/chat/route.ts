@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/DB';
+import { logger } from '@/libs/Logger';
 import { businessProfileSchema } from '@/models/Schema';
 
 export const POST = async (req: Request) => {
@@ -35,9 +36,11 @@ export const POST = async (req: Request) => {
     // 4. Try N8n Integration
     const n8nUrl = process.env.N8N_CHAT_WEBHOOK_URL || process.env.N8N_WEBHOOK_URL;
 
+    logger.info({ n8nUrl }, 'Attempting to contact N8n');
+
     if (!n8nUrl) {
       return NextResponse.json({
-        reply: 'N8n Webhook is not configured.',
+        reply: 'عذراً، لم يتم إعداد رابط n8n في الإعدادات.',
       }, { status: 200 });
     }
 
