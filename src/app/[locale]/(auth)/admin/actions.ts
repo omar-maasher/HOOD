@@ -8,6 +8,7 @@ import {
   aiSettingsSchema,
   bookingSchema,
   businessProfileSchema,
+  globalSettingsSchema,
   integrationSchema,
   leadSchema,
   organizationSchema,
@@ -147,6 +148,24 @@ export async function updateOrganizationDeepSettings(orgId: string, data: {
       })
       .where(eq(businessProfileSchema.organizationId, orgId));
   }
+
+  return { success: true };
+}
+
+export async function getGlobalSettings() {
+  await checkSuperAdmin();
+  return db.select().from(globalSettingsSchema);
+}
+
+export async function updateGlobalSetting(key: string, value: string) {
+  await checkSuperAdmin();
+
+  await db.insert(globalSettingsSchema)
+    .values({ key, value })
+    .onConflictDoUpdate({
+      target: globalSettingsSchema.key,
+      set: { value, updatedAt: new Date() },
+    });
 
   return { success: true };
 }

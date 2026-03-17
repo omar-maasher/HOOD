@@ -25,7 +25,13 @@ import {
 } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 
-import { deleteOrganization, getOrganizationDeepSettings, updateOrganizationDeepSettings, updateOrganizationSubscription } from './actions';
+import {
+  deleteOrganization,
+  getOrganizationDeepSettings,
+  updateGlobalSetting,
+  updateOrganizationDeepSettings,
+  updateOrganizationSubscription,
+} from './actions';
 
 type AdminStats = {
   totalOrgs: number;
@@ -34,7 +40,7 @@ type AdminStats = {
   activeSubscriptions: number;
 };
 
-export function AdminClient({ stats, organizations }: { stats: AdminStats; organizations: any[] }) {
+export function AdminClient({ stats, organizations, globalSettings }: { stats: AdminStats; organizations: any[]; globalSettings: any[] }) {
   const t = useTranslations('Admin');
   const [mounted, setMounted] = React.useState(false);
   const [editingOrg, setEditingOrg] = React.useState<any>(null);
@@ -44,6 +50,10 @@ export function AdminClient({ stats, organizations }: { stats: AdminStats; organ
   const [deepSettings, setDeepSettings] = React.useState<any>(null);
   const [isLoadingDeep, setIsLoadingDeep] = React.useState(false);
   const [showDeepContent, setShowDeepContent] = React.useState(false);
+  const [globalData, setGlobalData] = React.useState<Record<string, string>>(
+    Object.fromEntries(globalSettings.map(s => [s.key, s.value])),
+  );
+  const [isSavingGlobal, setIsSavingGlobal] = React.useState(false);
   const router = useRouter();
 
   React.useEffect(() => {
@@ -135,6 +145,19 @@ export function AdminClient({ stats, organizations }: { stats: AdminStats; organ
     }
   };
 
+  const handleUpdateGlobal = async (key: string, value: string) => {
+    setIsSavingGlobal(true);
+    try {
+      await updateGlobalSetting(key, value);
+      setGlobalData(prev => ({ ...prev, [key]: value }));
+      router.refresh();
+    } catch (error) {
+      console.error('Global update failed:', error);
+    } finally {
+      setIsSavingGlobal(false);
+    }
+  };
+
   const statCards = [
     {
       title: t('total_orgs'),
@@ -187,6 +210,45 @@ export function AdminClient({ stats, organizations }: { stats: AdminStats; organ
           <div className="rounded-full border border-blue-200 bg-blue-100 px-3 py-1 text-[10px] font-bold text-blue-700">v1.16.0</div>
         </div>
       </div>
+
+      {/* Platform Settings */}
+      <Card className="rounded-3xl border-none bg-blue-50/30 shadow-xl ring-1 ring-blue-100/50 backdrop-blur-md">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-3 text-lg font-bold text-blue-900">
+            <div className="rounded-xl bg-blue-600/10 p-2 text-blue-600">
+              <Sparkles className="size-5" />
+            </div>
+            إعدادات المنصة (Global Settings)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-2">
+              <label htmlFor="global-n8n-url" className="text-[11px] font-black uppercase tracking-wider text-blue-800/60">رابط N8n للشات (Site Webhook)</label>
+              <div className="flex gap-2">
+                <Input
+                  defaultValue={globalData.N8N_WEBHOOK_URL}
+                  placeholder="https://n8n.example.com/webhook/..."
+                  className="rounded-xl border-blue-100 bg-white/80 focus:ring-blue-500"
+                  id="global-n8n-url"
+                />
+                <Button
+                  size="sm"
+                  className="rounded-xl bg-blue-600 px-4 font-bold hover:bg-blue-700"
+                  disabled={isSavingGlobal}
+                  onClick={() => {
+                    const val = (document.getElementById('global-n8n-url') as HTMLInputElement).value;
+                    handleUpdateGlobal('N8N_WEBHOOK_URL', val);
+                  }}
+                >
+                  {isSavingGlobal ? <RefreshCcw className="size-4 animate-spin" /> : 'حفظ'}
+                </Button>
+              </div>
+              <p className="text-[10px] font-medium leading-relaxed text-blue-600/60">هذا الرابط سيتحكم في شات الصفحة الرئيسية للموقع بشكل كامل.</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Stats Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">

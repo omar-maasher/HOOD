@@ -14,21 +14,16 @@ export const ChatWidget = () => {
   const locale = useLocale();
   const isAr = locale === 'ar';
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<{ role: 'user' | 'bot'; text: string }[]>([]);
+  const [messages, setMessages] = useState<{ id: string; role: 'user' | 'bot'; text: string }[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const toggleChat = () => setIsOpen(!isOpen);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTo({
-        top: scrollRef.current.scrollHeight,
-        behavior: 'smooth',
-      });
-    }
-  }, [messages]);
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isLoading]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,7 +32,7 @@ export const ChatWidget = () => {
     }
 
     const userMessage = inputText.trim();
-    setMessages(prev => [...prev, { role: 'user', text: userMessage }]);
+    setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'user', text: userMessage }]);
     setInputText('');
     setIsLoading(true);
 
@@ -49,10 +44,10 @@ export const ChatWidget = () => {
       });
 
       const data = await response.json();
-      setMessages(prev => [...prev, { role: 'bot', text: data.reply || (isAr ? 'عذراً، حدث خطأ ما.' : 'Sorry, something went wrong.') }]);
+      setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'bot', text: data.reply || (isAr ? 'عذراً، حدث خطأ ما.' : 'Sorry, something went wrong.') }]);
     } catch (error) {
       console.error('Chat error:', error);
-      setMessages(prev => [...prev, { role: 'bot', text: isAr ? 'فشل الاتصال بالخادم.' : 'Failed to connect to server.' }]);
+      setMessages(prev => [...prev, { id: crypto.randomUUID(), role: 'bot', text: isAr ? 'فشل الاتصال بالخادم.' : 'Failed to connect to server.' }]);
     } finally {
       setIsLoading(false);
     }
@@ -86,7 +81,7 @@ export const ChatWidget = () => {
               </div>
 
               {/* Messages Area */}
-              <ScrollArea className="h-[400px] p-4" ref={scrollRef}>
+              <ScrollArea className="h-[400px] p-4">
                 <div className="flex flex-col gap-4">
                   {messages.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground">
@@ -96,9 +91,9 @@ export const ChatWidget = () => {
                       </p>
                     </div>
                   )}
-                  {messages.map((msg, i) => (
+                  {messages.map(msg => (
                     <div
-                      key={i}
+                      key={msg.id}
                       className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
@@ -121,6 +116,7 @@ export const ChatWidget = () => {
                       </div>
                     </div>
                   )}
+                  <div ref={messagesEndRef} />
                 </div>
               </ScrollArea>
 

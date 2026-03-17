@@ -38,13 +38,21 @@ export const POST = async (req: Request) => {
       : '';
 
     // 3. Try N8n Integration
-    const n8nUrl = process.env.N8N_CHAT_WEBHOOK_URL || process.env.N8N_WEBHOOK_URL;
+    // Check DB for global setting first, then fallback to Env
+    const globalSettings = await db.query.globalSettingsSchema.findMany();
+    const dbN8nUrl = globalSettings.find(s => s.key === 'N8N_WEBHOOK_URL')?.value;
+
+    const n8nUrl = dbN8nUrl || process.env.N8N_CHAT_WEBHOOK_URL || process.env.N8N_WEBHOOK_URL;
 
     if (n8nUrl) {
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds timeout
+
         const n8nRes = await fetch(n8nUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
           body: JSON.stringify({
             message,
             platform: 'website',
@@ -57,6 +65,8 @@ export const POST = async (req: Request) => {
             },
           }),
         });
+
+        clearTimeout(timeoutId);
 
         if (n8nRes.ok) {
           const n8nData = await n8nRes.json();
