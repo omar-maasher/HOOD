@@ -168,6 +168,7 @@ export const POST = async (request: Request) => {
     const context = {
       organizationId: orgId,
       integrationType: integration.type,
+      metaAccessToken: integration.accessToken || '',
       aiConfig: aiSettingsResults[0] || { isActive: 'false' },
     };
 
