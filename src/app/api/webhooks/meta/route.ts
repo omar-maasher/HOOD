@@ -175,11 +175,14 @@ export const POST = async (request: Request) => {
     // معالجة Messenger / Instagram
     for (const event of messaging) {
       const mid = event.message?.mid;
-      if (event.message?.is_echo || !mid) {
+      // نتحقق من وجود المعرف أو وجود مرفقات (للدعم الكامل للصوت والوسائط)
+      if (event.message?.is_echo || (!mid && !event.message?.attachments)) {
         continue;
       }
 
       const senderId = event.sender?.id as string;
+      const messageText = event.message?.text || '';
+      const hasAttachments = !!(event.message?.attachments && event.message.attachments.length > 0);
       // Detect platform based on MID format
       const platform = detectMessagingPlatform(mid);
 
@@ -216,6 +219,8 @@ export const POST = async (request: Request) => {
               senderId,
               username: finalUsername,
               name: finalName,
+              message: messageText,
+              hasAttachments,
               context,
             }),
           });
