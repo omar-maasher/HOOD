@@ -210,12 +210,15 @@ export const POST = async (request: Request) => {
             return null;
           }
 
+          const msgType = hasAttachments && event.message?.attachments?.[0]?.type === 'audio' ? 'audio' : 'text';
+
           return await fetch(targetUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               rawBody: body,
               platform,
+              type: msgType,
               senderId,
               username: finalUsername,
               name: finalName,
@@ -261,10 +264,18 @@ export const POST = async (request: Request) => {
                 return null;
               }
 
+              const msgType = msg.type === 'audio' ? 'audio' : 'text';
+
               return await fetch(targetUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ rawBody: body, platform: 'whatsapp', eventType: 'message', senderId, context }),
+                body: JSON.stringify({
+                  rawBody: body,
+                  platform: 'whatsapp',
+                  type: msgType,
+                  senderId,
+                  context,
+                }),
               });
             } catch (e) {
               logger.error('WhatsApp forward error', e);
