@@ -194,11 +194,13 @@ export const POST = async (request: Request) => {
     for (const event of messaging) {
       const mid = event.message?.mid;
       // نتحقق من وجود المعرف أو وجود مرفقات (للدعم الكامل للصوت والوسائط)
-      if (event.message?.is_echo || (!mid && !event.message?.attachments)) {
+      if (!mid && !event.message?.attachments) {
         continue;
       }
 
-      const senderId = event.sender?.id as string;
+      const isEcho = event.message?.is_echo === true;
+      const senderId = (isEcho ? event.recipient?.id : event.sender?.id) as string;
+
       const messageText = event.message?.text || '';
       const hasAttachments = !!(event.message?.attachments && event.message.attachments.length > 0);
       // Detect platform based on MID format
@@ -215,13 +217,18 @@ export const POST = async (request: Request) => {
 
           await db.insert(webhookEventSchema).values({ mid });
 
-          // Fetch profile info (Name/Username)
-          const profile = await getSenderProfile(senderId, platform, integration.accessToken || '');
-          const finalName = profile?.name || senderId;
-          const finalUsername = platform === 'instagram' ? (profile?.username || senderId) : senderId;
+          // Fetch profile info (Name/Username) - Only for incoming messages
+          let finalName = senderId;
+          let finalUsername = senderId;
 
-          // Auto-create/update lead with real name and username
-          await upsertLead(orgId, senderId, platform, finalName, finalUsername);
+          if (!isEcho) {
+            const profile = await getSenderProfile(senderId, platform, integration.accessToken || '');
+            finalName = profile?.name || senderId;
+            finalUsername = platform === 'instagram' ? (profile?.username || senderId) : senderId;
+
+            // Auto-create/update lead with real name and username
+            await upsertLead(orgId, senderId, platform, finalName, finalUsername);
+          }
 
           // --- INBOX SYNC ---
           const conversation = await db.insert(conversationSchema)
@@ -248,11 +255,15 @@ export const POST = async (request: Request) => {
             await db.insert(messageSchema).values({
               organizationId: orgId,
               conversationId: conversation[0].id,
-              direction: 'incoming',
+              direction: isEcho ? 'outgoing' : 'incoming',
               text: messageText,
               type: hasAttachments ? 'image' : 'text', // Simplified for now, can be more specific
               metadata: mid,
             });
+          }
+
+          if (isEcho) {
+            return null; // Do not send bot's own replies back to n8n to prevent loops
           }
 
           const targetUrl = n8nUrls[platform];

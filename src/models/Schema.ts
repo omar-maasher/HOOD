@@ -1,5 +1,6 @@
 import {
   bigint,
+  integer,
   jsonb,
   numeric,
   pgTable,
@@ -243,7 +244,7 @@ export const messageSchema = pgTable('message', {
   organizationId: text('organization_id')
     .notNull()
     .references(() => organizationSchema.id),
-  conversationId: serial('conversation_id')
+  conversationId: integer('conversation_id')
     .notNull()
     .references(() => conversationSchema.id, { onDelete: 'cascade' }),
   direction: text('direction').notNull(), // 'incoming' | 'outgoing'

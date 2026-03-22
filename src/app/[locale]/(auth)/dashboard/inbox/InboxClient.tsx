@@ -1,6 +1,6 @@
 'use client';
 
-import { format } from 'date-fns';
+import { format, isToday, isYesterday } from 'date-fns';
 import { ar, enUS } from 'date-fns/locale';
 import {
   ArrowRight,
@@ -277,36 +277,55 @@ export const InboxClient = ({ initialConversations, isAr }: { initialConversatio
                         )
                       : (
                           <>
-                            <div className="py-4 text-center">
-                              <Badge variant="outline" className="bg-background text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                                {isAr ? 'بداية المحادثة' : 'CONVERSATION STARTED'}
-                              </Badge>
-                            </div>
+                            {(() => {
+                              let lastDateStr = '';
+                              return messages.map((msg) => {
+                                const msgDate = new Date(msg.createdAt);
+                                const dateStr = format(msgDate, 'yyyy-MM-dd');
+                                const showDivider = dateStr !== lastDateStr;
+                                lastDateStr = dateStr;
 
-                            {messages.map(msg => (
-                              <div
-                                key={msg.id}
-                                className={`group flex ${msg.direction === 'outgoing' ? 'justify-end' : 'justify-start'}`}
-                              >
-                                <div className={`flex max-w-[75%] flex-col gap-1 ${msg.direction === 'outgoing' ? 'items-end' : 'items-start'}`}>
-                                  <div
-                                    className={`rounded-3xl p-4 text-sm font-medium shadow-sm transition-all duration-300 hover:shadow-md ${
-                                      msg.direction === 'outgoing'
-                                        ? 'rounded-tr-none bg-primary text-primary-foreground'
-                                        : 'rounded-tl-none border bg-background text-foreground'
-                                    }`}
-                                  >
-                                    {msg.text}
-                                  </div>
-                                  <div className="flex items-center gap-2 px-1 opacity-0 transition-opacity group-hover:opacity-100">
-                                    <span className="text-[10px] font-bold italic text-muted-foreground">
-                                      {format(new Date(msg.createdAt), 'p', { locale: isAr ? ar : enUS })}
-                                    </span>
-                                    {msg.direction === 'outgoing' && <CheckCheck size={12} className="text-primary" />}
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
+                                const dateLabel = isToday(msgDate)
+                                  ? (isAr ? 'اليوم' : 'Today')
+                                  : isYesterday(msgDate)
+                                    ? (isAr ? 'أمس' : 'Yesterday')
+                                    : format(msgDate, 'dd MMMM yyyy', { locale: isAr ? ar : enUS });
+
+                                return (
+                                  <React.Fragment key={msg.id}>
+                                    {showDivider && (
+                                      <div className="py-4 text-center">
+                                        <Badge variant="outline" className="bg-background text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                                          {dateLabel}
+                                        </Badge>
+                                      </div>
+                                    )}
+
+                                    <div
+                                      className={`group flex ${msg.direction === 'outgoing' ? 'justify-end' : 'justify-start'}`}
+                                    >
+                                      <div className={`flex max-w-[75%] flex-col gap-1 ${msg.direction === 'outgoing' ? 'items-end' : 'items-start'}`}>
+                                        <div
+                                          className={`rounded-3xl p-4 text-sm font-medium shadow-sm transition-all duration-300 hover:shadow-md ${
+                                            msg.direction === 'outgoing'
+                                              ? 'rounded-tr-none bg-primary text-primary-foreground'
+                                              : 'rounded-tl-none border bg-background text-foreground'
+                                          }`}
+                                        >
+                                          {msg.text}
+                                        </div>
+                                        <div className="flex items-center gap-2 px-1 opacity-0 transition-opacity group-hover:opacity-100">
+                                          <span className="text-[10px] font-bold italic text-muted-foreground">
+                                            {format(msgDate, 'p', { locale: isAr ? ar : enUS })}
+                                          </span>
+                                          {msg.direction === 'outgoing' && <CheckCheck size={12} className="text-primary" />}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </React.Fragment>
+                                );
+                              });
+                            })()}
                           </>
                         )}
                     <div ref={messagesEndRef} />
