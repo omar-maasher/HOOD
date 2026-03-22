@@ -57,6 +57,7 @@ export default function BookingsClient({ initialBookings, products }: { initialB
     notes: '',
     source: 'whatsapp',
     socialUsername: '',
+    serviceDetails: '',
     cart: [] as any[],
   });
 
@@ -73,6 +74,7 @@ export default function BookingsClient({ initialBookings, products }: { initialB
       notes: '',
       source: 'whatsapp',
       socialUsername: '',
+      serviceDetails: '',
       cart: [],
     });
     setCurrentProduct({ id: '', quantity: '1' });
@@ -89,6 +91,7 @@ export default function BookingsClient({ initialBookings, products }: { initialB
       notes: booking.notes || '',
       source: booking.source || 'whatsapp',
       socialUsername: booking.socialUsername || '',
+      serviceDetails: booking.serviceDetails || '',
       cart: booking.cart || [],
     });
     setCurrentProduct({ id: '', quantity: '1' });
@@ -200,7 +203,8 @@ export default function BookingsClient({ initialBookings, products }: { initialB
       || b.contactInfo.toLowerCase().includes(searchQuery.toLowerCase())
       || (b.socialUsername && b.socialUsername.toLowerCase().includes(searchQuery.toLowerCase()))
       || cartMatches
-      || (b.notes && b.notes.toLowerCase().includes(searchQuery.toLowerCase()));
+      || (b.notes && b.notes.toLowerCase().includes(searchQuery.toLowerCase()))
+      || (b.serviceDetails && b.serviceDetails.toLowerCase().includes(searchQuery.toLowerCase()));
 
     const matchesStatus = statusFilter ? b.status === statusFilter : true;
 
@@ -356,10 +360,11 @@ export default function BookingsClient({ initialBookings, products }: { initialB
                         onChange={handleSelectAll}
                       />
                     </TableHead>
-                    <TableHead className="px-4 py-6 text-start text-sm font-black uppercase tracking-widest">العميل</TableHead>
-                    <TableHead className="p-6 text-start text-sm font-black uppercase tracking-widest">المنتجات</TableHead>
-                    <TableHead className="p-6 text-start text-sm font-black uppercase tracking-widest">الموعد</TableHead>
-                    <TableHead className="p-6 text-start text-sm font-black uppercase tracking-widest">الحالة</TableHead>
+                    <TableHead className="px-4 py-6 text-start text-sm font-black uppercase tracking-widest">{isAr ? 'العميل' : 'Customer'}</TableHead>
+                    <TableHead className="p-6 text-start text-sm font-black uppercase tracking-widest">{isAr ? 'المنتجات' : 'Products'}</TableHead>
+                    <TableHead className="p-6 text-start text-sm font-black uppercase tracking-widest">{isAr ? 'التفاصيل' : 'Details'}</TableHead>
+                    <TableHead className="p-6 text-start text-sm font-black uppercase tracking-widest">{isAr ? 'الموعد' : 'Booking Date'}</TableHead>
+                    <TableHead className="p-6 text-start text-sm font-black uppercase tracking-widest">{isAr ? 'الحالة' : 'Status'}</TableHead>
                     <TableHead className="px-8 py-6 text-end text-sm font-black uppercase tracking-widest">إجراءات</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -416,15 +421,22 @@ export default function BookingsClient({ initialBookings, products }: { initialB
                                 })
                               )
                             : (
-                                <span className="text-sm font-medium italic text-muted-foreground">خدمة / عام</span>
+                                <span className="text-sm font-medium italic text-muted-foreground">{isAr ? 'خدمة / عام' : 'Service / General'}</span>
                               )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-6 py-5">
+                        <div className="flex max-w-[150px] flex-col text-start">
+                          <span className="truncate text-sm font-bold text-gray-700" title={booking.serviceDetails}>
+                            {booking.serviceDetails || '-'}
+                          </span>
                         </div>
                       </TableCell>
                       <TableCell className="px-6 py-5">
                         <div className="flex flex-col text-start">
                           <div className="flex items-center gap-2 text-base font-black tracking-tighter text-gray-800">
                             <CalendarIcon className="size-4 text-primary/60" />
-                            <span dir="ltr">{format(new Date(booking.bookingDate), 'PPp', { locale: arSA })}</span>
+                            <span dir="ltr">{format(new Date(booking.bookingDate), 'PPp', { locale: isAr ? arSA : undefined })}</span>
                           </div>
                           <span className="mt-1 text-xs font-bold text-muted-foreground">{getRelativeDate(booking.bookingDate)}</span>
                         </div>
@@ -627,11 +639,22 @@ export default function BookingsClient({ initialBookings, products }: { initialB
                 </div>
 
                 <div className="grid gap-3">
-                  <Label className="px-1 text-lg font-black">تفاصيل وملاحظات (اختياري)</Label>
+                  <Label className="px-1 text-lg font-black">{isAr ? 'تفاصيل الخدمة (المستخلصة من الـ AI)' : 'Service Details (AI Extracted)'}</Label>
                   <textarea
-                    rows={4}
-                    placeholder="أي تعليمات إضافية تتعلق بهذا الحجز..."
-                    className="flex min-h-[140px] w-full resize-none rounded-[2rem] border-none bg-muted/30 p-6 text-base font-medium leading-relaxed shadow-inner outline-none focus:ring-2 focus:ring-primary"
+                    rows={2}
+                    placeholder={isAr ? 'مثلاً: صيانة لابتوب، غسيل سيارة...' : 'e.g. Laptop repair...'}
+                    className="flex min-h-[80px] w-full resize-none rounded-2xl border-none bg-muted/30 p-4 text-base font-bold shadow-inner outline-none focus:ring-2 focus:ring-primary"
+                    value={formData.serviceDetails}
+                    onChange={e => setFormData({ ...formData, serviceDetails: e.target.value })}
+                  />
+                </div>
+
+                <div className="grid gap-3">
+                  <Label className="px-1 text-lg font-black">{isAr ? 'ملاحظات إضافية (اختياري)' : 'Additional Notes (Optional)'}</Label>
+                  <textarea
+                    rows={3}
+                    placeholder={isAr ? 'أي تعليمات إضافية تتعلق بهذا الحجز...' : 'Any extra instructions...'}
+                    className="flex min-h-[120px] w-full resize-none rounded-[2rem] border-none bg-muted/30 p-6 text-base font-medium leading-relaxed shadow-inner outline-none focus:ring-2 focus:ring-primary"
                     value={formData.notes}
                     onChange={e => setFormData({ ...formData, notes: e.target.value })}
                   />

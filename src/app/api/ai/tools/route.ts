@@ -64,7 +64,8 @@ export const POST = async (request: Request) => {
 
       // --- BOOKING TOOLS ---
       case 'create_booking': {
-        const { customerName, contactInfo, serviceDetails, bookingDate, source, socialUsername, notes } = params;
+        const { customerName, contactInfo, bookingDate, source, socialUsername, notes } = params;
+        const serviceDetails = params.serviceDetails || params.details || ''; // قبول المسميين لضمان وصول البيانات
 
         const [newBooking] = await db.insert(bookingSchema).values({
           organizationId,
@@ -79,6 +80,32 @@ export const POST = async (request: Request) => {
         }).returning();
 
         return NextResponse.json({ success: true, bookingId: newBooking?.id });
+      }
+
+      // --- TRACKING TOOLS ---
+      case 'get_booking_status': {
+        const bookingId = Number(params?.bookingId);
+        if (!bookingId) {
+          return NextResponse.json({ error: 'Missing bookingId' }, { status: 400 });
+        }
+
+        const booking = await db.query.bookingSchema.findFirst({
+          where: and(
+            eq(bookingSchema.id, bookingId),
+            eq(bookingSchema.organizationId, organizationId),
+          ),
+        });
+
+        if (!booking) {
+          return NextResponse.json({ message: 'حجز غير موجود، يرجى التأكد من الرقم.' });
+        }
+
+        return NextResponse.json({
+          status: booking.status,
+          customerName: booking.customerName,
+          bookingDate: booking.bookingDate,
+          notes: booking.notes,
+        });
       }
 
       default:
