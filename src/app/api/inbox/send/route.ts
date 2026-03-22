@@ -52,7 +52,19 @@ export const POST = async (request: Request) => {
     }
 
     const accessToken = integration.accessToken;
-    const providerId = integration.providerId; // WABA Phone ID or FB Page ID
+    let providerId = integration.providerId; // FB Page ID
+
+    // For WhatsApp, we need the phoneNumberId from config, not the WABA ID
+    if (platform === 'whatsapp' && integration.config) {
+      try {
+        const config = JSON.parse(integration.config);
+        if (config.phoneNumberId) {
+          providerId = config.phoneNumberId;
+        }
+      } catch (e) {
+        console.error('Failed to parse integration config', e);
+      }
+    }
 
     // 3. Send via Meta API
     let metaResponse: any;

@@ -15,6 +15,7 @@ import {
   Send,
   User,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import React, { useEffect, useRef, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
@@ -51,6 +52,12 @@ export const InboxClient = ({ initialConversations, isAr }: { initialConversatio
   const [sending, setSending] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  // Keep conversations fresh if page data changes (via router.refresh)
+  useEffect(() => {
+    setConversations(initialConversations);
+  }, [initialConversations]);
 
   const selectedConv = conversations.find(c => c.id === selectedConvId);
 
@@ -69,12 +76,32 @@ export const InboxClient = ({ initialConversations, isAr }: { initialConversatio
     }
   };
 
-  // Fetch messages when a conversation is selected
+  // Fetch messages when a conversation is selected and start polling
   useEffect(() => {
     if (selectedConvId) {
       loadMessages(selectedConvId);
     }
-  }, [selectedConvId]);
+
+    // Polling interval for live updates without page refresh
+    const interval = setInterval(() => {
+      // 1. Refresh conversations sidebar invisibly
+      router.refresh();
+
+      // 2. Refresh active chat messages invisibly
+      if (selectedConvId) {
+        fetch(`/api/inbox/messages?conversationId=${selectedConvId}`)
+          .then(res => res.ok ? res.json() : null)
+          .then((data) => {
+            if (data) {
+              setMessages(data);
+            }
+          })
+          .catch(err => console.error('Background message fetch failed', err));
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [selectedConvId, router]);
 
   // Auto-scroll to bottom of messages
   useEffect(() => {
