@@ -101,8 +101,9 @@ export const WhatsAppConnect: React.FC<WhatsAppConnectProps> = ({ appId, isAr })
 
     setLoading(true);
 
-    // Embedded Signup flow with Coexistence
-    // IDs provided: App ID 4004663493011326, Config ID 1161530359261782
+    // Embedded Signup flow with specific App ID and Config ID provided by user
+    // App ID: 4004663493011326
+    // Config ID: 1161530359261782
     window.FB.login((response: any) => {
       if (response.authResponse) {
         const code = response.authResponse.code;
@@ -113,13 +114,15 @@ export const WhatsAppConnect: React.FC<WhatsAppConnectProps> = ({ appId, isAr })
         console.log('User cancelled login or did not fully authorize.');
       }
     }, {
-      config_id: process.env.NEXT_PUBLIC_META_WA_CONFIG_ID, // Use environment variable
+      config_id: '1161530359261782', // المعرف الذي زودتنا به
       response_type: 'code',
       override_default_response_type: true,
       scope: 'whatsapp_business_management,whatsapp_business_messaging,business_management',
       extras: {
-        setup: {},
+        featureType: 'whatsapp_business_app_onboarding',
         sessionInfoVersion: '3',
+        version: 'v3',
+        setup: {},
       },
     });
   };
