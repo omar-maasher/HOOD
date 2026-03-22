@@ -42,6 +42,11 @@ export default async function DashboardLayout(props: { children: React.ReactNode
         }]
       : []),
     {
+      href: '/dashboard/inbox',
+      label: t('inbox'),
+      icon: <LayoutTemplate className="size-4" />, // We'll update the icon to Inbox later
+    },
+    {
       href: '/dashboard/products',
       label: t('products'),
       icon: <ShoppingBag className="size-4" />,

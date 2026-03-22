@@ -216,3 +216,44 @@ export const globalSettingsSchema = pgTable('global_settings', {
     .notNull(),
   createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
 });
+export const conversationSchema = pgTable('conversation', {
+  id: serial('id').primaryKey(),
+  organizationId: text('organization_id')
+    .notNull()
+    .references(() => organizationSchema.id),
+  platform: text('platform').notNull(), // 'whatsapp' | 'instagram' | 'messenger'
+  externalId: text('external_id').notNull(), // The ID from Meta (senderId)
+  customerName: text('customer_name'),
+  lastMessage: text('last_message'),
+  lastMessageAt: timestamp('last_message_at', { mode: 'date' }),
+  isUnread: text('is_unread').default('false'),
+  updatedAt: timestamp('updated_at', { mode: 'date' })
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+}, (table) => {
+  return {
+    externalPlatformIdx: uniqueIndex('external_platform_idx').on(table.organizationId, table.platform, table.externalId),
+  };
+});
+
+export const messageSchema = pgTable('message', {
+  id: serial('id').primaryKey(),
+  organizationId: text('organization_id')
+    .notNull()
+    .references(() => organizationSchema.id),
+  conversationId: serial('conversation_id')
+    .notNull()
+    .references(() => conversationSchema.id, { onDelete: 'cascade' }),
+  direction: text('direction').notNull(), // 'incoming' | 'outgoing'
+  type: text('type').default('text').notNull(), // 'text' | 'image' | 'voice'
+  text: text('text'),
+  mediaUrl: text('media_url'),
+  metadata: text('metadata'), // Extra info like MID or status
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+});
+
+// Relationships and types for Drizzle
+export type Conversation = typeof conversationSchema.$inferSelect;
+export type Message = typeof messageSchema.$inferSelect;

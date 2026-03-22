@@ -4,7 +4,16 @@ import { NextResponse } from 'next/server';
 import { db } from '@/libs/DB';
 import { logger } from '@/libs/Logger';
 import { detectMessagingPlatform, getSenderProfile } from '@/libs/Meta';
-import { aiSettingsSchema, businessProfileSchema, integrationSchema, leadSchema, organizationSchema, webhookEventSchema } from '@/models/Schema';
+import {
+  aiSettingsSchema,
+  businessProfileSchema,
+  conversationSchema,
+  integrationSchema,
+  leadSchema,
+  messageSchema,
+  organizationSchema,
+  webhookEventSchema,
+} from '@/models/Schema';
 
 export const GET = async (request: Request) => {
   const { searchParams } = new URL(request.url);
@@ -214,6 +223,38 @@ export const POST = async (request: Request) => {
           // Auto-create/update lead with real name and username
           await upsertLead(orgId, senderId, platform, finalName, finalUsername);
 
+          // --- INBOX SYNC ---
+          const conversation = await db.insert(conversationSchema)
+            .values({
+              organizationId: orgId,
+              platform,
+              externalId: senderId,
+              customerName: finalName,
+              lastMessage: messageText,
+              lastMessageAt: new Date(),
+              isUnread: 'true',
+            })
+            .onConflictDoUpdate({
+              target: [conversationSchema.organizationId, conversationSchema.platform, conversationSchema.externalId],
+              set: {
+                lastMessage: messageText,
+                lastMessageAt: new Date(),
+                isUnread: 'true',
+              },
+            })
+            .returning();
+
+          if (conversation[0]) {
+            await db.insert(messageSchema).values({
+              organizationId: orgId,
+              conversationId: conversation[0].id,
+              direction: 'incoming',
+              text: messageText,
+              type: hasAttachments ? 'image' : 'text', // Simplified for now, can be more specific
+              metadata: mid,
+            });
+          }
+
           const targetUrl = n8nUrls[platform];
           if (!targetUrl) {
             return null;
@@ -268,6 +309,40 @@ export const POST = async (request: Request) => {
               }
               await db.insert(webhookEventSchema).values({ mid });
 
+              const text = msg.text?.body || msg.caption || '';
+
+              // --- INBOX SYNC ---
+              const conversation = await db.insert(conversationSchema)
+                .values({
+                  organizationId: orgId,
+                  platform: 'whatsapp',
+                  externalId: senderId,
+                  customerName: senderName,
+                  lastMessage: text,
+                  lastMessageAt: new Date(),
+                  isUnread: 'true',
+                })
+                .onConflictDoUpdate({
+                  target: [conversationSchema.organizationId, conversationSchema.platform, conversationSchema.externalId],
+                  set: {
+                    lastMessage: text,
+                    lastMessageAt: new Date(),
+                    isUnread: 'true',
+                  },
+                })
+                .returning();
+
+              if (conversation[0]) {
+                await db.insert(messageSchema).values({
+                  organizationId: orgId,
+                  conversationId: conversation[0].id,
+                  direction: 'incoming',
+                  text,
+                  type: msg.type === 'image' ? 'image' : (msg.type === 'audio' ? 'audio' : 'text'),
+                  metadata: mid,
+                });
+              }
+
               const targetUrl = n8nUrls.whatsapp;
               if (!targetUrl) {
                 return null;
@@ -283,6 +358,8 @@ export const POST = async (request: Request) => {
                   platform: 'whatsapp',
                   type: msgType,
                   senderId,
+                  name: senderName,
+                  message: text,
                   context,
                 }),
               });
@@ -322,6 +399,38 @@ export const POST = async (request: Request) => {
 
             if (senderId) {
               await upsertLead(orgId, senderId, 'instagram', senderName, senderName);
+            }
+
+            // --- INBOX SYNC ---
+            // حفظ المحادثة والرسالة للـ Inbox
+            const conversation = await db.insert(conversationSchema)
+              .values({
+                organizationId: orgId,
+                platform: 'instagram',
+                externalId: senderId,
+                lastMessage: text,
+                lastMessageAt: new Date(),
+                isUnread: 'true',
+              })
+              .onConflictDoUpdate({
+                target: [conversationSchema.organizationId, conversationSchema.platform, conversationSchema.externalId],
+                set: {
+                  lastMessage: text,
+                  lastMessageAt: new Date(),
+                  isUnread: 'true',
+                },
+              })
+              .returning();
+
+            if (conversation[0]) {
+              await db.insert(messageSchema).values({
+                organizationId: orgId,
+                conversationId: conversation[0].id,
+                direction: 'incoming',
+                text,
+                type: 'text', // Comments are text
+                metadata: commentId,
+              });
             }
 
             const targetUrl = n8nUrls.instagram;
