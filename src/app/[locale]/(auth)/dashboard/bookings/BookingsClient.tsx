@@ -266,8 +266,8 @@ export default function BookingsClient({ initialBookings, products }: { initialB
       </div>
 
       {/* Stats & Search */}
-      <div className="grid grid-cols-1 items-center gap-6 lg:grid-cols-12">
-        <div className="flex flex-col gap-4 sm:flex-row lg:col-span-8">
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4 lg:flex-row">
           <div className="group relative flex-1">
             <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center text-muted-foreground transition-colors group-focus-within:text-primary">
               <Search className="size-5" />
@@ -281,17 +281,17 @@ export default function BookingsClient({ initialBookings, products }: { initialB
           </div>
 
           <select
-            className="h-14 w-full min-w-[150px] cursor-pointer rounded-2xl border-none bg-card px-6 text-base font-bold shadow-xl shadow-gray-100/40 outline-none focus:ring-2 focus:ring-primary sm:w-auto"
+            className="h-14 w-full cursor-pointer rounded-2xl border-none bg-card px-6 text-base font-bold shadow-xl shadow-gray-100/40 outline-none focus:ring-2 focus:ring-primary lg:w-auto"
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
           >
-            <option value="">جميع الحالات</option>
-            <option value="upcoming">قادم / مؤكد</option>
-            <option value="completed">مكتمل</option>
-            <option value="cancelled">ملغي</option>
+            <option value="">{isAr ? 'جميع الحالات' : 'All Status'}</option>
+            <option value="upcoming">{isAr ? 'قادم / مؤكد' : 'Upcoming'}</option>
+            <option value="completed">{isAr ? 'مكتمل' : 'Completed'}</option>
+            <option value="cancelled">{isAr ? 'ملغي' : 'Cancelled'}</option>
           </select>
         </div>
-        <div className="flex h-14 items-center gap-4 overflow-hidden rounded-2xl border border-white/50 bg-muted/20 p-2 lg:col-span-4">
+        <div className="flex h-14 items-center gap-4 overflow-hidden rounded-2xl border border-white/50 bg-muted/20 p-2">
           <div className="flex flex-1 flex-col items-center justify-center border-l border-muted-foreground/10 px-4">
             <span className="text-[10px] font-extrabold uppercase tracking-tighter text-muted-foreground">قادمة</span>
             <span className="text-xl font-black text-blue-600">{bookings.filter(b => b.status === 'upcoming').length}</span>
@@ -337,143 +337,145 @@ export default function BookingsClient({ initialBookings, products }: { initialB
       </div>
 
       {/* Table Container */}
-      <div className="overflow-hidden rounded-[2rem] border bg-card shadow-[0_20px_50px_rgba(0,0,0,0.02)]">
-        {bookings.length === 0
-          ? (
-              <div className="flex flex-col items-center justify-center py-24 text-center">
-                <div className="mb-6 flex size-24 animate-pulse items-center justify-center rounded-[2rem] bg-muted/30 text-muted-foreground/30">
-                  <CalendarIcon className="size-12" />
+      <div className="overflow-x-auto rounded-[2rem] border bg-card shadow-[0_20px_50px_rgba(0,0,0,0.02)]">
+        <div className="min-w-[800px]">
+          {bookings.length === 0
+            ? (
+                <div className="flex flex-col items-center justify-center py-24 text-center">
+                  <div className="mb-6 flex size-24 animate-pulse items-center justify-center rounded-[2rem] bg-muted/30 text-muted-foreground/30">
+                    <CalendarIcon className="size-12" />
+                  </div>
+                  <h3 className="mb-3 text-3xl font-black text-muted-foreground">{isAr ? 'لا توجد حجوزات' : 'No Bookings'}</h3>
+                  <p className="mx-auto max-w-sm text-base italic text-muted-foreground">{isAr ? 'سيظهر هنا أي موعد أو حجز يقوم الذكاء الاصطناعي بتنظيمه.' : 'Any appointment or booking organized by AI will appear here.'}</p>
                 </div>
-                <h3 className="mb-3 text-3xl font-black text-muted-foreground">{isAr ? 'لا توجد حجوزات' : 'No Bookings'}</h3>
-                <p className="mx-auto max-w-sm text-base italic text-muted-foreground">{isAr ? 'سيظهر هنا أي موعد أو حجز يقوم الذكاء الاصطناعي بتنظيمه.' : 'Any appointment or booking organized by AI will appear here.'}</p>
-              </div>
-            )
-          : (
-              <Table>
-                <TableHeader className="border-b bg-muted/10">
-                  <TableRow className="border-none hover:bg-transparent">
-                    <TableHead className="w-12 p-6">
-                      <input
-                        type="checkbox"
-                        className="size-5 cursor-pointer rounded-md border-gray-300 text-primary accent-primary focus:ring-primary"
-                        checked={filteredBookings.length > 0 && selectedBookingIds.length === filteredBookings.length}
-                        onChange={handleSelectAll}
-                      />
-                    </TableHead>
-                    <TableHead className="px-4 py-6 text-start text-sm font-black uppercase tracking-widest">{isAr ? 'العميل' : 'Customer'}</TableHead>
-                    <TableHead className="p-6 text-start text-sm font-black uppercase tracking-widest">{isAr ? 'المنتجات' : 'Products'}</TableHead>
-                    <TableHead className="p-6 text-start text-sm font-black uppercase tracking-widest">{isAr ? 'التفاصيل' : 'Details'}</TableHead>
-                    <TableHead className="p-6 text-start text-sm font-black uppercase tracking-widest">{isAr ? 'الموعد' : 'Booking Date'}</TableHead>
-                    <TableHead className="p-6 text-start text-sm font-black uppercase tracking-widest">{isAr ? 'الحالة' : 'Status'}</TableHead>
-                    <TableHead className="px-8 py-6 text-end text-sm font-black uppercase tracking-widest">إجراءات</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredBookings.map(booking => (
-                    <TableRow
-                      key={booking.id}
-                      className={`group cursor-pointer border-b transition-all last:border-0 hover:bg-muted/5 ${selectedBookingIds.includes(booking.id) ? 'bg-primary/5 hover:bg-primary/10' : ''}`}
-                      onClick={() => handleEdit(booking)}
-                    >
-                      <TableCell className="px-6 py-5" onClick={e => e.stopPropagation()}>
+              )
+            : (
+                <Table>
+                  <TableHeader className="border-b bg-muted/10">
+                    <TableRow className="border-none hover:bg-transparent">
+                      <TableHead className="w-12 p-6">
                         <input
                           type="checkbox"
                           className="size-5 cursor-pointer rounded-md border-gray-300 text-primary accent-primary focus:ring-primary"
-                          checked={selectedBookingIds.includes(booking.id)}
-                          onChange={e => handleSelectBooking(booking.id, e.target.checked)}
+                          checked={filteredBookings.length > 0 && selectedBookingIds.length === filteredBookings.length}
+                          onChange={handleSelectAll}
                         />
-                      </TableCell>
-                      <TableCell className="px-4 py-5">
-                        <div className="flex items-center gap-4 text-start">
-                          <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-primary/5 text-primary shadow-inner transition-transform group-hover:scale-110">
-                            <User className="size-7" />
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="text-base font-bold text-gray-900 transition-colors group-hover:text-primary">{booking.customerName}</span>
-                            <div className="mt-0.5 flex items-center gap-2">
-                              <span className="text-xs font-medium text-muted-foreground" dir="ltr">{booking.contactInfo}</span>
-                              {booking.socialUsername && (
-                                <span className="text-xs font-bold text-blue-500" dir="ltr">
-                                  @
-                                  {booking.socialUsername}
-                                </span>
-                              )}
+                      </TableHead>
+                      <TableHead className="px-4 py-6 text-start text-sm font-black uppercase tracking-widest">{isAr ? 'العميل' : 'Customer'}</TableHead>
+                      <TableHead className="p-6 text-start text-sm font-black uppercase tracking-widest">{isAr ? 'المنتجات' : 'Products'}</TableHead>
+                      <TableHead className="p-6 text-start text-sm font-black uppercase tracking-widest">{isAr ? 'التفاصيل' : 'Details'}</TableHead>
+                      <TableHead className="p-6 text-start text-sm font-black uppercase tracking-widest">{isAr ? 'الموعد' : 'Booking Date'}</TableHead>
+                      <TableHead className="p-6 text-start text-sm font-black uppercase tracking-widest">{isAr ? 'الحالة' : 'Status'}</TableHead>
+                      <TableHead className="px-8 py-6 text-end text-sm font-black uppercase tracking-widest">إجراءات</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredBookings.map(booking => (
+                      <TableRow
+                        key={booking.id}
+                        className={`group cursor-pointer border-b transition-all last:border-0 hover:bg-muted/5 ${selectedBookingIds.includes(booking.id) ? 'bg-primary/5 hover:bg-primary/10' : ''}`}
+                        onClick={() => handleEdit(booking)}
+                      >
+                        <TableCell className="px-6 py-5" onClick={e => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            className="size-5 cursor-pointer rounded-md border-gray-300 text-primary accent-primary focus:ring-primary"
+                            checked={selectedBookingIds.includes(booking.id)}
+                            onChange={e => handleSelectBooking(booking.id, e.target.checked)}
+                          />
+                        </TableCell>
+                        <TableCell className="px-4 py-5">
+                          <div className="flex items-center gap-4 text-start">
+                            <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-primary/5 text-primary shadow-inner transition-transform group-hover:scale-110">
+                              <User className="size-7" />
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-base font-bold text-gray-900 transition-colors group-hover:text-primary">{booking.customerName}</span>
+                              <div className="mt-0.5 flex items-center gap-2">
+                                <span className="text-xs font-medium text-muted-foreground" dir="ltr">{booking.contactInfo}</span>
+                                {booking.socialUsername && (
+                                  <span className="text-xs font-bold text-blue-500" dir="ltr">
+                                    @
+                                    {booking.socialUsername}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="px-6 py-5">
-                        <div className="flex max-w-[240px] flex-wrap gap-1.5">
-                          {booking.cart && booking.cart.length > 0
-                            ? (
-                                booking.cart.map((item: any) => {
-                                  const prod = products.find(p => p.id.toString() === item.productId?.toString());
-                                  if (!prod) {
-                                    return null;
-                                  }
-                                  return (
-                                    <span key={item.productId} className="rounded-xl border border-primary/10 bg-primary/5 px-3 py-1 text-xs font-bold text-primary shadow-sm">
-                                      {item.quantity}
-                                      x
-                                      {prod.name}
-                                    </span>
-                                  );
-                                })
-                              )
-                            : (
-                                <span className="text-sm font-medium italic text-muted-foreground">{isAr ? 'خدمة / عام' : 'Service / General'}</span>
-                              )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="px-6 py-5">
-                        <div className="flex max-w-[150px] flex-col text-start">
-                          <span className="truncate text-sm font-bold text-gray-700" title={booking.serviceDetails}>
-                            {booking.serviceDetails || '-'}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="px-6 py-5">
-                        <div className="flex flex-col text-start">
-                          <div className="flex items-center gap-2 text-base font-black tracking-tighter text-gray-800">
-                            <CalendarIcon className="size-4 text-primary/60" />
-                            <span dir="ltr">{format(new Date(booking.bookingDate), 'PPp', { locale: isAr ? arSA : undefined })}</span>
+                        </TableCell>
+                        <TableCell className="px-6 py-5">
+                          <div className="flex max-w-[240px] flex-wrap gap-1.5">
+                            {booking.cart && booking.cart.length > 0
+                              ? (
+                                  booking.cart.map((item: any) => {
+                                    const prod = products.find(p => p.id.toString() === item.productId?.toString());
+                                    if (!prod) {
+                                      return null;
+                                    }
+                                    return (
+                                      <span key={item.productId} className="rounded-xl border border-primary/10 bg-primary/5 px-3 py-1 text-xs font-bold text-primary shadow-sm">
+                                        {item.quantity}
+                                        x
+                                        {prod.name}
+                                      </span>
+                                    );
+                                  })
+                                )
+                              : (
+                                  <span className="text-sm font-medium italic text-muted-foreground">{isAr ? 'خدمة / عام' : 'Service / General'}</span>
+                                )}
                           </div>
-                          <span className="mt-1 text-xs font-bold text-muted-foreground">{getRelativeDate(booking.bookingDate)}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="px-6 py-5">
-                        {getStatusBadge(booking.status)}
-                      </TableCell>
-                      <TableCell className="px-8 py-5 text-end" onClick={e => e.stopPropagation()}>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="size-10 rounded-2xl transition-all group-hover:bg-muted">
-                              <MoreHorizontal className="size-5" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="min-w-[200px] rounded-2xl border-muted/50 p-2 shadow-2xl">
-                            <DropdownMenuItem onClick={() => handleEdit(booking)} className="flex cursor-pointer gap-3 rounded-xl py-3 text-base font-bold hover:bg-primary/5 hover:text-primary focus:bg-primary/5 focus:text-primary">
-                              <Edit className="size-5" />
-                              تعديل الحجز
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDelete(booking.id)} className="flex cursor-pointer gap-3 rounded-xl py-3 text-base font-bold text-red-500 hover:bg-red-50 hover:text-red-600 focus:bg-red-50 focus:text-red-600">
-                              <Trash2 className="size-5" />
-                              حذف الموعد
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
+                        </TableCell>
+                        <TableCell className="px-6 py-5">
+                          <div className="flex max-w-[150px] flex-col text-start">
+                            <span className="truncate text-sm font-bold text-gray-700" title={booking.serviceDetails}>
+                              {booking.serviceDetails || '-'}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="px-6 py-5">
+                          <div className="flex flex-col text-start">
+                            <div className="flex items-center gap-2 text-base font-black tracking-tighter text-gray-800">
+                              <CalendarIcon className="size-4 text-primary/60" />
+                              <span dir="ltr">{format(new Date(booking.bookingDate), 'PPp', { locale: isAr ? arSA : undefined })}</span>
+                            </div>
+                            <span className="mt-1 text-xs font-bold text-muted-foreground">{getRelativeDate(booking.bookingDate)}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="px-6 py-5">
+                          {getStatusBadge(booking.status)}
+                        </TableCell>
+                        <TableCell className="px-8 py-5 text-end" onClick={e => e.stopPropagation()}>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="size-10 rounded-2xl transition-all group-hover:bg-muted">
+                                <MoreHorizontal className="size-5" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="min-w-[200px] rounded-2xl border-muted/50 p-2 shadow-2xl">
+                              <DropdownMenuItem onClick={() => handleEdit(booking)} className="flex cursor-pointer gap-3 rounded-xl py-3 text-base font-bold hover:bg-primary/5 hover:text-primary focus:bg-primary/5 focus:text-primary">
+                                <Edit className="size-5" />
+                                تعديل الحجز
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleDelete(booking.id)} className="flex cursor-pointer gap-3 rounded-xl py-3 text-base font-bold text-red-500 hover:bg-red-50 hover:text-red-600 focus:bg-red-50 focus:text-red-600">
+                                <Trash2 className="size-5" />
+                                حذف الموعد
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+        </div>
       </div>
 
       {/* Modern Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md duration-300 animate-in fade-in">
-          <div className="relative flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-[2.5rem] bg-card shadow-[0_32px_128px_-10px_rgba(0,0,0,0.4)] duration-300 animate-in zoom-in-95 slide-in-from-bottom-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-2 backdrop-blur-md duration-300 animate-in fade-in sm:p-4">
+          <div className="relative flex max-h-[95vh] w-full max-w-2xl flex-col overflow-hidden rounded-[2.5rem] bg-card shadow-[0_32px_128px_-10px_rgba(0,0,0,0.4)] duration-300 animate-in zoom-in-95 slide-in-from-bottom-5">
             <div className="flex items-center justify-between border-b bg-muted/10 p-8">
               <div className="flex items-center gap-4 text-start">
                 <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
