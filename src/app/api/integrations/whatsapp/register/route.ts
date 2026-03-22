@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/DB';
 import { exchangeCodeForToken, fetchWabaDetails } from '@/libs/Meta';
-import { integrationSchema } from '@/models/Schema';
+import { integrationSchema, organizationSchema } from '@/models/Schema';
 
 export const POST = async (request: Request) => {
   const { orgId, userId } = await auth();
@@ -36,6 +36,19 @@ export const POST = async (request: Request) => {
 
     // 4. Fetch WABA and Phone details
     const wabaDetails = await fetchWabaDetails({ accessToken, wabaId, phoneNumberId, pin });
+
+    // 4.5 Ensure Organization exists in our DB to avoid FK Violations
+    const orgAtDb = await db.query.organizationSchema.findFirst({
+      where: eq(organizationSchema.id, orgId),
+    });
+
+    if (!orgAtDb) {
+      await db.insert(organizationSchema).values({
+        id: orgId,
+        updatedAt: new Date(),
+        createdAt: new Date(),
+      });
+    }
 
     // 5. Save Integration in DB
     const existing = await db.query.integrationSchema.findFirst({
