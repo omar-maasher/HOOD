@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/libs/DB';
 import { logger } from '@/libs/Logger';
 import { detectMessagingPlatform, getSenderProfile } from '@/libs/Meta';
-import { aiSettingsSchema, integrationSchema, leadSchema, organizationSchema, webhookEventSchema } from '@/models/Schema';
+import { aiSettingsSchema, businessProfileSchema, integrationSchema, leadSchema, organizationSchema, webhookEventSchema } from '@/models/Schema';
 
 export const GET = async (request: Request) => {
   const { searchParams } = new URL(request.url);
@@ -165,11 +165,20 @@ export const POST = async (request: Request) => {
       .where(eq(aiSettingsSchema.organizationId, orgId))
       .limit(1);
 
+    const businessProfile = await db.query.businessProfileSchema.findFirst({
+      where: eq(businessProfileSchema.organizationId, orgId),
+    });
+
     const context = {
       organizationId: orgId,
       integrationType: integration.type,
       metaAccessToken: integration.accessToken || '',
       aiConfig: aiSettingsResults[0] || { isActive: 'false' },
+      businessSummary: {
+        name: businessProfile?.businessName || '',
+        description: businessProfile?.businessDescription || '',
+        policy: businessProfile?.policies || '',
+      },
     };
 
     // معالجة Messenger / Instagram
