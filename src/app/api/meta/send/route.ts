@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/DB';
 import { replyToInstagramComment, sendInstagramMessage, sendMessengerMessage, sendWhatsAppMessage } from '@/libs/Meta';
-import { integrationSchema, organizationSchema } from '@/models/Schema';
+import { conversationSchema, integrationSchema, messageSchema, organizationSchema } from '@/models/Schema';
 import { PLAN_ID } from '@/utils/AppConfig';
 
 export const POST = async (request: Request) => {
@@ -122,8 +122,37 @@ export const POST = async (request: Request) => {
       }
 
       responseData = await sendWhatsAppMessage(phoneNumberId, recipientId, finalMessage, token);
-    } else {
-      return NextResponse.json({ error: 'Unsupported platform specified.' }, { status: 400 });
+
+      // --- Sync WhatsApp bot replies to Inbox DB ---
+      // Since WhatsApp does not send echo webhooks containing text, we must manually save it here.
+      if (recipientId) {
+        const conv = await db.query.conversationSchema.findFirst({
+          where: and(
+            eq(conversationSchema.organizationId, orgId),
+            eq(conversationSchema.platform, 'whatsapp'),
+            eq(conversationSchema.externalId, recipientId),
+          ),
+        });
+
+        if (conv) {
+          await db.insert(messageSchema).values({
+            organizationId: orgId,
+            conversationId: conv.id,
+            direction: 'outgoing',
+            text: finalMessage,
+            type: 'text',
+            metadata: JSON.stringify(responseData),
+          });
+
+          await db.update(conversationSchema)
+            .set({
+              lastMessage: finalMessage,
+              lastMessageAt: new Date(),
+              isUnread: 'false',
+            })
+            .where(eq(conversationSchema.id, conv.id));
+        }
+      }
     }
 
     // 4. Return success to n8n
