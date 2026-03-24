@@ -1,8 +1,9 @@
 import { auth } from '@clerk/nextjs/server';
 import { eq } from 'drizzle-orm';
-import { Info, Instagram, Link as LinkIcon, MessageSquare, Phone } from 'lucide-react';
+import { DatabaseZap, Info, Instagram, Link as LinkIcon, MessageSquare, Phone, ScanEye, ShoppingCart } from 'lucide-react';
 import { getLocale } from 'next-intl/server';
 
+import { StoreConnect } from '@/features/integrations/StoreConnect';
 import { WhatsAppConnect } from '@/features/integrations/WhatsAppConnect';
 import { db } from '@/libs/DB';
 import { integrationSchema } from '@/models/Schema';
@@ -165,6 +166,67 @@ export default async function IntegrationsPage(props: { searchParams: Promise<an
                               </a>
                             )}
                       </>
+                    )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* E-Commerce Stores Section */}
+      <div className={`mt-8 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center ${isAr ? 'text-start' : 'text-left'}`}>
+        <div>
+          <h2 className="bg-gradient-to-r from-amber-500 to-amber-700 bg-clip-text text-2xl font-extrabold tracking-tight text-transparent">
+            {isAr ? 'بوابات المتاجر الإلكترونية (E-Commerce)' : 'E-Commerce Platforms'}
+          </h2>
+          <p className="mt-1 font-medium text-muted-foreground">
+            {isAr ? 'اربط متجرك لسحب منتجاتك وعرضها للعملاء في صندوق الوارد تلقائياً.' : 'Connect your store to automatically sync products.'}
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+        {[
+          { key: 'salla', name: 'سلة (Salla)', desc: 'اشبك متجرك في سلة لسحب منتجاتك رسمياً.', icon: ShoppingCart, color: 'text-teal-600', bg: 'bg-teal-50' },
+          { key: 'shopify', name: 'شوبيفاي (Shopify)', desc: 'اسحب منتجات متجرك من شوبيفاي للعالم.', icon: ShoppingCart, color: 'text-green-600', bg: 'bg-green-50' },
+          { key: 'scraper', name: 'القارئ الذكي (Smart Reader)', desc: 'انسخ رابط مقالة أو منتج، وسيقوم الروبوت بقراءته!', icon: ScanEye, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+          { key: 'custom', name: 'متجر مخصص (Custom API)', desc: 'اربط متجرك البرمجي المخصص عبر واجهة API المرنة.', icon: DatabaseZap, color: 'text-zinc-600', bg: 'bg-zinc-100' },
+        ].map((store) => {
+          const isConnected = integrations.some(i => i.type === store.key && i.status === 'active');
+          const StoreIcon = store.icon;
+
+          return (
+            <div key={store.key} className={`group relative flex flex-col rounded-[2rem] border bg-card p-8 shadow-xl shadow-gray-100/50 transition-all duration-300 ${isConnected ? 'border-amber-200 ring-4 ring-amber-500/5' : 'hover:border-primary/40'}`}>
+              <div className="mb-6 flex items-center justify-between">
+                <div className={`flex size-14 items-center justify-center rounded-2xl ${store.bg} ${store.color} shadow-inner`}>
+                  <StoreIcon className="size-7" />
+                </div>
+                {isConnected
+                  ? (
+                      <span className="flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-amber-700">
+                        <span className="size-1.5 animate-pulse rounded-full bg-amber-500" />
+                        {isAr ? 'متصل ومُزامن' : 'SYNCED'}
+                      </span>
+                    )
+                  : (
+                      <span className="rounded-full bg-muted px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">
+                        {isAr ? 'غير مرتبط' : 'NOT CONNECTED'}
+                      </span>
+                    )}
+              </div>
+
+              <div className={`flex-1 ${isAr ? 'text-start' : 'text-left'}`}>
+                <h3 className="mb-2 flex items-center gap-2 text-xl font-bold">{store.name}</h3>
+                <p className="text-sm leading-relaxed text-muted-foreground">{store.desc}</p>
+              </div>
+
+              <div className="mt-8 border-t border-dashed pt-6">
+                {isConnected
+                  ? (
+                      <DisconnectButton channelKey={store.key} />
+                    )
+                  : (
+                      <StoreConnect platform={store.key} isAr={isAr} />
                     )}
               </div>
             </div>

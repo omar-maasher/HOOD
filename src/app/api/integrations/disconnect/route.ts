@@ -45,6 +45,14 @@ export const POST = async (request: Request) => {
           eq(integrationSchema.type, 'whatsapp'),
         ),
       );
+    } else {
+      // Catch-all for generic platforms (shopify, salla, custom, scraper, etc)
+      await db.delete(integrationSchema).where(
+        and(
+          eq(integrationSchema.organizationId, orgId),
+          eq(integrationSchema.type, platform),
+        ),
+      );
     }
 
     return NextResponse.json({ success: true });

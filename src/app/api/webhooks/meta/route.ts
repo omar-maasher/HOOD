@@ -187,6 +187,10 @@ export const POST = async (request: Request) => {
         name: businessProfile?.businessName || '',
         description: businessProfile?.businessDescription || '',
         policy: businessProfile?.policies || '',
+        storeLatitude: businessProfile?.storeLatitude || '',
+        storeLongitude: businessProfile?.storeLongitude || '',
+        deliveryPricePerKm: businessProfile?.deliveryPricePerKm || '',
+        isDeliveryEnabled: businessProfile?.isDeliveryEnabled || 'false',
       },
     };
 
@@ -320,7 +324,19 @@ export const POST = async (request: Request) => {
               }
               await db.insert(webhookEventSchema).values({ mid });
 
-              const text = msg.text?.body || msg.caption || '';
+              const isLocation = msg.type === 'location';
+              const text = isLocation
+                ? `📍 الموقع الجغرافي تم إرساله (العرض: ${msg.location?.latitude}, الطول: ${msg.location?.longitude})`
+                : (msg.text?.body || msg.caption || '');
+
+              let msgType = 'text';
+              if (msg.type === 'image') {
+                msgType = 'image';
+              } else if (msg.type === 'audio') {
+                msgType = 'audio';
+              } else if (isLocation) {
+                msgType = 'location';
+              }
 
               // --- INBOX SYNC ---
               const conversation = await db.insert(conversationSchema)
@@ -349,7 +365,7 @@ export const POST = async (request: Request) => {
                   conversationId: conversation[0].id,
                   direction: 'incoming',
                   text,
-                  type: msg.type === 'image' ? 'image' : (msg.type === 'audio' ? 'audio' : 'text'),
+                  type: msgType,
                   metadata: mid,
                 });
               }
@@ -358,8 +374,6 @@ export const POST = async (request: Request) => {
               if (!targetUrl) {
                 return null;
               }
-
-              const msgType = msg.type === 'audio' ? 'audio' : 'text';
 
               return await fetch(targetUrl, {
                 method: 'POST',
@@ -371,6 +385,7 @@ export const POST = async (request: Request) => {
                   senderId,
                   name: senderName,
                   message: text,
+                  location: isLocation ? msg.location : undefined,
                   context,
                 }),
               });

@@ -44,6 +44,10 @@ export async function saveBusinessProfile(data: any) {
         policies: data.policies,
         paymentMethods: data.paymentMethods,
         bankAccounts: data.bankAccounts,
+        storeLatitude: data.storeLatitude,
+        storeLongitude: data.storeLongitude,
+        deliveryPricePerKm: data.deliveryPricePerKm,
+        isDeliveryEnabled: data.isDeliveryEnabled,
       })
       .where(eq(businessProfileSchema.organizationId, orgId))
       .returning();
@@ -60,8 +64,48 @@ export async function saveBusinessProfile(data: any) {
         policies: data.policies,
         paymentMethods: data.paymentMethods,
         bankAccounts: data.bankAccounts,
+        storeLatitude: data.storeLatitude,
+        storeLongitude: data.storeLongitude,
+        deliveryPricePerKm: data.deliveryPricePerKm,
+        isDeliveryEnabled: data.isDeliveryEnabled,
       })
       .returning();
     return inserted;
+  }
+}
+
+export async function scrapeBusinessInfo(url: string) {
+  const { orgId } = await auth();
+  if (!orgId) {
+    throw new Error('Unauthorized');
+  }
+
+  // Replace this with the actual n8n webhook URL
+  const N8N_AI_READER_WEBHOOK = process.env.N8N_AI_READER_WEBHOOK || 'http://localhost:5678/webhook/ai-reader';
+
+  try {
+    const cleanUrl = url.startsWith('http') ? url : `https://${url}`;
+
+    // Ask N8N AI to read the website
+    const res = await fetch(N8N_AI_READER_WEBHOOK, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: cleanUrl, intent: 'business_info' }),
+    });
+
+    if (!res.ok) {
+      throw new Error('Failed to reach N8N Webhook');
+    }
+
+    const data = await res.json();
+
+    return {
+      businessName: data.businessName || '',
+      businessDescription: data.businessDescription || '',
+      phoneNumber: data.phoneNumber || '',
+    };
+  } catch (error) {
+    console.error('Error auto-filling business via n8n:', error);
+    throw new Error('فشل الاتصال بمحرك n8n لقراءة الموقع. تأكد من إعداد Webhook الخاص بك.');
   }
 }

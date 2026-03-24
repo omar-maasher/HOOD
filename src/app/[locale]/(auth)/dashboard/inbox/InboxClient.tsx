@@ -162,7 +162,7 @@ export const InboxClient = ({ initialConversations, isAr }: { initialConversatio
     || (c.externalId || '').includes(searchQuery),
   );
 
-  const containerDirClass = isAr ? 'flex-row-reverse' : 'flex-row';
+  const containerDirClass = 'flex-row';
   const sidebarVisibilityClass = selectedConvId ? 'hidden md:flex' : 'flex';
   const arrowClass = isAr ? '' : 'rotate-180';
   const handleCloseConv = () => setSelectedConvId(null);

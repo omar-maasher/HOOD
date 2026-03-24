@@ -77,6 +77,10 @@ export const businessProfileSchema = pgTable('business_profile', {
   paymentMethods: text('payment_methods'),
   bankAccounts: jsonb('bank_accounts').$type<{ bankName: string; accountNumber: string; accountName: string }[]>(),
   socialLinks: jsonb('social_links').$type<{ platform: string; url: string }[]>(),
+  storeLatitude: text('store_latitude'),
+  storeLongitude: text('store_longitude'),
+  deliveryPricePerKm: text('delivery_price_per_km'),
+  isDeliveryEnabled: text('is_delivery_enabled').default('false'),
   updatedAt: timestamp('updated_at', { mode: 'date' })
     .defaultNow()
     .$onUpdate(() => new Date())

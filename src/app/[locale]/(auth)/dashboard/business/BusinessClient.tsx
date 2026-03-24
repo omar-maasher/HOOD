@@ -5,25 +5,34 @@ import {
   Check,
   Clock,
   CreditCard,
+  Globe,
   Info,
+  MapPin,
   Plus,
   Save,
   ShieldCheck,
   Trash2,
+  Wand2,
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 
-import { saveBusinessProfile } from './actions';
+import { saveBusinessProfile, scrapeBusinessInfo } from './actions';
+
+const MapPicker = dynamic(() => import('@/components/MapPicker'), { ssr: false, loading: () => <div className="h-[300px] w-full animate-pulse rounded-2xl bg-muted/50" /> });
 
 export default function BusinessClient({ profile }: { profile: any }) {
   const t = useTranslations('Business');
   const [isLoading, setIsLoading] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [isScraping, setIsScraping] = useState(false);
+  const [scrapeUrl, setScrapeUrl] = useState('');
   const [activeTab, setActiveTab] = useState('general');
 
   const [formData, setFormData] = useState({
@@ -35,6 +44,10 @@ export default function BusinessClient({ profile }: { profile: any }) {
     policies: profile?.policies || '',
     paymentMethods: profile?.paymentMethods || '',
     bankAccounts: Array.isArray(profile?.bankAccounts) ? profile.bankAccounts : [],
+    storeLatitude: profile?.storeLatitude || '',
+    storeLongitude: profile?.storeLongitude || '',
+    deliveryPricePerKm: profile?.deliveryPricePerKm || '',
+    isDeliveryEnabled: profile?.isDeliveryEnabled || 'false',
   });
 
   const handleAddBankAccount = () => {
@@ -53,6 +66,28 @@ export default function BusinessClient({ profile }: { profile: any }) {
     setFormData({ ...formData, bankAccounts: newAccounts });
   };
 
+  const handleGetLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setFormData({
+            ...formData,
+            storeLatitude: position.coords.latitude.toString(),
+            storeLongitude: position.coords.longitude.toString(),
+          });
+        },
+        (error) => {
+          console.error('Error getting location', error);
+          // eslint-disable-next-line no-alert
+          alert('يرجى السماح بصلاحية الموقع من إعدادات المتصفح لالتقاط إحداثيات المخزن تلقائياً.');
+        },
+      );
+    } else {
+      // eslint-disable-next-line no-alert
+      alert('المتصفح الخاص بك لا يدعم تحديد الموقع التلقائي.');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -65,6 +100,30 @@ export default function BusinessClient({ profile }: { profile: any }) {
       console.error('Failed to save profile', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleAutoScrape = async () => {
+    if (!scrapeUrl) {
+      // eslint-disable-next-line no-alert
+      alert('يرجى ادخال رابط الموقع أولاً');
+      return;
+    }
+    setIsScraping(true);
+    try {
+      const result = await scrapeBusinessInfo(scrapeUrl);
+      setFormData(prev => ({
+        ...prev,
+        businessName: result.businessName || prev.businessName,
+        businessDescription: result.businessDescription || prev.businessDescription,
+        phoneNumber: result.phoneNumber || prev.phoneNumber,
+      }));
+      setScrapeUrl(''); // clear it
+    } catch (e: any) {
+      // eslint-disable-next-line no-alert
+      alert(e.message || 'حدث خطأ أثناء الاتصال بالموقع.');
+    } finally {
+      setIsScraping(false);
     }
   };
 
@@ -117,6 +176,40 @@ export default function BusinessClient({ profile }: { profile: any }) {
                       <p className="text-start text-sm text-muted-foreground">{t('general_desc')}</p>
                     </div>
                   </div>
+
+                  {/* AI AUTO DISCOVERY WIDGET */}
+                  <div className="flex flex-col gap-3 rounded-3xl border border-primary/20 bg-primary/5 p-6 animate-in zoom-in-95">
+                    <h4 className="flex items-center gap-2 text-lg font-black text-primary">
+                      <Wand2 className="size-5" />
+                      التعرف بذكاء على المتجر (سحب البيانات)
+                    </h4>
+                    <p className="text-sm font-medium text-muted-foreground">قم بإدخال رابط متجرك أو موقعك لدعنا نكتب عنك ونملأ بياناتك أوتوماتيكياً عبر القارئ الذكي الخاص بنا.</p>
+                    <div className="mt-2 flex flex-col gap-3 md:flex-row">
+                      <div className="relative flex-1">
+                        <Globe className="absolute right-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground/50" />
+                        <Input
+                          placeholder="https://mystore.com"
+                          value={scrapeUrl}
+                          onChange={e => setScrapeUrl(e.target.value)}
+                          className="h-12 rounded-xl border-primary/20 bg-background pr-12 focus-visible:ring-primary"
+                          dir="ltr"
+                        />
+                      </div>
+                      <Button type="button" disabled={isScraping} onClick={handleAutoScrape} size="lg" className="h-12 rounded-xl border-t border-t-white/20 font-bold shadow-lg shadow-primary/25 transition-all active:scale-95">
+                        {isScraping
+                          ? (
+                              <div className="flex items-center gap-2">
+                                <div className="size-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+                                يتم القراءة بذكاء...
+                              </div>
+                            )
+                          : (
+                              <>استخراج المعلومات بذكاء اصطناعي ✨</>
+                            )}
+                      </Button>
+                    </div>
+                  </div>
+
                   <div className="grid gap-6">
                     <div className="grid gap-2 text-start">
                       <Label htmlFor="businessName" className="text-lg font-bold">{t('business_name')}</Label>
@@ -161,6 +254,60 @@ export default function BusinessClient({ profile }: { profile: any }) {
                           className="h-14 rounded-2xl border-none bg-muted/30 text-base focus-visible:ring-primary"
                         />
                       </div>
+                    </div>
+
+                    {/* NEW DELIVERY SETTINGS */}
+                    <div className="mt-6 grid gap-4 rounded-3xl border bg-muted/10 p-6">
+                      <div className="flex items-center justify-between border-b pb-4">
+                        <div>
+                          <h4 className="text-lg font-bold">إعدادات موقع المخزن والتوصيل</h4>
+                          <p className="mt-1 text-sm text-muted-foreground">تُستخدم هذه الإحداثيات لحساب مسافة وسعر التوصيل للعملاء تلقائياً.</p>
+                        </div>
+                        <Switch
+                          checked={formData.isDeliveryEnabled === 'true'}
+                          onCheckedChange={checked => setFormData({ ...formData, isDeliveryEnabled: checked ? 'true' : 'false' })}
+                          className="data-[state=checked]:bg-primary"
+                        />
+                      </div>
+
+                      {formData.isDeliveryEnabled === 'true' && (
+                        <div className="mt-2 grid items-start gap-6 duration-300 animate-in fade-in slide-in-from-top-4">
+                          <div className="grid gap-2 text-start sm:w-1/2">
+                            <Label htmlFor="deliveryPricePerKm" className="font-bold">سعر التوصيل لكل كم (العملة المحلية)</Label>
+                            <Input
+                              id="deliveryPricePerKm"
+                              placeholder="مثال: 2"
+                              value={formData.deliveryPricePerKm}
+                              onChange={e => setFormData({ ...formData, deliveryPricePerKm: e.target.value })}
+                              className="h-14 rounded-2xl border bg-background shadow-sm focus-visible:ring-primary"
+                              dir="ltr"
+                              type="number"
+                            />
+                          </div>
+
+                          <div className="grid gap-4">
+                            <Label className="border-b pb-2 font-bold">الموقع على الخريطة</Label>
+                            {/* Map View */}
+                            <div className="relative z-0 shadow-md">
+                              <MapPicker
+                                lat={formData.storeLatitude}
+                                lng={formData.storeLongitude}
+                                onChange={(lat, lng) => setFormData({ ...formData, storeLatitude: lat, storeLongitude: lng })}
+                              />
+                            </div>
+
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={handleGetLocation}
+                              className="h-12 w-full gap-2 rounded-2xl border-primary/20 bg-primary/5 text-primary shadow-sm hover:bg-primary/10 hover:text-primary"
+                            >
+                              <MapPin className="size-5" />
+                              تحديد موقعي الحالي تلقائياً (GPS)
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -251,7 +398,7 @@ export default function BusinessClient({ profile }: { profile: any }) {
                           </div>
                         )}
                         {formData.bankAccounts.map((account: any, index: number) => (
-                          <div key={`${account.bankName}-${index}`} className="flex flex-col items-center gap-3 rounded-2xl border border-white/50 bg-muted/20 p-3 duration-200 animate-in fade-in zoom-in-95 sm:flex-row">
+                          <div key={`${account.bankName || 'bank'}-${index}`} className="flex flex-col items-center gap-3 rounded-2xl border border-white/50 bg-muted/20 p-3 duration-200 animate-in fade-in zoom-in-95 sm:flex-row">
                             <Input
                               placeholder={t('bank_name_placeholder')}
                               value={account.bankName}
