@@ -111,7 +111,12 @@ export default function BusinessClient({ profile }: { profile: any }) {
     }
     setIsScraping(true);
     try {
-      const result = await scrapeBusinessInfo(scrapeUrl);
+      const result: any = await scrapeBusinessInfo(scrapeUrl);
+
+      if (result?.error) {
+        throw new Error(result.error);
+      }
+
       setFormData(prev => ({
         ...prev,
         businessName: result.businessName || prev.businessName,

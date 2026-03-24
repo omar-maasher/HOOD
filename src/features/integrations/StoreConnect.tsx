@@ -30,12 +30,17 @@ export function StoreConnect({ platform, isAr }: { platform: string; isAr: boole
     setSuccessCount(null);
     try {
       const res = await saveStoreIntegrationAndSync(platform, storeUrl, accessToken);
-      if (res.success) {
-        setSuccessCount(res.count);
+
+      if (res?.error) {
+        throw new Error(res.error);
+      }
+
+      if (res?.success) {
+        setSuccessCount(res.count ?? 0);
         setTimeout(() => setIsOpen(false), 5000);
       }
-    } catch (e: any) {
-      setError(e.message || 'حدث خطأ مجهول');
+    } catch (error: any) {
+      setError(error.message || 'حدث خطأ مجهول');
     } finally {
       setLoading(false);
     }

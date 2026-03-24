@@ -106,6 +106,6 @@ export async function scrapeBusinessInfo(url: string) {
     };
   } catch (error) {
     console.error('Error auto-filling business via n8n:', error);
-    throw new Error('فشل الاتصال بمحرك n8n لقراءة الموقع. تأكد من إعداد Webhook الخاص بك.');
+    return { error: 'فشل الاتصال بمحرك n8n لقراءة الموقع. تأكد من إعداد Webhook الخاص بك.' };
   }
 }

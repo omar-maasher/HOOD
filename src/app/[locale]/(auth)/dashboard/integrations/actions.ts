@@ -234,6 +234,6 @@ export async function saveStoreIntegrationAndSync(
     return { success: true, count: fetchedProducts.length };
   } catch (error: any) {
     logger.error('Store Sync Error', error);
-    throw new Error(error.message || 'فشل الاتصال بالمتجر، يرجى التأكد من صحة البيانات.');
+    return { success: false, error: error.message || 'فشل الاتصال بالمتجر، يرجى التأكد من صحة البيانات.' };
   }
 }
