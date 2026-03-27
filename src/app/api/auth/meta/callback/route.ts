@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/DB';
 import { logger } from '@/libs/Logger';
-import { exchangeCodeForToken, exchangeInstagramCodeForToken, getInstagramLongLivedToken, getLongLivedToken } from '@/libs/Meta';
+import { exchangeCodeForToken, getLongLivedToken } from '@/libs/Meta';
 import { integrationSchema } from '@/models/Schema';
 
 export const GET = async (request: Request) => {
@@ -23,85 +23,6 @@ export const GET = async (request: Request) => {
     const state = JSON.parse(Buffer.from(stateBase64, 'base64').toString());
     const { orgId, platform, locale } = state;
     lang = locale || 'ar';
-
-    // ─── INSTAGRAM (New Direct Instagram OAuth Flow) ───────────────────
-    if (platform === 'instagram') {
-      try {
-        // 1. Exchange code for short-lived token via Instagram API
-        const tokenResponse = await exchangeInstagramCodeForToken(code);
-        logger.info({ tokenResponse }, 'Instagram Token Response');
-
-        if (tokenResponse.error_type || tokenResponse.error_message) {
-          logger.error({ tokenResponse }, 'Instagram Token Exchange Error');
-          return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=token_exchange_failed`, request.url));
-        }
-
-        const shortLivedToken = tokenResponse.access_token;
-        const igUserId = tokenResponse.user_id; // Instagram User ID
-
-        if (!shortLivedToken) {
-          logger.error({ tokenResponse }, 'No access token in Instagram response');
-          return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=no_access_token`, request.url));
-        }
-
-        // 2. Exchange for long-lived token (60 days)
-        const longLivedResponse = await getInstagramLongLivedToken(shortLivedToken);
-        const accessToken = longLivedResponse.access_token || shortLivedToken;
-
-        logger.info({ igUserId }, 'Instagram Long-lived token obtained');
-
-        // 3. Fetch the user's Instagram profile to get username
-        let igUsername = '';
-        try {
-          const profileRes = await fetch(`https://graph.instagram.com/v21.0/me?fields=user_id,username&access_token=${accessToken}`);
-          if (profileRes.ok) {
-            const profileData = await profileRes.json();
-            igUsername = profileData.username || '';
-            logger.info({ profileData }, 'Instagram profile fetched');
-          }
-        } catch (e) {
-          logger.error(e, 'Failed to fetch IG profile');
-        }
-
-        // 4. Save integration to database
-        const existingIg = await db.query.integrationSchema.findFirst({
-          where: and(
-            eq(integrationSchema.organizationId, orgId),
-            eq(integrationSchema.type, 'instagram'),
-          ),
-        });
-
-        const integrationData = {
-          accessToken,
-          providerId: String(igUserId), // Instagram User ID
-          config: JSON.stringify({ igUserId, igUsername }),
-          status: 'active' as const,
-          updatedAt: new Date(),
-        };
-
-        if (existingIg) {
-          await db.update(integrationSchema)
-            .set(integrationData)
-            .where(
-              and(
-                eq(integrationSchema.organizationId, orgId),
-                eq(integrationSchema.type, 'instagram'),
-              ),
-            );
-        } else {
-          await db.insert(integrationSchema).values({
-            organizationId: orgId,
-            type: 'instagram',
-            ...integrationData,
-          });
-        }
-
-        return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?success=connected`, request.url));
-      } catch (e) {
-        console.error('Instagram OAuth Error:', e);
-        return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=instagram_oauth_failed`, request.url));
-      }
-    }
 
     // ─── FACEBOOK-BASED PLATFORMS (Messenger, WhatsApp) ────────────────
     // Exchange short-lived code for token
@@ -187,8 +108,8 @@ export const GET = async (request: Request) => {
       } catch (e) {
         logger.error(e, 'Auto-connect Messenger Error');
       }
-    } else if (platform === 'instagram_fb') {
-      // OLD FLOW: Instagram via Facebook Login (through Facebook Pages)
+    } else if (platform === 'instagram') {
+      // Instagram via Facebook Login (through Facebook Pages)
       try {
         const pagesRes = await fetch(`https://graph.facebook.com/v21.0/me/accounts?access_token=${accessToken}`);
         if (pagesRes.ok) {
@@ -250,7 +171,7 @@ export const GET = async (request: Request) => {
           }
         }
       } catch (e) {
-        logger.error(e, 'Auto-connect Instagram (FB flow) Error');
+        logger.error(e, 'Auto-connect Instagram Error');
       }
     } else if (platform === 'whatsapp') {
       try {

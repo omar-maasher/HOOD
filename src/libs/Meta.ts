@@ -11,17 +11,10 @@ export const META_CONFIG = {
   instagramAppSecret: process.env.INSTAGRAM_APP_SECRET || process.env.META_APP_SECRET,
 };
 
-export type MetaPlatform = 'instagram' | 'instagram_fb' | 'messenger' | 'whatsapp';
+export type MetaPlatform = 'instagram' | 'messenger' | 'whatsapp';
 
 const PLATFORM_SCOPES: Record<MetaPlatform, string[]> = {
   instagram: [
-    // Instagram Business Login scopes (essential for messaging)
-    'instagram_business_basic',
-    'instagram_business_manage_messages',
-    'instagram_business_manage_comments',
-  ],
-  instagram_fb: [
-    // Old Facebook Login flow for Instagram
     'pages_show_list',
     'instagram_basic',
     'instagram_manage_messages',
@@ -65,37 +58,9 @@ const handleMetaError = (error: any) => {
   }
 };
 
-/**
- * Generate the Instagram Business Login OAuth URL.
- * This uses Instagram's own OAuth endpoint instead of Facebook's.
- * Docs: https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/business-login
- */
-export const getInstagramAuthUrl = (state: string) => {
-  const scopes = PLATFORM_SCOPES.instagram;
-
-  const params = new URLSearchParams({
-    client_id: META_CONFIG.instagramAppId || '',
-    redirect_uri: META_CONFIG.redirectUri || '',
-    state,
-    response_type: 'code',
-    scope: scopes.join(','),
-    force_reauth: 'true',
-  });
-
-  return `https://www.instagram.com/oauth/authorize?${params.toString()}`;
-};
-
 export const getMetaAuthUrl = (state: string, platform?: MetaPlatform) => {
-  // Instagram direct flow uses Instagram's own OAuth
-  if (platform === 'instagram') {
-    return getInstagramAuthUrl(state);
-  }
-
-  // instagram_fb uses the old Facebook Login flow with Instagram scopes
-  const effectivePlatform = platform === 'instagram_fb' ? 'instagram_fb' : platform;
-
-  const scopes = effectivePlatform
-    ? PLATFORM_SCOPES[effectivePlatform]
+  const scopes = platform
+    ? PLATFORM_SCOPES[platform]
     : [...new Set(Object.values(PLATFORM_SCOPES).flat())];
 
   const params = new URLSearchParams({

@@ -114,10 +114,12 @@ export const POST = async (request: Request) => {
 
   logger.info({
     entryCount: entries.length,
-    hasWhatsAppUrl: !!n8nUrls.whatsapp,
-    hasInstagramUrl: !!n8nUrls.instagram,
-    hasMessengerUrl: !!n8nUrls.messenger,
-  }, '[WEBHOOK DEBUG] Received body');
+    n8nUrls: {
+      whatsapp: !!n8nUrls.whatsapp,
+      instagram: !!n8nUrls.instagram,
+      messenger: !!n8nUrls.messenger,
+    },
+  }, '[WEBHOOK DEBUG] Received Meta Webhook');
 
   const processingPromises: Promise<any>[] = [];
 
@@ -126,48 +128,34 @@ export const POST = async (request: Request) => {
     const messaging = entry.messaging || [];
     const changes = entry.changes || [];
 
-    // البحث عن الربط — يبحث في جميع الأنواع
+    // Search for integration by providerId
     const results = await db.select().from(integrationSchema).where(eq(integrationSchema.providerId, entryId)).limit(1);
     let integration = results[0];
 
-    logger.info({ entryId, foundIntegration: !!integration }, '[WEBHOOK DEBUG] DB lookup by providerId');
-
-    // --- FALLBACK: Try to detect platform from payload shape, then pick best integration ---
+    // --- FALLBACK: Try to detect platform and find any active integration for the org ---
     if (!integration) {
-      const hasMessaging = messaging.length > 0; // messenger/instagram send via entry.messaging
-      const hasChanges = changes.length > 0; // whatsapp sends via entry.changes
+      const hasMessaging = messaging.length > 0;
+      const hasChanges = changes.length > 0;
 
       if (hasMessaging) {
-        // Try messenger integration first, then instagram
+        // Find if any messenger or instagram integration exists globally as a fallback
         integration = await db.query.integrationSchema.findFirst({
-          where: eq(integrationSchema.type, 'messenger'),
+          where: (i, { or, eq: eqFn }) => or(eqFn(i.type, 'messenger'), eqFn(i.type, 'instagram')),
         });
-        if (!integration) {
-          integration = await db.query.integrationSchema.findFirst({
-            where: eq(integrationSchema.type, 'instagram'),
-          });
-        }
-        logger.info({ fallbackType: integration?.type, entryId }, '[WEBHOOK DEBUG] Fallback: messaging event → trying messenger/instagram');
       } else if (hasChanges) {
         integration = await db.query.integrationSchema.findFirst({
           where: eq(integrationSchema.type, 'whatsapp'),
         });
-        logger.info({ fallbackType: integration?.type, entryId }, '[WEBHOOK DEBUG] Fallback: changes event → trying whatsapp');
-      }
-
-      // Last resort: pick any integration
-      if (!integration) {
-        integration = await db.query.integrationSchema.findFirst();
-        logger.info({ fallbackType: integration?.type, entryId }, '[WEBHOOK DEBUG] Last-resort fallback integration');
       }
     }
 
     if (!integration) {
-      logger.warn({ entryId }, '[WEBHOOK DEBUG] No integration found, skipping entry');
+      logger.warn({ entryId }, '[WEBHOOK DEBUG] No integration found for this Provider ID. Skipping.');
       continue;
     }
 
     const orgId = integration.organizationId;
+    logger.info({ entryId, orgId, type: integration.type }, '[WEBHOOK DEBUG] Found Integration');
 
     const aiSettingsResults = await db.select()
       .from(aiSettingsSchema)
@@ -270,14 +258,16 @@ export const POST = async (request: Request) => {
             return null; // Do not send bot's own replies back to n8n to prevent loops
           }
 
-          const targetUrl = n8nUrls[platform];
+          const targetUrl = n8nUrls[platform] || process.env.N8N_WEBHOOK_URL;
           if (!targetUrl) {
+            logger.warn({ platform, mid }, '[WEBHOOK DEBUG] No N8N URL found for this platform or globally');
             return null;
           }
 
           const msgType = hasAttachments && event.message?.attachments?.[0]?.type === 'audio' ? 'audio' : 'text';
 
-          return await fetch(targetUrl, {
+          logger.info({ targetUrl, platform, senderId }, '[WEBHOOK DEBUG] Forwarding to n8n...');
+          const n8nRes = await fetch(targetUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -292,6 +282,8 @@ export const POST = async (request: Request) => {
               context,
             }),
           });
+          logger.info({ status: n8nRes.status, platform }, '[WEBHOOK DEBUG] n8n delivery status');
+          return n8nRes;
         } catch (e) {
           logger.error('Messenger/IG forward error', e);
           return null;
