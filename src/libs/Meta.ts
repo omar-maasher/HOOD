@@ -15,12 +15,10 @@ export type MetaPlatform = 'instagram' | 'messenger' | 'whatsapp';
 
 const PLATFORM_SCOPES: Record<MetaPlatform, string[]> = {
   instagram: [
-    // Instagram Business Login scopes (new API)
+    // Instagram Business Login scopes (essential for messaging)
     'instagram_business_basic',
     'instagram_business_manage_messages',
     'instagram_business_manage_comments',
-    'instagram_business_content_publish',
-    'instagram_business_manage_insights',
   ],
   messenger: [
     'pages_show_list',
