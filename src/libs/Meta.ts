@@ -6,18 +6,21 @@ export const META_CONFIG = {
   redirectUri: process.env.NEXT_PUBLIC_META_REDIRECT_URI,
   systemUserToken: process.env.META_SYSTEM_USER_TOKEN,
   graphVersion: 'v21.0',
+  // Instagram Business Login (separate app credentials)
+  instagramAppId: process.env.INSTAGRAM_APP_ID || process.env.META_APP_ID,
+  instagramAppSecret: process.env.INSTAGRAM_APP_SECRET || process.env.META_APP_SECRET,
 };
 
 export type MetaPlatform = 'instagram' | 'messenger' | 'whatsapp';
 
 const PLATFORM_SCOPES: Record<MetaPlatform, string[]> = {
   instagram: [
-    'pages_show_list',
-    'instagram_basic',
-    'instagram_manage_messages',
-    'instagram_manage_comments',
-    'public_profile',
-    'pages_read_engagement', // Needed to see the link between page and IG
+    // Instagram Business Login scopes (new API)
+    'instagram_business_basic',
+    'instagram_business_manage_messages',
+    'instagram_business_manage_comments',
+    'instagram_business_content_publish',
+    'instagram_business_manage_insights',
   ],
   messenger: [
     'pages_show_list',
@@ -55,7 +58,32 @@ const handleMetaError = (error: any) => {
   }
 };
 
+/**
+ * Generate the Instagram Business Login OAuth URL.
+ * This uses Instagram's own OAuth endpoint instead of Facebook's.
+ * Docs: https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/business-login
+ */
+export const getInstagramAuthUrl = (state: string) => {
+  const scopes = PLATFORM_SCOPES.instagram;
+
+  const params = new URLSearchParams({
+    client_id: META_CONFIG.instagramAppId || '',
+    redirect_uri: META_CONFIG.redirectUri || '',
+    state,
+    response_type: 'code',
+    scope: scopes.join(','),
+    force_reauth: 'true',
+  });
+
+  return `https://www.instagram.com/oauth/authorize?${params.toString()}`;
+};
+
 export const getMetaAuthUrl = (state: string, platform?: MetaPlatform) => {
+  // Instagram uses its own direct OAuth flow
+  if (platform === 'instagram') {
+    return getInstagramAuthUrl(state);
+  }
+
   const scopes = platform
     ? PLATFORM_SCOPES[platform]
     : [...new Set(Object.values(PLATFORM_SCOPES).flat())];
@@ -68,6 +96,45 @@ export const getMetaAuthUrl = (state: string, platform?: MetaPlatform) => {
   });
 
   return `https://www.facebook.com/${META_CONFIG.graphVersion}/dialog/oauth?${params.toString()}`;
+};
+
+/**
+ * Exchange an Instagram authorization code for a short-lived access token.
+ * This uses Instagram's token endpoint, not Facebook's Graph API.
+ */
+export const exchangeInstagramCodeForToken = async (code: string) => {
+  const url = 'https://api.instagram.com/oauth/access_token';
+
+  const formData = new URLSearchParams({
+    client_id: META_CONFIG.instagramAppId || '',
+    client_secret: META_CONFIG.instagramAppSecret || '',
+    grant_type: 'authorization_code',
+    redirect_uri: META_CONFIG.redirectUri || '',
+    code,
+  });
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: formData.toString(),
+  });
+
+  return response.json();
+};
+
+/**
+ * Exchange a short-lived Instagram token for a long-lived token (60 days).
+ */
+export const getInstagramLongLivedToken = async (shortLivedToken: string) => {
+  const params = new URLSearchParams({
+    grant_type: 'ig_exchange_token',
+    client_secret: META_CONFIG.instagramAppSecret || '',
+    access_token: shortLivedToken,
+  });
+
+  const url = `https://graph.instagram.com/access_token?${params.toString()}`;
+  const response = await fetch(url);
+  return response.json();
 };
 
 export const exchangeCodeForToken = async (code: string, redirectUri?: string) => {
@@ -99,28 +166,24 @@ export const getLongLivedToken = async (shortLivedToken: string) => {
 };
 
 /**
- * Send a message via the Messenger API for Instagram.
+ * Send a message via Instagram's direct API (Instagram Business Login).
  *
- * IMPORTANT: `pageId` must be the FACEBOOK PAGE ID (not the Instagram
- * Business Account ID). The `/messages` endpoint is scoped to the Facebook
- * Page that is linked to the Instagram account.
+ * With the new Instagram Business Login flow, messages are sent directly
+ * through graph.instagram.com using the user's Instagram token.
  *
- * The `accessToken` must be the PAGE ACCESS TOKEN for that page.
+ * Required scopes:
+ *   - instagram_business_manage_messages
  *
- * Required app permissions:
- *   - instagram_manage_messages  (needs Meta App Review for live mode)
- *   - pages_messaging
- *
- * Docs: https://developers.facebook.com/docs/messenger-platform/instagram/features/send-message
+ * Docs: https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/messaging
  */
 export const sendInstagramMessage = async (
-  pageId: string, // Facebook Page ID (stored as providerId in DB)
+  _igUserIdOrPageId: string, // Instagram User ID (new flow) or Facebook Page ID (legacy)
   recipientId: string, // Instagram-scoped user ID of the recipient
   text: string,
-  accessToken: string, // Page Access Token
+  accessToken: string, // Instagram user access token (new) or Page token (legacy)
 ) => {
-  // Endpoint: POST /{page-id}/messages  (Messenger API for Instagram)
-  const url = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${pageId}/messages`;
+  // Use the Instagram Graph API directly
+  const url = `https://graph.instagram.com/${META_CONFIG.graphVersion}/me/messages`;
 
   const response = await fetch(url, {
     method: 'POST',

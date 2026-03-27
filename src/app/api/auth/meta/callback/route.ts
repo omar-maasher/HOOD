@@ -4,7 +4,8 @@ import { and, eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/DB';
-import { exchangeCodeForToken, getLongLivedToken } from '@/libs/Meta';
+import { logger } from '@/libs/Logger';
+import { exchangeCodeForToken, exchangeInstagramCodeForToken, getInstagramLongLivedToken, getLongLivedToken } from '@/libs/Meta';
 import { integrationSchema } from '@/models/Schema';
 
 export const GET = async (request: Request) => {
@@ -23,6 +24,86 @@ export const GET = async (request: Request) => {
     const { orgId, platform, locale } = state;
     lang = locale || 'ar';
 
+    // ─── INSTAGRAM (New Direct Instagram OAuth Flow) ───────────────────
+    if (platform === 'instagram') {
+      try {
+        // 1. Exchange code for short-lived token via Instagram API
+        const tokenResponse = await exchangeInstagramCodeForToken(code);
+        logger.info({ tokenResponse }, 'Instagram Token Response');
+
+        if (tokenResponse.error_type || tokenResponse.error_message) {
+          logger.error({ tokenResponse }, 'Instagram Token Exchange Error');
+          return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=token_exchange_failed`, request.url));
+        }
+
+        const shortLivedToken = tokenResponse.access_token;
+        const igUserId = tokenResponse.user_id; // Instagram User ID
+
+        if (!shortLivedToken) {
+          logger.error({ tokenResponse }, 'No access token in Instagram response');
+          return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=no_access_token`, request.url));
+        }
+
+        // 2. Exchange for long-lived token (60 days)
+        const longLivedResponse = await getInstagramLongLivedToken(shortLivedToken);
+        const accessToken = longLivedResponse.access_token || shortLivedToken;
+
+        logger.info({ igUserId }, 'Instagram Long-lived token obtained');
+
+        // 3. Fetch the user's Instagram profile to get username
+        let igUsername = '';
+        try {
+          const profileRes = await fetch(`https://graph.instagram.com/v21.0/me?fields=user_id,username&access_token=${accessToken}`);
+          if (profileRes.ok) {
+            const profileData = await profileRes.json();
+            igUsername = profileData.username || '';
+            logger.info({ profileData }, 'Instagram profile fetched');
+          }
+        } catch (e) {
+          logger.error(e, 'Failed to fetch IG profile');
+        }
+
+        // 4. Save integration to database
+        const existingIg = await db.query.integrationSchema.findFirst({
+          where: and(
+            eq(integrationSchema.organizationId, orgId),
+            eq(integrationSchema.type, 'instagram'),
+          ),
+        });
+
+        const integrationData = {
+          accessToken,
+          providerId: String(igUserId), // Instagram User ID
+          config: JSON.stringify({ igUserId, igUsername }),
+          status: 'active' as const,
+          updatedAt: new Date(),
+        };
+
+        if (existingIg) {
+          await db.update(integrationSchema)
+            .set(integrationData)
+            .where(
+              and(
+                eq(integrationSchema.organizationId, orgId),
+                eq(integrationSchema.type, 'instagram'),
+              ),
+            );
+        } else {
+          await db.insert(integrationSchema).values({
+            organizationId: orgId,
+            type: 'instagram',
+            ...integrationData,
+          });
+        }
+
+        return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?success=connected`, request.url));
+      } catch (e) {
+        console.error('Instagram OAuth Error:', e);
+        return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=instagram_oauth_failed`, request.url));
+      }
+    }
+
+    // ─── FACEBOOK-BASED PLATFORMS (Messenger, WhatsApp) ────────────────
     // Exchange short-lived code for token
     const tokenResponse = await exchangeCodeForToken(code);
 
@@ -35,11 +116,7 @@ export const GET = async (request: Request) => {
     const longLivedResponse = await getLongLivedToken(tokenResponse.access_token);
     const accessToken = longLivedResponse.access_token || tokenResponse.access_token;
 
-    // Here you would normally fetch the user's pages and let them choose
-    // For now, we just save the main token for the organization
-    // We'll tag it as 'facebook' which can then be used to list pages/instagram/etc.
-
-    // Check if the integration already exists
+    // Save root Facebook token
     const existingIntegration = await db.query.integrationSchema.findFirst({
       where: and(
         eq(integrationSchema.organizationId, orgId),
@@ -71,11 +148,10 @@ export const GET = async (request: Request) => {
         const pagesRes = await fetch(`https://graph.facebook.com/v21.0/me/accounts?access_token=${accessToken}`);
         if (pagesRes.ok) {
           const pagesData = await pagesRes.json();
-          // Pick the first page the user connected
           if (pagesData.data && pagesData.data.length > 0) {
             const page = pagesData.data[0];
             const pageToken = page.access_token;
-            const pageId = page.id; // This is the ID that Webhooks use!
+            const pageId = page.id;
 
             const existingMsg = await db.query.integrationSchema.findFirst({
               where: and(
@@ -111,76 +187,14 @@ export const GET = async (request: Request) => {
       } catch (e) {
         console.error('Auto-connect Messenger Error:', e);
       }
-    } else if (platform === 'instagram') {
-      // --- AUTO FETCH PAGES AND INSTAGRAM ACCOUNT ---
-      try {
-        const pagesRes = await fetch(`https://graph.facebook.com/v21.0/me/accounts?access_token=${accessToken}`);
-        if (pagesRes.ok) {
-          const pagesData = await pagesRes.json();
-
-          // Loop through all pages to see if they have an Instagram Business account connected
-          for (const page of pagesData.data || []) {
-            const pageToken = page.access_token;
-            const pageId = page.id;
-
-            const igRes = await fetch(`https://graph.facebook.com/v21.0/${pageId}?fields=instagram_business_account&access_token=${pageToken}`);
-            if (igRes.ok) {
-              const igData = await igRes.json();
-
-              // If the page has an Instagram account connected
-              if (igData.instagram_business_account) {
-                const igAccountId = igData.instagram_business_account.id;
-
-                const existingIg = await db.query.integrationSchema.findFirst({
-                  where: and(
-                    eq(integrationSchema.organizationId, orgId),
-                    eq(integrationSchema.type, 'instagram'),
-                  ),
-                });
-
-                if (existingIg) {
-                  await db.update(integrationSchema)
-                    .set({
-                      accessToken: pageToken,
-                      providerId: igAccountId, // Instagram Account ID (needed for Webhook)
-                      config: JSON.stringify({ pageId }), // Facebook Page ID (needed for Sending Messages)
-                      updatedAt: new Date(),
-                    })
-                    .where(
-                      and(
-                        eq(integrationSchema.organizationId, orgId),
-                        eq(integrationSchema.type, 'instagram'),
-                      ),
-                    );
-                } else {
-                  await db.insert(integrationSchema).values({
-                    organizationId: orgId,
-                    type: 'instagram',
-                    providerId: igAccountId,
-                    accessToken: pageToken,
-                    config: JSON.stringify({ pageId }),
-                    status: 'active',
-                  });
-                }
-
-                // Only auto-connect the first found one for now
-                break;
-              }
-            }
-          }
-        }
-      } catch (e) {
-        console.error('Auto-connect Instagram Error:', e);
-      }
     } else if (platform === 'whatsapp') {
       try {
         const wabaRes = await fetch(`https://graph.facebook.com/v21.0/me/whatsapp_business_accounts?access_token=${accessToken}`);
         if (wabaRes.ok) {
           const wabaData = await wabaRes.json();
           if (wabaData.data && wabaData.data.length > 0) {
-            const wabaId = wabaData.data[0].id; // The ID used in Webhooks
+            const wabaId = wabaData.data[0].id;
 
-            // Fetch Phone Numbers for this WABA to get the Phone Number ID (needed for Sending)
             const phoneRes = await fetch(`https://graph.facebook.com/v21.0/${wabaId}/phone_numbers?access_token=${accessToken}`);
             if (phoneRes.ok) {
               const phoneData = await phoneRes.json();
