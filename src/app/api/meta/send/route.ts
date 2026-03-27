@@ -44,12 +44,13 @@ export const POST = async (request: Request) => {
       console.error('Failed to check org plan for branding', e);
     }
 
-    // 2. Fetch the specific integration (Page Token)
+    // 2. Fetch the specific integration (Page Token) - Order by updatedAt DESC to get the latest one
     const platformIntegration = await db.query.integrationSchema.findFirst({
       where: and(
         eq(integrationSchema.organizationId, orgId),
         eq(integrationSchema.type, platform),
       ),
+      orderBy: (integration, { desc }) => [desc(integration.updatedAt)],
     });
 
     let responseData;
