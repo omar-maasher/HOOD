@@ -11,7 +11,7 @@ export const META_CONFIG = {
   instagramAppSecret: process.env.INSTAGRAM_APP_SECRET || process.env.META_APP_SECRET,
 };
 
-export type MetaPlatform = 'instagram' | 'messenger' | 'whatsapp';
+export type MetaPlatform = 'instagram' | 'instagram_fb' | 'messenger' | 'whatsapp';
 
 const PLATFORM_SCOPES: Record<MetaPlatform, string[]> = {
   instagram: [
@@ -19,6 +19,15 @@ const PLATFORM_SCOPES: Record<MetaPlatform, string[]> = {
     'instagram_business_basic',
     'instagram_business_manage_messages',
     'instagram_business_manage_comments',
+  ],
+  instagram_fb: [
+    // Old Facebook Login flow for Instagram
+    'pages_show_list',
+    'instagram_basic',
+    'instagram_manage_messages',
+    'instagram_manage_comments',
+    'public_profile',
+    'pages_read_engagement',
   ],
   messenger: [
     'pages_show_list',
@@ -77,13 +86,16 @@ export const getInstagramAuthUrl = (state: string) => {
 };
 
 export const getMetaAuthUrl = (state: string, platform?: MetaPlatform) => {
-  // Instagram uses its own direct OAuth flow
+  // Instagram direct flow uses Instagram's own OAuth
   if (platform === 'instagram') {
     return getInstagramAuthUrl(state);
   }
 
-  const scopes = platform
-    ? PLATFORM_SCOPES[platform]
+  // instagram_fb uses the old Facebook Login flow with Instagram scopes
+  const effectivePlatform = platform === 'instagram_fb' ? 'instagram_fb' : platform;
+
+  const scopes = effectivePlatform
+    ? PLATFORM_SCOPES[effectivePlatform]
     : [...new Set(Object.values(PLATFORM_SCOPES).flat())];
 
   const params = new URLSearchParams({

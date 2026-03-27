@@ -185,7 +185,72 @@ export const GET = async (request: Request) => {
           }
         }
       } catch (e) {
-        console.error('Auto-connect Messenger Error:', e);
+        logger.error(e, 'Auto-connect Messenger Error');
+      }
+    } else if (platform === 'instagram_fb') {
+      // OLD FLOW: Instagram via Facebook Login (through Facebook Pages)
+      try {
+        const pagesRes = await fetch(`https://graph.facebook.com/v21.0/me/accounts?access_token=${accessToken}`);
+        if (pagesRes.ok) {
+          const pagesData = await pagesRes.json();
+          if (pagesData.data && pagesData.data.length > 0) {
+            // Find a page linked to an Instagram account
+            let igAccountId = '';
+            let igPageToken = '';
+            let igPageId = '';
+
+            for (const page of pagesData.data) {
+              const igRes = await fetch(`https://graph.facebook.com/v21.0/${page.id}?fields=instagram_business_account&access_token=${page.access_token}`);
+              if (igRes.ok) {
+                const igData = await igRes.json();
+                if (igData.instagram_business_account) {
+                  igAccountId = igData.instagram_business_account.id;
+                  igPageToken = page.access_token;
+                  igPageId = page.id;
+                  break;
+                }
+              }
+            }
+
+            if (igAccountId) {
+              const existingIg = await db.query.integrationSchema.findFirst({
+                where: and(
+                  eq(integrationSchema.organizationId, orgId),
+                  eq(integrationSchema.type, 'instagram'),
+                ),
+              });
+
+              const integrationData = {
+                accessToken: igPageToken,
+                providerId: igPageId, // Facebook Page ID for webhook matching
+                config: JSON.stringify({ igAccountId, method: 'facebook_login' }),
+                status: 'active' as const,
+                updatedAt: new Date(),
+              };
+
+              if (existingIg) {
+                await db.update(integrationSchema)
+                  .set(integrationData)
+                  .where(
+                    and(
+                      eq(integrationSchema.organizationId, orgId),
+                      eq(integrationSchema.type, 'instagram'),
+                    ),
+                  );
+              } else {
+                await db.insert(integrationSchema).values({
+                  organizationId: orgId,
+                  type: 'instagram',
+                  ...integrationData,
+                });
+              }
+            } else {
+              return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=no_instagram_account&pages_found=${pagesData.data.length}`, request.url));
+            }
+          }
+        }
+      } catch (e) {
+        logger.error(e, 'Auto-connect Instagram (FB flow) Error');
       }
     } else if (platform === 'whatsapp') {
       try {
