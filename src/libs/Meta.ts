@@ -152,13 +152,13 @@ export const getLongLivedToken = async (shortLivedToken: string) => {
  * Docs: https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/messaging
  */
 export const sendInstagramMessage = async (
-  _igUserIdOrPageId: string, // Instagram User ID (new flow) or Facebook Page ID (legacy)
+  pageId: string, // For the Facebook-based flow, this is the Page ID Correlated with Instagram
   recipientId: string, // Instagram-scoped user ID of the recipient
   text: string,
-  accessToken: string, // Instagram user access token (new) or Page token (legacy)
+  accessToken: string, // Page Access Token
 ) => {
-  // Use the Instagram Graph API directly
-  const url = `https://graph.instagram.com/${META_CONFIG.graphVersion}/me/messages`;
+  // MUST use graph.facebook.com for the Page-based Instagram messaging flow
+  const url = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${pageId}/messages`;
 
   const response = await fetch(url, {
     method: 'POST',

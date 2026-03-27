@@ -2,6 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/DB';
+import { logger } from '@/libs/Logger';
 import { replyToInstagramComment, sendInstagramMessage, sendMessengerMessage, sendWhatsAppMessage } from '@/libs/Meta';
 import { conversationSchema, integrationSchema, messageSchema, organizationSchema } from '@/models/Schema';
 import { PLAN_ID } from '@/utils/AppConfig';
@@ -79,6 +80,14 @@ export const POST = async (request: Request) => {
       if (!token || !pageIdForSending) {
         return NextResponse.json({ error: 'Instagram integration is missing token or account ID.' }, { status: 400 });
       }
+
+      logger.info({
+        platform,
+        orgId,
+        providerId: platformIntegration.providerId,
+        pageIdForSending,
+        tokenPrefix: `${token.substring(0, 10)}...`,
+      }, '[SEND DEBUG] Attempting to send Instagram message');
 
       if (commentId) {
         // If commentId is provided, we reply to a comment instead of sending a DM
