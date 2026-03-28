@@ -1,7 +1,14 @@
+import { auth } from '@clerk/nextjs/server';
+import { eq } from 'drizzle-orm';
 import { Bot, Building2, CalendarCheck, Check, Crown, Megaphone, MessageSquare, Radio, ShieldCheck, Users, Zap } from 'lucide-react';
 import { getLocale } from 'next-intl/server';
+import React from 'react';
 
-import { PLAN_ID } from '@/utils/AppConfig';
+import { createCheckoutSession } from '@/features/billing/actions';
+import { db } from '@/libs/DB';
+import { Env } from '@/libs/Env';
+import { organizationSchema } from '@/models/Schema';
+import { PLAN_ID, PricingPlanList } from '@/utils/AppConfig';
 
 export default async function SubscriptionPage() {
   const locale = await getLocale();
@@ -13,15 +20,10 @@ export default async function SubscriptionPage() {
   const whatsappNumber = '966524318721'; // حدث هذا الرقم برقمك الحقيقي
 
   try {
-    const { auth } = await import('@clerk/nextjs/server');
-    const { eq } = await import('drizzle-orm');
-    const { db } = await import('@/libs/DB');
-    const { organizationSchema } = await import('@/models/Schema');
-
     const { orgId } = await auth();
     currentOrgId = orgId;
 
-    if (orgId && db) {
+    if (orgId) {
       const orgData = await db.query.organizationSchema.findFirst({
         where: eq(organizationSchema.id, orgId),
       });
@@ -37,7 +39,7 @@ export default async function SubscriptionPage() {
           subscriptionStatus = isAr ? 'نشط (دفع يدوي)' : 'Active (Manual)';
         } else if (orgData.stripeSubscriptionStatus === 'trialing') {
           subscriptionStatus = isAr ? 'فترة تجريبية' : 'Trial';
-        } else {
+        } else if (orgData.stripeSubscriptionStatus) {
           subscriptionStatus = isAr ? 'غير نشط' : 'Inactive';
         }
       }
@@ -101,10 +103,6 @@ export default async function SubscriptionPage() {
       ],
     },
   ];
-
-  const { Env } = await import('@/libs/Env');
-  const { createCheckoutSession } = await import('@/features/billing/actions');
-  const { PricingPlanList } = await import('@/utils/AppConfig');
 
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 pb-20">
