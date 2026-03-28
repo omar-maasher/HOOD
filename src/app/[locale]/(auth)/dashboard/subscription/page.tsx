@@ -1,5 +1,5 @@
 import { auth } from '@clerk/nextjs/server';
-import { Bot, Building2, CalendarCheck, Check, Crown, Megaphone, MessageSquare, Radio, ShieldCheck, Users, Zap } from 'lucide-react';
+import { Bot, Building2, CalendarCheck, Check, Crown, MessageSquare, Radio, ShieldCheck, Zap } from 'lucide-react';
 import React from 'react';
 
 import { createCheckoutSession } from '@/features/billing/actions';
