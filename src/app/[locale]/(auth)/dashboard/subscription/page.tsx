@@ -1,22 +1,48 @@
 import { auth } from '@clerk/nextjs/server';
+import { eq } from 'drizzle-orm';
 import { Bot, Building2, CalendarCheck, Check, Crown, Megaphone, MessageSquare, Radio, ShieldCheck, Users, Zap } from 'lucide-react';
 import React from 'react';
 
 import { createCheckoutSession } from '@/features/billing/actions';
+import { db } from '@/libs/DB';
 import { Env } from '@/libs/Env';
+import { organizationSchema } from '@/models/Schema';
 import { PLAN_ID, PricingPlanList } from '@/utils/AppConfig';
 
-export default async function SubscriptionPage({ params }: { params: Promise<{ locale: string }> }) {
-  const { locale } = await params;
+export default async function SubscriptionPage({ params }: { params: { locale: string } }) {
+  const { locale } = params;
   const isAr = locale === 'ar';
 
   let currentPlanId: string = PLAN_ID.FREE;
   let subscriptionStatus = isAr ? 'حساب أساسي' : 'Basic Account';
+  let currentOrgId: string | null | undefined = null;
   const whatsappNumber = '966524318721';
 
   try {
     const { orgId } = await auth();
-    // تم تعطيله مؤقتاً للتشخيص
+    currentOrgId = orgId;
+
+    if (orgId) {
+      const orgData = await db.query.organizationSchema.findFirst({
+        where: eq(organizationSchema.id, orgId),
+      });
+
+      if (orgData) {
+        if (orgData.planId === PLAN_ID.PREMIUM) {
+          currentPlanId = PLAN_ID.PREMIUM;
+        } else if (orgData.planId === PLAN_ID.ENTERPRISE) {
+          currentPlanId = PLAN_ID.ENTERPRISE;
+        }
+
+        if (orgData.stripeSubscriptionStatus === 'active') {
+          subscriptionStatus = isAr ? 'نشط (دفع يدوي)' : 'Active (Manual)';
+        } else if (orgData.stripeSubscriptionStatus === 'trialing') {
+          subscriptionStatus = isAr ? 'فترة تجريبية' : 'Trial';
+        } else if (orgData.stripeSubscriptionStatus) {
+          subscriptionStatus = isAr ? 'غير نشط' : 'Inactive';
+        }
+      }
+    }
   } catch (error) {
     console.error('Subscription page error:', error);
   }
@@ -104,6 +130,9 @@ export default async function SubscriptionPage({ params }: { params: Promise<{ l
                 {subscriptionStatus}
               </span>
             </div>
+            <p className={`text-sm font-medium ${currentPlanId !== PLAN_ID.FREE ? 'text-indigo-700' : 'text-muted-foreground'}`}>
+              {currentPlanId === PLAN_ID.FREE ? (isAr ? 'قم بالترقية للوصول إلى مزايا أكثر' : 'Upgrade to get more benefits') : (isAr ? 'تتمتع بكافة مزايا باقتك' : 'You are enjoying all your plan benefits')}
+            </p>
           </div>
         </div>
       </div>
@@ -116,12 +145,13 @@ export default async function SubscriptionPage({ params }: { params: Promise<{ l
           const stripePriceId = Env.BILLING_PLAN_ENV === 'prod' ? planConfig?.prodPriceId : (Env.BILLING_PLAN_ENV === 'test' ? planConfig?.testPriceId : planConfig?.devPriceId);
 
           return (
-            <div key={plan.id} className={`relative flex flex-col overflow-hidden rounded-[2rem] border bg-card shadow-xl transition-all hover:scale-[1.02] ${plan.popular ? 'border-primary/30 ring-2 ring-primary/10' : 'border-border'}`}>
+            <div key={plan.id} className={`relative flex flex-col overflow-hidden rounded-[2rem] border bg-card shadow-xl transition-all hover:scale-[1.02] ${plan.popular ? 'border-primary/30 ring-2 ring-primary/10' : 'border-border'} ${isCurrentPlan ? 'border-emerald-200 ring-2 ring-emerald-500/30' : ''}`}>
               <div className={`p-8 text-start ${plan.color === 'indigo' ? 'bg-gradient-to-br from-indigo-50/50 to-purple-50/30' : plan.color === 'purple' ? 'bg-gradient-to-br from-purple-50/50 to-pink-50/30' : 'bg-muted/10'}`}>
                 <div className={`mb-4 flex size-14 items-center justify-center rounded-2xl ${plan.color === 'indigo' ? 'bg-indigo-100 text-indigo-600' : plan.color === 'purple' ? 'bg-purple-100 text-purple-600' : 'bg-muted text-muted-foreground'}`}>
                   <Icon className="size-7" />
                 </div>
                 <h3 className="mb-1 text-xl font-black">{plan.name}</h3>
+                <p className="text-sm font-medium text-muted-foreground">{plan.description}</p>
                 <div className="mt-4 flex items-baseline gap-1">
                   <span className="text-4xl font-black">{plan.price}</span>
                   <span className="text-sm font-bold">{isAr ? 'دولار / شهرياً' : 'USD / month'}</span>
@@ -154,7 +184,7 @@ export default async function SubscriptionPage({ params }: { params: Promise<{ l
                         </button>
                       </form>
                     )}
-                    <a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noopener noreferrer" className="flex h-12 w-full items-center justify-center rounded-2xl bg-emerald-600 font-bold text-white transition-all hover:bg-emerald-700">
+                    <a href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(isAr ? `أهلاً، أرغب في تفعيل باقة (${plan.name}) لحسابي.\nمعرف المنظمة: ${currentOrgId}` : `Hello, I want to activate (${plan.name}) for my account.\nOrg ID: ${currentOrgId}`)}`} target="_blank" rel="noopener noreferrer" className="flex h-12 w-full items-center justify-center rounded-2xl bg-emerald-600 font-bold text-white transition-all hover:bg-emerald-700">
                       {isAr ? 'تفعيل يدوي (واتساب)' : 'Manual Activation (WhatsApp)'}
                     </a>
                   </>
