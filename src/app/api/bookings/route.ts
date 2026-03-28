@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/DB';
@@ -17,15 +17,15 @@ export const POST = async (request: Request) => {
     }
 
     const body = await request.json();
-    const { 
-      organizationId, 
-      customerName, 
-      contactInfo, 
-      serviceDetails, 
-      bookingDate, 
-      source, 
+    const {
+      organizationId,
+      customerName,
+      contactInfo,
+      serviceDetails,
+      bookingDate,
+      source,
       socialUsername,
-      notes 
+      notes,
     } = body;
 
     if (!organizationId || !customerName || !bookingDate) {
@@ -41,7 +41,7 @@ export const POST = async (request: Request) => {
       source: source || 'unknown',
       socialUsername,
       notes,
-      status: 'upcoming'
+      status: 'upcoming',
     }).returning();
 
     return NextResponse.json({ success: true, booking: newBooking[0] });
