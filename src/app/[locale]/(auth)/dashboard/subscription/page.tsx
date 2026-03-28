@@ -23,27 +23,15 @@ export default async function SubscriptionPage() {
     const { orgId } = await auth();
     currentOrgId = orgId;
 
+    // تعطيل مؤقت للبحث في القاعدة للتأكد من مصدر الخطأ
+    /*
     if (orgId) {
       const orgData = await db.query.organizationSchema.findFirst({
         where: eq(organizationSchema.id, orgId),
       });
-
-      if (orgData) {
-        if (orgData.planId === PLAN_ID.PREMIUM) {
-          currentPlanId = PLAN_ID.PREMIUM;
-        } else if (orgData.planId === PLAN_ID.ENTERPRISE) {
-          currentPlanId = PLAN_ID.ENTERPRISE;
-        }
-
-        if (orgData.stripeSubscriptionStatus === 'active') {
-          subscriptionStatus = isAr ? 'نشط (دفع يدوي)' : 'Active (Manual)';
-        } else if (orgData.stripeSubscriptionStatus === 'trialing') {
-          subscriptionStatus = isAr ? 'فترة تجريبية' : 'Trial';
-        } else if (orgData.stripeSubscriptionStatus) {
-          subscriptionStatus = isAr ? 'غير نشط' : 'Inactive';
-        }
-      }
+      // ... (تم تعطيله مؤقتاً)
     }
+    */
   } catch (error) {
     console.error('Subscription page error:', error);
   }
