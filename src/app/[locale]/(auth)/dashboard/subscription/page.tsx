@@ -12,12 +12,10 @@ export default async function SubscriptionPage({ params }: { params: Promise<{ l
 
   let currentPlanId: string = PLAN_ID.FREE;
   let subscriptionStatus = isAr ? 'حساب أساسي' : 'Basic Account';
-  let currentOrgId: string | null | undefined = null;
   const whatsappNumber = '966524318721';
 
   try {
     const { orgId } = await auth();
-    currentOrgId = orgId;
     // تم تعطيله مؤقتاً للتشخيص
   } catch (error) {
     console.error('Subscription page error:', error);
