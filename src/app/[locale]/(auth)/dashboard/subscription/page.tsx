@@ -1,13 +1,10 @@
 import { auth } from '@clerk/nextjs/server';
-import { eq } from 'drizzle-orm';
 import { Bot, Building2, CalendarCheck, Check, Crown, Megaphone, MessageSquare, Radio, ShieldCheck, Users, Zap } from 'lucide-react';
 import { getLocale } from 'next-intl/server';
 import React from 'react';
 
 import { createCheckoutSession } from '@/features/billing/actions';
-import { db } from '@/libs/DB';
 import { Env } from '@/libs/Env';
-import { organizationSchema } from '@/models/Schema';
 import { PLAN_ID, PricingPlanList } from '@/utils/AppConfig';
 
 export default async function SubscriptionPage() {
