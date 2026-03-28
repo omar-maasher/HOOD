@@ -4,7 +4,6 @@ import { NextResponse } from 'next/server';
 import type Stripe from 'stripe';
 
 import { db } from '@/libs/DB';
-import { logger } from '@/libs/Logger';
 import { stripe } from '@/libs/Stripe';
 import { organizationSchema } from '@/models/Schema';
 import { PLAN_ID, PricingPlanList } from '@/utils/AppConfig';
