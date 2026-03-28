@@ -5,6 +5,7 @@ import { ar, enUS } from 'date-fns/locale';
 import {
   ArrowRight,
   CheckCheck,
+  CalendarCheck,
   Filter,
   Instagram,
   Loader2,
@@ -52,6 +53,7 @@ export const InboxClient = ({ initialConversations, isAr }: { initialConversatio
   const [sending, setSending] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [showDetails, setShowDetails] = useState(true);
   const router = useRouter();
 
   // Keep conversations fresh if page data changes (via router.refresh)
@@ -59,7 +61,7 @@ export const InboxClient = ({ initialConversations, isAr }: { initialConversatio
     setConversations(initialConversations);
   }, [initialConversations]);
 
-  const selectedConv = conversations.find(c => c.id === selectedConvId);
+  const selectedConv = conversations.find(c => c.id === selectedConvId) as Conversation & { status?: string };
 
   const loadMessages = async (convId: number) => {
     setLoadingMessages(true);
@@ -148,12 +150,12 @@ export const InboxClient = ({ initialConversations, isAr }: { initialConversatio
     }
   };
 
-  const getPlatformIcon = (platform: string) => {
+  const getPlatformIcon = (platform: string, size = 14) => {
     switch (platform) {
-      case 'whatsapp': return <div className="rounded-lg bg-emerald-100 p-1.5 text-emerald-600"><Phone size={14} /></div>;
-      case 'instagram': return <div className="rounded-lg bg-pink-100 p-1.5 text-pink-600"><Instagram size={14} /></div>;
-      case 'messenger': return <div className="rounded-lg bg-blue-100 p-1.5 text-blue-600"><MessageCircle size={14} /></div>;
-      default: return <MessageCircle size={14} />;
+      case 'whatsapp': return <div className="rounded-lg bg-emerald-100 p-1.5 text-emerald-600"><Phone size={size} /></div>;
+      case 'instagram': return <div className="rounded-lg bg-pink-100 p-1.5 text-pink-600"><Instagram size={size} /></div>;
+      case 'messenger': return <div className="rounded-lg bg-blue-100 p-1.5 text-blue-600"><MessageCircle size={size} /></div>;
+      default: return <MessageCircle size={size} />;
     }
   };
 
@@ -169,20 +171,20 @@ export const InboxClient = ({ initialConversations, isAr }: { initialConversatio
 
   return (
     <div className={`flex h-[calc(100vh-140px)] w-full overflow-hidden rounded-[2.5rem] border bg-background shadow-2xl ${containerDirClass}`} dir={isAr ? 'rtl' : 'ltr'}>
-      {/* Sidebar - Conversations List */}
-      <div className={`flex w-full flex-col border-x transition-all duration-300 md:w-[380px] ${sidebarVisibilityClass}`}>
-        <div className="space-y-4 border-b p-6">
+      {/* Sidebar - Conversations List (Column 1) */}
+      <div className={`flex w-full flex-col border-x transition-all duration-300 md:w-[320px] lg:w-[380px] ${sidebarVisibilityClass}`}>
+        <div className="space-y-4 border-b p-6 bg-muted/10">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-black">{isAr ? 'المحادثات' : 'Conversations'}</h2>
-            <Button type="button" variant="ghost" size="icon" className="rounded-xl bg-muted/50">
+            <Button type="button" variant="ghost" size="icon" className="rounded-xl hover:bg-muted-foreground/10">
               <Filter size={18} />
             </Button>
           </div>
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className={`absolute ${isAr ? 'right-3' : 'left-3'} top-1/2 size-4 -translate-y-1/2 text-muted-foreground`} />
             <Input
               placeholder={isAr ? 'ابحث عن عميل...' : 'Search customers...'}
-              className={`h-11 rounded-xl border-none bg-muted/30 pl-10 focus-visible:ring-primary ${isAr ? 'pl-3 pr-10' : ''}`}
+              className={`h-11 rounded-xl border-none bg-muted/30 focus-visible:ring-primary ${isAr ? 'pr-10' : 'pl-10'}`}
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
             />
@@ -193,9 +195,9 @@ export const InboxClient = ({ initialConversations, isAr }: { initialConversatio
           <div className="space-y-1 p-3">
             {filteredConversations.length === 0
               ? (
-                  <div className="space-y-2 py-20 text-center text-muted-foreground opacity-40">
+                  <div className="space-y-2 py-20 text-center text-muted-foreground opacity-30">
                     <MessageCircle size={48} className="mx-auto" />
-                    <p className="text-sm font-medium">{isAr ? 'لا توجد محادثات بعد' : 'No conversations found'}</p>
+                    <p className="text-sm font-medium">{isAr ? 'لا توجد محادثات' : 'No conversations'}</p>
                   </div>
                 )
               : (
@@ -218,8 +220,8 @@ export const InboxClient = ({ initialConversations, isAr }: { initialConversatio
                           <div className={`flex size-14 items-center justify-center overflow-hidden rounded-2xl border-2 bg-muted text-xl font-black ${avatarBorderClass}`}>
                             {conv.customerName ? conv.customerName[0]?.toUpperCase() : <User size={24} />}
                           </div>
-                          <div className="absolute -bottom-1 -right-1 rounded-lg shadow-sm ring-4 ring-background">
-                            {getPlatformIcon(conv.platform)}
+                          <div className={`absolute -bottom-1 -right-1 rounded-lg shadow-sm ${isSelected ? 'ring-2 ring-primary-foreground/30' : 'ring-4 ring-background'}`}>
+                            {getPlatformIcon(conv.platform, 12)}
                           </div>
                         </div>
 
@@ -228,7 +230,7 @@ export const InboxClient = ({ initialConversations, isAr }: { initialConversatio
                             <h4 className="truncate text-sm font-bold">
                               {conv.customerName || conv.externalId}
                             </h4>
-                            <span className={`text-[10px] ${timeClass} font-medium`}>
+                            <span className={`text-[10px] ${timeClass} font-medium whitespace-nowrap`}>
                               {conv.lastMessageAt ? format(new Date(conv.lastMessageAt), 'p', { locale: isAr ? ar : enUS }) : ''}
                             </span>
                           </div>
@@ -248,8 +250,8 @@ export const InboxClient = ({ initialConversations, isAr }: { initialConversatio
         </ScrollArea>
       </div>
 
-      {/* Main Chat Area */}
-      <div className="flex flex-1 flex-col bg-muted/20">
+      {/* Main Chat Area (Column 2) */}
+      <div className="flex flex-1 flex-col bg-muted/10 transition-all">
         {selectedConv
           ? (
               <>
@@ -269,19 +271,25 @@ export const InboxClient = ({ initialConversations, isAr }: { initialConversatio
                       {selectedConv.customerName ? selectedConv.customerName[0]?.toUpperCase() : <User size={22} />}
                     </div>
                     <div>
-                      <h3 className="text-lg font-black">{selectedConv.customerName || selectedConv.externalId}</h3>
-                      <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
-                        <span className="inline-block size-2 animate-pulse rounded-full bg-emerald-500" />
-                        {selectedConv.platform.toUpperCase()}
+                      <h3 className="text-lg font-black tracking-tight">{selectedConv.customerName || selectedConv.externalId}</h3>
+                      <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                        <span className="inline-block size-1.5 animate-pulse rounded-full bg-emerald-500" />
+                        {selectedConv.platform}
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button type="button" variant="outline" size="icon" className="rounded-xl">
-                      <Phone size={18} />
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setShowDetails(!showDetails)}
+                      className="hidden rounded-xl border-none bg-muted/50 font-bold transition-all active:scale-95 lg:flex h-9 px-4"
+                    >
+                      {showDetails ? (isAr ? 'إخفاء التفاصيل' : 'Hide Details') : (isAr ? 'عرض التفاصيل' : 'Show Details')}
                     </Button>
-                    <Button type="button" variant="outline" size="icon" className="rounded-xl">
-                      <MoreVertical size={18} />
+                    <Button type="button" variant="outline" size="icon" className="group rounded-xl border-none bg-muted/50 active:scale-95">
+                      <MoreVertical size={18} className="transition-transform group-hover:rotate-90" />
                     </Button>
                   </div>
                 </div>
@@ -322,7 +330,7 @@ export const InboxClient = ({ initialConversations, isAr }: { initialConversatio
                                   <React.Fragment key={msg.id}>
                                     {showDivider && (
                                       <div className="py-4 text-center">
-                                        <Badge variant="outline" className="bg-background text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                                        <Badge variant="outline" className="bg-background px-3 py-1 border-none text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">
                                           {dateLabel}
                                         </Badge>
                                       </div>
@@ -333,7 +341,7 @@ export const InboxClient = ({ initialConversations, isAr }: { initialConversatio
                                     >
                                       <div className={`flex max-w-[75%] flex-col gap-1 ${msg.direction === 'outgoing' ? 'items-end' : 'items-start'}`}>
                                         <div
-                                          className={`rounded-3xl p-4 text-sm font-medium shadow-sm transition-all duration-300 hover:shadow-md ${
+                                          className={`rounded-2xl p-4 text-[13px] font-bold leading-relaxed shadow-sm transition-all duration-300 hover:shadow-md ${
                                             msg.direction === 'outgoing'
                                               ? 'rounded-tr-none bg-primary text-primary-foreground'
                                               : 'rounded-tl-none border bg-background text-foreground'
@@ -361,11 +369,11 @@ export const InboxClient = ({ initialConversations, isAr }: { initialConversatio
 
                 {/* Input Area */}
                 <div className="border-t bg-background/50 p-6 backdrop-blur-md">
-                  <form onSubmit={handleSendMessage} className="flex items-end gap-4">
-                    <div className="relative flex-1 rounded-3xl border bg-muted/50 transition-all duration-300 focus-within:ring-2 focus-within:ring-primary/20">
+                  <form onSubmit={handleSendMessage} className="flex items-end gap-3">
+                    <div className="relative flex-1 rounded-2xl border-none bg-muted/40 transition-all duration-300 focus-within:bg-muted/60 focus-within:ring-2 focus-within:ring-primary/20">
                       <textarea
                         placeholder={isAr ? 'اكتب ردك هنا...' : 'Type your reply...'}
-                        className="max-h-[150px] min-h-[56px] w-full resize-none border-none bg-transparent p-4 pr-12 text-sm focus:outline-none"
+                        className="max-h-[150px] min-h-[50px] w-full resize-none border-none bg-transparent p-4 text-[13px] font-bold focus:outline-none placeholder:font-medium"
                         rows={1}
                         value={inputText}
                         onChange={e => setInputText(e.target.value)}
@@ -381,48 +389,89 @@ export const InboxClient = ({ initialConversations, isAr }: { initialConversatio
                       type="submit"
                       size="icon"
                       disabled={!inputText.trim() || sending}
-                      className="size-14 shrink-0 rounded-2xl shadow-xl shadow-primary/20"
+                      className="size-12 shrink-0 rounded-2xl shadow-xl shadow-primary/20 transition-all active:scale-95"
                     >
-                      {sending ? <Loader2 className="animate-spin" /> : <Send className={isAr ? 'rotate-180' : ''} />}
+                      {sending ? <Loader2 className="animate-spin size-5" /> : <Send size={20} className={isAr ? 'rotate-180' : ''} />}
                     </Button>
                   </form>
-                  <p className="mt-2 text-center text-[10px] font-medium italic text-muted-foreground opacity-60">
-                    {isAr ? 'سيتم إرسال الرد عبر المنصة الرسمية تلقائياً.' : 'Reply will be sent via official platform automatically.'}
-                  </p>
                 </div>
               </>
             )
           : (
-              <div className="flex flex-1 flex-col items-center justify-center space-y-4 p-12 text-center text-muted-foreground/40">
-                <div className="flex size-32 items-center justify-center rounded-full bg-muted/30">
-                  <MessageCircle size={64} className="opacity-20" />
+              <div className="flex flex-1 flex-col items-center justify-center space-y-4 p-12 text-center text-muted-foreground/30">
+                <div className="flex size-32 items-center justify-center rounded-3xl bg-muted/20">
+                  <MessageCircle size={64} className="opacity-10" />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="text-xl font-black text-foreground/20">{isAr ? 'صندوق الوارد الموحد' : 'Unified Omnichannel Inbox'}</h3>
-                  <p className="max-w-md text-sm font-medium">
-                    {isAr ? 'اختر محادثة من القائمة الجانبية للبدء في الرد على عملائك.' : 'Select a conversation from the sidebar to start replying to your customers.'}
-                  </p>
-                </div>
-                <div className="mt-8 flex gap-3">
-                  <Badge variant="outline" className="gap-2 rounded-lg px-3 py-1 font-bold">
-                    <Phone size={12} className="text-emerald-500" />
-                    {' '}
-                    WhatsApp
-                  </Badge>
-                  <Badge variant="outline" className="gap-2 rounded-lg px-3 py-1 font-bold">
-                    <Instagram size={12} className="text-pink-500" />
-                    {' '}
-                    Instagram
-                  </Badge>
-                  <Badge variant="outline" className="gap-2 rounded-lg px-3 py-1 font-bold">
-                    <MessageCircle size={12} className="text-blue-500" />
-                    {' '}
-                    Messenger
-                  </Badge>
+                  <h3 className="text-xl font-black text-foreground/20">{isAr ? 'اختر محادثة للبدء' : 'Select Chat to Start'}</h3>
                 </div>
               </div>
             )}
       </div>
+
+      {/* Right Details Pane (Column 3) - Only visible if showDetails is true & desktop */}
+      {selectedConv && showDetails && (
+        <div className="hidden h-full flex-col border-r bg-background lg:flex lg:w-[320px] transition-all animate-in slide-in-from-right-10">
+          <div className="flex items-center justify-between border-b p-6">
+            <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground">{isAr ? 'ملف العميل' : 'Profile'}</h3>
+            <Badge className="bg-primary/10 text-primary border-none rounded-lg text-[10px] font-black">
+              {selectedConv.status?.toUpperCase() || 'OPEN'}
+            </Badge>
+          </div>
+
+          <ScrollArea className="flex-1">
+            <div className="p-6">
+              {/* Profile Card */}
+              <div className="mb-8 flex flex-col items-center text-center">
+                <div className="mb-4 flex size-24 items-center justify-center rounded-[2rem] border bg-muted text-3xl font-black shadow-inner shadow-black/5">
+                  {selectedConv.customerName ? selectedConv.customerName[0]?.toUpperCase() : <User size={40} />}
+                </div>
+                <h4 className="text-lg font-black">{selectedConv.customerName || isAr ? 'عميل غير مسجل' : 'Anonymous Customer'}</h4>
+                <p className="text-xs font-bold text-muted-foreground">{selectedConv.externalId}</p>
+              </div>
+
+              {/* Attributes */}
+              <div className="space-y-6">
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground block mb-2">{isAr ? 'المنصة' : 'Platform'}</label>
+                  <div className="flex items-center gap-3 rounded-2xl bg-muted/30 p-4 border border-muted-foreground/5">
+                    {getPlatformIcon(selectedConv.platform)}
+                    <span className="text-sm font-bold uppercase">{selectedConv.platform}</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground block mb-2">{isAr ? 'تاريخ البدء' : 'First Interaction'}</label>
+                  <div className="flex items-center gap-3 rounded-2xl bg-muted/30 p-4 border border-muted-foreground/5">
+                    <CalendarCheck size={16} className="text-muted-foreground" />
+                    <span className="text-sm font-bold">{isAr ? 'منذ 3 ساعات' : '3 hours ago'}</span>
+                  </div>
+                </div>
+
+                {/* Internal Notes Placeholder */}
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground block mb-2">{isAr ? 'ملاحظات' : 'Notes'}</label>
+                  <div className="rounded-2xl bg-amber-50/50 p-4 border border-amber-200/50">
+                    <p className="text-[11px] font-bold text-amber-900/60 italic leading-relaxed">
+                      {isAr ? 'لا توجد ملاحظات داخلية لهذا العميل.' : 'No internal notes for this contact.'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="mt-8 pt-6 border-t space-y-2">
+                <Button variant="outline" className="w-full rounded-2xl font-bold border-muted-foreground/10 hover:bg-muted text-xs h-10 shadow-sm">
+                   {isAr ? 'تحويل لعميل دائم' : 'Mark as VIP'}
+                </Button>
+                <Button variant="outline" className="w-full rounded-2xl font-bold border-red-200 text-red-500 hover:bg-red-50 text-xs h-10 shadow-sm">
+                   {isAr ? 'إغلاق المحادثة' : 'Close Ticket'}
+                </Button>
+              </div>
+            </div>
+          </ScrollArea>
+        </div>
+      )}
     </div>
   );
 };

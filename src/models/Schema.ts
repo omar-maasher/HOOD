@@ -232,6 +232,7 @@ export const conversationSchema = pgTable('conversation', {
   lastMessage: text('last_message'),
   lastMessageAt: timestamp('last_message_at', { mode: 'date' }),
   isUnread: text('is_unread').default('false'),
+  status: text('status').default('open'), // 'open' | 'pending' | 'closed'
   updatedAt: timestamp('updated_at', { mode: 'date' })
     .defaultNow()
     .$onUpdate(() => new Date())
@@ -262,3 +263,4 @@ export const messageSchema = pgTable('message', {
 // Relationships and types for Drizzle
 export type Conversation = typeof conversationSchema.$inferSelect;
 export type Message = typeof messageSchema.$inferSelect;
+export type Booking = typeof bookingSchema.$inferSelect;
