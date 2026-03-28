@@ -26,10 +26,10 @@ export const PLAN_ID = {
 export const PricingPlanList: Record<string, PricingPlan> = {
   [PLAN_ID.FREE]: {
     id: PLAN_ID.FREE,
-    price: 0,
+    price: 35,
     interval: BILLING_INTERVAL.MONTH,
     testPriceId: '',
-    devPriceId: '',
+    devPriceId: 'price_1TFz0TKCGBuLPgjQTFcojlxv',
     prodPriceId: '',
     features: {
       teamMember: 2,
@@ -40,7 +40,7 @@ export const PricingPlanList: Record<string, PricingPlan> = {
   },
   [PLAN_ID.PREMIUM]: {
     id: PLAN_ID.PREMIUM,
-    price: 39,
+    price: 50,
     interval: BILLING_INTERVAL.MONTH,
     testPriceId: 'price_premium_test', // Use for testing
     // FIXME: Update the price ID, you can create it after running `npm run stripe:setup-price`

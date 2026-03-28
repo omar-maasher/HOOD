@@ -50,25 +50,22 @@ export default async function SubscriptionPage({ params }: { params: { locale: s
   const plans = [
     {
       id: PLAN_ID.FREE,
-      name: isAr ? 'Trial – 7 أيام' : 'Trial – 7 Days',
-      price: 0,
-      description: isAr ? 'جرّب النظام مجاناً لمدة 7 أيام بدون التزام' : 'Try the system for free for 7 days without commitment',
+      name: isAr ? 'الباقة العادية' : 'Normal Plan',
+      price: 35,
+      description: isAr ? 'مثالية لمن يبحث عن الأساسيات' : 'Perfect for those looking for basics',
       icon: Building2,
       color: 'gray',
-      trial: true,
       features: [
-        { icon: Radio, text: isAr ? '3 قنوات (واتساب، انستقرام، ماسنجر)' : '3 Channels (WhatsApp, Instagram, Messenger)' },
+        { icon: Radio, text: isAr ? '3 قنوات' : '3 Channels' },
         { icon: MessageSquare, text: isAr ? '150 محادثة' : '150 Conversations' },
         { icon: Bot, text: isAr ? '300 رسالة AI' : '300 AI Messages' },
-        { icon: Megaphone, text: isAr ? 'حملة (حتى 150 مستلم)' : 'Campaign (up to 150 recipients)' },
-        { icon: Users, text: isAr ? 'CRM حتى 200 عميل' : 'CRM up to 200 customers' },
         { icon: CalendarCheck, text: isAr ? 'نظام حجوزات مفعّل' : 'Active Booking System' },
       ],
     },
     {
       id: PLAN_ID.PREMIUM,
       name: isAr ? 'باقة بريميوم' : 'Premium Plan',
-      price: 35,
+      price: 50,
       description: isAr ? 'مناسبة لمتجر متوسط' : 'Suitable for a medium store',
       icon: Crown,
       color: 'indigo',
@@ -168,7 +165,7 @@ export default async function SubscriptionPage({ params }: { params: { locale: s
               </div>
 
               <div className="flex flex-col gap-3 p-8 pt-0">
-                {isCurrentPlan ? (
+                {(isCurrentPlan && (subscriptionStatus === (isAr ? 'نشط' : 'Active') || subscriptionStatus === (isAr ? 'فترة تجريبية' : 'Trial'))) ? (
                   <div className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 font-bold text-emerald-700">
                     <Check className="size-5" /> {isAr ? 'مفعّلة' : 'Active'}
                   </div>
