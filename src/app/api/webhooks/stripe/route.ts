@@ -18,44 +18,56 @@ export const POST = async (request: Request) => {
   try {
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
     if (!sig || !webhookSecret) {
+      console.error('❌ Webhook Secret or Signature missing');
       return new NextResponse('Webhook Secret not found', { status: 400 });
     }
     event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
   } catch (err: any) {
+    console.error(`❌ Webhook Error: ${err.message}`);
     return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
   }
 
-  // Handle the event
+  console.log(`✅ Received Stripe event: ${event.type}`);
+
   switch (event.type) {
     case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session;
       const orgId = session.client_reference_id;
       const subscriptionId = session.subscription as string;
 
+      console.log(`🔍 Processing session for Org: ${orgId}, Subscription: ${subscriptionId}`);
+
       if (orgId) {
-        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-        const priceId = subscription.items.data[0]?.price.id;
+        try {
+          const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+          const priceId = subscription.items.data[0]?.price.id;
 
-        // Match priceId to PLAN_ID
-        let planId = PLAN_ID.FREE;
-        for (const [key, plan] of Object.entries(PricingPlanList)) {
-          if (plan.devPriceId === priceId || plan.prodPriceId === priceId || plan.testPriceId === priceId) {
-            planId = key as any;
-            break;
+          let planId = PLAN_ID.FREE;
+          for (const [key, plan] of Object.entries(PricingPlanList)) {
+            if (plan.devPriceId === priceId || plan.prodPriceId === priceId || plan.testPriceId === priceId) {
+              planId = key as any;
+              break;
+            }
           }
+
+          console.log(`📝 Updating DB for Org ${orgId} to Plan ${planId} with Status ${subscription.status}`);
+
+          await db.update(organizationSchema)
+            .set({
+              stripeSubscriptionId: subscriptionId,
+              stripeSubscriptionPriceId: priceId,
+              stripeSubscriptionStatus: subscription.status,
+              stripeSubscriptionCurrentPeriodEnd: subscription.current_period_end,
+              planId,
+            })
+            .where(eq(organizationSchema.id, orgId));
+
+          console.log(`✨ Successfully activated account for Org ${orgId}`);
+        } catch (dbError) {
+          console.error(`❌ Database Update Error:`, dbError);
         }
-
-        await db.update(organizationSchema)
-          .set({
-            stripeSubscriptionId: subscriptionId,
-            stripeSubscriptionPriceId: priceId,
-            stripeSubscriptionStatus: subscription.status,
-            stripeSubscriptionCurrentPeriodEnd: subscription.current_period_end,
-            planId,
-          })
-          .where(eq(organizationSchema.id, orgId));
-
-        logger.info({ orgId, planId }, 'Stripe subscription completed successfully');
+      } else {
+        console.warn('⚠️ No orgId found in session client_reference_id');
       }
       break;
     }
@@ -64,6 +76,8 @@ export const POST = async (request: Request) => {
     case 'customer.subscription.updated': {
       const subscription = event.data.object as Stripe.Subscription;
       const orgId = subscription.metadata.orgId;
+
+      console.log(`🔄 Subscription update/delete for Org: ${orgId}, Status: ${subscription.status}`);
 
       if (orgId) {
         const priceId = subscription.items.data[0]?.price.id;
@@ -82,14 +96,9 @@ export const POST = async (request: Request) => {
             planId: subscription.status === 'active' ? planId : PLAN_ID.FREE,
           })
           .where(eq(organizationSchema.id, orgId));
-
-        logger.info({ orgId, status: subscription.status }, 'Stripe subscription updated/deleted');
       }
       break;
     }
-
-    default:
-      logger.info({ eventType: event.type }, 'Unhandled Stripe event type');
   }
 
   return new NextResponse('OK', { status: 200 });
