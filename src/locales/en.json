@@ -540,6 +540,7 @@
     "general_desc": "Name, description, and contact details",
     "business_name": "Store / Brand Name",
     "business_name_placeholder": "e.g. Hood Advanced Store",
+    "business_type": "Business Type",
     "business_desc": "About the Store (AI description)",
     "business_desc_placeholder": "We are a store specializing in...",
     "phone": "Contact Number",
@@ -623,5 +624,21 @@
     "no_orgs": "No organizations found on the platform.",
     "update_failed": "Failed to update subscription",
     "system_online": "SYSTEM ONLINE"
+  },
+  "Onboarding": {
+    "title": "Let's Start Your Journey",
+    "subtitle": "Tell us a bit about your business to customize your AI assistant.",
+    "org_name": "Store or Organization Name",
+    "org_name_placeholder": "e.g., Hood Fashion Store",
+    "business_type": "Business Type",
+    "business_type_placeholder": "Select business type...",
+    "type_store": "Online Store / Retail",
+    "type_restaurant": "Restaurant / Cafe",
+    "type_clinic": "Medical Clinic / Health Center",
+    "type_real_estate": "Real Estate / Construction",
+    "type_services": "Service Center / Marketing Agency",
+    "type_other": "Other Activity",
+    "submit": "Create My Dashboard",
+    "creating": "Setting up your store..."
   }
 }

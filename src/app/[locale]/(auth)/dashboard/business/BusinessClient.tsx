@@ -1,5 +1,6 @@
 'use client';
 
+import { useOrganization } from '@clerk/nextjs';
 import {
   Building2,
   Check,
@@ -7,6 +8,7 @@ import {
   CreditCard,
   Globe,
   Info,
+  Loader2,
   MapPin,
   Plus,
   Save,
@@ -22,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { cn } from '@/utils/Helpers';
 
 import { saveBusinessProfile, scrapeBusinessInfo } from './actions';
 
@@ -35,8 +38,10 @@ export default function BusinessClient({ profile }: { profile: any }) {
   const [scrapeUrl, setScrapeUrl] = useState('');
   const [activeTab, setActiveTab] = useState('general');
 
+  const { organization } = useOrganization();
   const [formData, setFormData] = useState({
-    businessName: profile?.businessName || '',
+    businessName: profile?.businessName || organization?.name || '',
+    businessType: profile?.businessType || (organization?.publicMetadata?.businessType as string) || '',
     businessDescription: profile?.businessDescription || '',
     phoneNumber: profile?.phoneNumber || '',
     address: profile?.address || '',
@@ -128,20 +133,20 @@ export default function BusinessClient({ profile }: { profile: any }) {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 pb-20">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 pb-20 duration-700 animate-in fade-in">
       {/* Header */}
-      <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
+      <div className="flex flex-col items-start justify-between gap-4 px-2 md:flex-row md:items-center">
         <div>
-          <h1 className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-3xl font-extrabold tracking-tight text-transparent">
+          <h1 className="bg-gradient-to-r from-primary via-orange-500 to-amber-500 bg-clip-text text-4xl font-black tracking-tight text-transparent drop-shadow-sm">
             {t('title')}
           </h1>
-          <p className="mt-1 font-medium text-muted-foreground">{t('subtitle')}</p>
+          <p className="mt-1.5 font-bold text-muted-foreground/80">{t('subtitle')}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
         {/* Sidebar Nav */}
-        <div className="flex flex-col gap-2 lg:col-span-3">
+        <div className="flex flex-col gap-3 lg:col-span-3">
           {[
             { id: 'general', label: t('tab_general'), icon: <Building2 className="size-5" /> },
             { id: 'hours', label: t('tab_hours'), icon: <Clock className="size-5" /> },
@@ -151,60 +156,84 @@ export default function BusinessClient({ profile }: { profile: any }) {
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-3 rounded-2xl px-4 py-3 font-bold transition-all ${activeTab === tab.id ? 'scale-[1.02] bg-primary text-primary-foreground shadow-lg shadow-primary/20' : 'text-muted-foreground hover:bg-muted'}`}
+              className={cn(
+                'flex items-center gap-3 rounded-[1.25rem] px-5 py-4 font-black transition-all duration-300 group',
+                activeTab === tab.id
+                  ? 'bg-primary text-primary-foreground shadow-xl shadow-primary/25 scale-[1.02] ring-1 ring-white/10'
+                  : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground hover:translate-x-1',
+              )}
             >
-              {tab.icon}
-              {tab.label}
+              <div className={cn(
+                'transition-all duration-300',
+                activeTab === tab.id ? 'scale-110' : 'group-hover:scale-110',
+              )}
+              >
+                {tab.icon}
+              </div>
+              <span className="text-[13px] tracking-tight">{tab.label}</span>
             </button>
           ))}
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-6 lg:col-span-9">
-          <div className="min-h-[500px] overflow-hidden rounded-[2rem] border bg-card shadow-xl shadow-gray-100/50">
+          <div className="min-h-[500px] overflow-hidden rounded-[2.5rem] border border-border/50 bg-card/50 shadow-2xl shadow-black/5 backdrop-blur-xl dark:shadow-black/20">
             <div className="p-8 md:p-10">
 
               {/* General */}
               {activeTab === 'general' && (
                 <div className="flex flex-col gap-8 duration-500 animate-in fade-in slide-in-from-bottom-4">
-                  <div className="flex items-center gap-3 border-b pb-6 text-start">
-                    <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <div className="flex items-center gap-4 border-b border-border/50 pb-8 text-start">
+                    <div className="flex size-14 items-center justify-center rounded-[1.25rem] bg-primary/10 text-primary shadow-inner">
                       <Info className="size-7" />
                     </div>
                     <div>
-                      <h3 className="text-start text-xl font-bold">{t('general_title')}</h3>
-                      <p className="text-start text-sm text-muted-foreground">{t('general_desc')}</p>
+                      <h3 className="text-start text-xl font-black tracking-tight">{t('general_title')}</h3>
+                      <p className="text-start text-sm font-bold text-muted-foreground/70">{t('general_desc')}</p>
                     </div>
                   </div>
 
                   {/* AI AUTO DISCOVERY WIDGET */}
-                  <div className="flex flex-col gap-3 rounded-3xl border border-primary/20 bg-primary/5 p-6 animate-in zoom-in-95">
-                    <h4 className="flex items-center gap-2 text-lg font-black text-primary">
-                      <Wand2 className="size-5" />
+                  {/* AI AUTO DISCOVERY WIDGET */}
+                  <div className="group relative flex flex-col gap-4 overflow-hidden rounded-[2rem] border border-primary/20 bg-gradient-to-br from-primary/[0.08] to-transparent p-8 duration-700 animate-in zoom-in-95">
+                    <div className="absolute right-0 top-0 p-4 opacity-10 transition-opacity group-hover:opacity-20">
+                      <Wand2 size={40} className="text-primary" />
+                    </div>
+
+                    <h4 className="flex items-center gap-2 text-xl font-black text-primary">
+                      <Wand2 className="size-6" />
                       التعرف بذكاء على المتجر (سحب البيانات)
                     </h4>
-                    <p className="text-sm font-medium text-muted-foreground">قم بإدخال رابط متجرك أو موقعك لدعنا نكتب عنك ونملأ بياناتك أوتوماتيكياً عبر القارئ الذكي الخاص بنا.</p>
-                    <div className="mt-2 flex flex-col gap-3 md:flex-row">
-                      <div className="relative flex-1">
-                        <Globe className="absolute right-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground/50" />
+                    <p className="max-w-2xl text-sm font-bold leading-relaxed text-muted-foreground">
+                      قم بإدخال رابط متجرك أو موقعك لدعنا نكتب عنك ونملأ بياناتك أوتوماتيكياً عبر القارئ الذكي الخاص بنا.
+                    </p>
+
+                    <div className="mt-4 flex flex-col gap-4 md:flex-row">
+                      <div className="group/input relative flex-1">
+                        <Globe className="absolute right-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground/40 transition-colors group-focus-within/input:text-primary" />
                         <Input
                           placeholder="https://mystore.com"
                           value={scrapeUrl}
                           onChange={e => setScrapeUrl(e.target.value)}
-                          className="h-12 rounded-xl border-primary/20 bg-background pr-12 focus-visible:ring-primary"
+                          className="h-14 rounded-2xl border-primary/10 bg-background/50 pr-12 text-sm font-bold shadow-inner focus-visible:ring-primary"
                           dir="ltr"
                         />
                       </div>
-                      <Button type="button" disabled={isScraping} onClick={handleAutoScrape} size="lg" className="h-12 rounded-xl border-t border-t-white/20 font-bold shadow-lg shadow-primary/25 transition-all active:scale-95">
+                      <Button
+                        type="button"
+                        disabled={isScraping}
+                        onClick={handleAutoScrape}
+                        className="h-14 rounded-2xl bg-primary px-8 text-sm font-black text-white shadow-xl shadow-primary/25 transition-all hover:scale-[1.02] hover:bg-orange-600 active:scale-95 disabled:opacity-50"
+                      >
                         {isScraping
                           ? (
                               <div className="flex items-center gap-2">
-                                <div className="size-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+                                <Loader2 className="size-5 animate-spin" />
                                 يتم القراءة بذكاء...
                               </div>
                             )
                           : (
-                              <>استخراج المعلومات بذكاء اصطناعي ✨</>
+                              <>استخراج البيانات ✨</>
                             )}
                       </Button>
                     </div>
@@ -220,6 +249,23 @@ export default function BusinessClient({ profile }: { profile: any }) {
                         onChange={e => setFormData({ ...formData, businessName: e.target.value })}
                         className="h-14 rounded-2xl border-none bg-muted/30 text-base focus-visible:ring-primary"
                       />
+                    </div>
+                    <div className="grid gap-2 text-start">
+                      <Label htmlFor="businessType" className="text-lg font-bold">{t('business_type') || 'نوع النشاط'}</Label>
+                      <select
+                        id="businessType"
+                        value={formData.businessType}
+                        onChange={e => setFormData({ ...formData, businessType: e.target.value })}
+                        className="h-14 rounded-2xl border-none bg-muted/30 px-4 text-base outline-none focus-visible:ring-primary"
+                      >
+                        <option value="">اختر نوع النشاط...</option>
+                        <option value="store">متجر إلكتروني / تجارة تجزئة</option>
+                        <option value="restaurant">مطعم / مقهى</option>
+                        <option value="clinic">عيادة طبية / مركز صحي</option>
+                        <option value="real_estate">عقارات / مقاولات</option>
+                        <option value="services">مركز خدمات / وكالة تسويق</option>
+                        <option value="other">نشاط آخر</option>
+                      </select>
                     </div>
                     <div className="grid gap-2 text-start">
                       <Label htmlFor="businessDescription" className="text-lg font-bold">{t('business_desc')}</Label>
@@ -439,33 +485,38 @@ export default function BusinessClient({ profile }: { profile: any }) {
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-between gap-4 border-t bg-muted/10 px-8 py-6">
-              <p className="hidden text-start text-sm text-muted-foreground md:block">{t('footer_hint')}</p>
+            <div className="flex items-center justify-between gap-4 border-t border-border/50 bg-muted/5 px-10 py-8">
+              <p className="hidden max-w-[240px] text-start text-xs font-bold italic leading-relaxed text-muted-foreground/60 md:block">{t('footer_hint')}</p>
               <Button
                 type="submit"
                 disabled={isLoading}
                 size="lg"
-                className={`h-12 rounded-2xl px-12 font-bold transition-all duration-300 ${isSaved ? 'bg-green-600 shadow-lg shadow-green-500/20 hover:bg-green-700' : 'shadow-lg shadow-primary/20'}`}
+                className={cn(
+                  'h-14 rounded-2xl px-16 text-base font-black transition-all duration-500',
+                  isSaved
+                    ? 'bg-green-600 shadow-2xl shadow-green-500/30 hover:bg-green-700'
+                    : 'bg-primary hover:bg-orange-600 shadow-2xl shadow-primary/30',
+                )}
               >
                 {isLoading
                   ? (
-                      <span className="flex items-center gap-2">
-                        <div className="size-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                      <span className="flex items-center gap-3">
+                        <Loader2 className="size-5 animate-spin" />
                         {t('saving')}
                       </span>
                     )
                   : isSaved
                     ? (
-                        <>
-                          <Check className="ml-2 size-5" />
+                        <div className="flex items-center gap-3">
+                          <Check className="size-6 stroke-[3px]" />
                           {t('saved')}
-                        </>
+                        </div>
                       )
                     : (
-                        <>
-                          <Save className="ml-2 size-5" />
+                        <div className="flex items-center gap-3">
+                          <Save className="size-5" />
                           {t('save')}
-                        </>
+                        </div>
                       )}
               </Button>
             </div>

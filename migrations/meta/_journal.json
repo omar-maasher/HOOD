@@ -50,6 +50,13 @@
       "when": 1774219620557,
       "tag": "0006_flat_martin_li",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1774806425933,
+      "tag": "0007_cheerful_gambit",
+      "breakpoints": true
     }
   ]
 }

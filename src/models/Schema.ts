@@ -69,6 +69,7 @@ export const businessProfileSchema = pgTable('business_profile', {
     .unique()
     .references(() => organizationSchema.id),
   businessName: text('business_name'),
+  businessType: text('business_type'),
   businessDescription: text('business_description'),
   phoneNumber: text('phone_number'),
   address: text('address'),

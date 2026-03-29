@@ -121,7 +121,9 @@ export default async function SubscriptionPage({ params }: { params: { locale: s
           <div>
             <div className="mb-0.5 flex items-center gap-3">
               <h3 className={`text-lg font-bold ${currentPlanId !== PLAN_ID.FREE ? 'text-indigo-900' : 'text-gray-900'}`}>
-                {isAr ? 'باقتك الحالية:' : 'Your Current Plan:'} {plans.find(p => p.id === currentPlanId)?.name}
+                {isAr ? 'باقتك الحالية:' : 'Your Current Plan:'}
+                {' '}
+                {plans.find(p => p.id === currentPlanId)?.name}
               </h3>
               <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider ${subscriptionStatus.includes(isAr ? 'نشط' : 'Active') || subscriptionStatus === (isAr ? 'فترة تجريبية' : 'Trial') || subscriptionStatus === (isAr ? 'حساب أساسي' : 'Basic Account') ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-600'}`}>
                 {subscriptionStatus}
@@ -140,7 +142,7 @@ export default async function SubscriptionPage({ params }: { params: { locale: s
           return (
             <div key={plan.id} className={`relative flex flex-col overflow-hidden rounded-[2rem] border bg-card shadow-xl transition-all hover:scale-[1.02] ${plan.popular ? 'border-primary/30 ring-2 ring-primary/10' : 'border-border'} ${isCurrentPlan ? 'border-emerald-200 ring-2 ring-emerald-500/30' : ''}`}>
               {plan.popular && (
-                <div className="absolute left-4 top-4 rounded-full bg-primary px-3 py-1 text-xs font-black text-primary-foreground uppercase tracking-wider">
+                <div className="absolute left-4 top-4 rounded-full bg-primary px-3 py-1 text-xs font-black uppercase tracking-wider text-primary-foreground">
                   {isAr ? 'الأكثر شيوعاً' : 'Most Popular'}
                 </div>
               )}
@@ -165,27 +167,32 @@ export default async function SubscriptionPage({ params }: { params: { locale: s
               </div>
 
               <div className="flex flex-col gap-3 p-8 pt-0">
-                {(isCurrentPlan && (subscriptionStatus === (isAr ? 'نشط' : 'Active') || subscriptionStatus === (isAr ? 'فترة تجريبية' : 'Trial'))) ? (
-                  <div className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 font-bold text-emerald-700">
-                    <Check className="size-5" /> {isAr ? 'مفعّلة' : 'Active'}
-                  </div>
-                ) : (
-                  <>
-                    {Env.STRIPE_SECRET_KEY && stripePriceId && (
-                      <form action={async () => {
-                        'use server';
-                        await createCheckoutSession(stripePriceId!);
-                      }}>
-                        <button type="submit" className="h-12 w-full rounded-2xl bg-primary font-bold text-white transition-all hover:bg-primary/90">
-                          {isAr ? 'دفع عبر البطاقة' : 'Pay with Card'}
-                        </button>
-                      </form>
+                {(isCurrentPlan && (subscriptionStatus === (isAr ? 'نشط' : 'Active') || subscriptionStatus === (isAr ? 'فترة تجريبية' : 'Trial')))
+                  ? (
+                      <div className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 font-bold text-emerald-700">
+                        <Check className="size-5" />
+                        {' '}
+                        {isAr ? 'مفعّلة' : 'Active'}
+                      </div>
+                    )
+                  : (
+                      <>
+                        {Env.STRIPE_SECRET_KEY && stripePriceId && (
+                          <form action={async () => {
+                            'use server';
+                            await createCheckoutSession(stripePriceId!);
+                          }}
+                          >
+                            <button type="submit" className="h-12 w-full rounded-2xl bg-primary font-bold text-white transition-all hover:bg-primary/90">
+                              {isAr ? 'دفع عبر البطاقة' : 'Pay with Card'}
+                            </button>
+                          </form>
+                        )}
+                        <a href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(isAr ? `أهلاً، أرغب في تفعيل باقة (${plan.name}) لحسابي.\nمعرف المنظمة: ${currentOrgId}` : `Hello, I want to activate (${plan.name}) for my account.\nOrg ID: ${currentOrgId}`)}`} target="_blank" rel="noopener noreferrer" className="flex h-12 w-full items-center justify-center rounded-2xl bg-emerald-600 font-bold text-white transition-all hover:bg-emerald-700">
+                          {isAr ? 'تفعيل يدوي (واتساب)' : 'Manual Activation (WhatsApp)'}
+                        </a>
+                      </>
                     )}
-                    <a href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(isAr ? `أهلاً، أرغب في تفعيل باقة (${plan.name}) لحسابي.\nمعرف المنظمة: ${currentOrgId}` : `Hello, I want to activate (${plan.name}) for my account.\nOrg ID: ${currentOrgId}`)}`} target="_blank" rel="noopener noreferrer" className="flex h-12 w-full items-center justify-center rounded-2xl bg-emerald-600 font-bold text-white transition-all hover:bg-emerald-700">
-                      {isAr ? 'تفعيل يدوي (واتساب)' : 'Manual Activation (WhatsApp)'}
-                    </a>
-                  </>
-                )}
               </div>
             </div>
           );

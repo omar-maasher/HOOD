@@ -554,6 +554,7 @@
     "general_desc": "الاسم، الوصف، وبيانات التواصل",
     "business_name": "اسم المتجر / العلامة التجارية",
     "business_name_placeholder": "مثلاً: متجر هود المطور",
+    "business_type": "نوع النشاط",
     "business_desc": "عن المتجر (وصف للـ AI)",
     "business_desc_placeholder": "نحن متجر متخصص في...",
     "phone": "رقم التواصل",
@@ -637,5 +638,21 @@
     "no_orgs": "لم يتم العثور على أي منظمات في المنصة.",
     "update_failed": "فشل تحديث الاشتراك",
     "system_online": "النظام متصل"
+  },
+  "Onboarding": {
+    "title": "لنبدأ رحلتك مع Hood Trading",
+    "subtitle": "أخبرنا قليلاً عن تجارتك لنقوم بتخصيص المساعد الذكي لك.",
+    "org_name": "اسم المتجر أو المؤسسة",
+    "org_name_placeholder": "مثلاً: متجر هود للأزياء",
+    "business_type": "نوع العمل أو النشاط",
+    "business_type_placeholder": "اختر نوع النشاط...",
+    "type_store": "متجر إلكتروني / تجارة تجزئة",
+    "type_restaurant": "مطعم / مقهى",
+    "type_clinic": "عيادة طبية / مركز صحي",
+    "type_real_estate": "عقارات / مقاولات",
+    "type_services": "مركز خدمات / وكالة تسويق",
+    "type_other": "نشاط آخر",
+    "submit": "إنشاء لوحة التحكم الخاصة بي",
+    "creating": "جاري تجهيز متجرك..."
   }
 }

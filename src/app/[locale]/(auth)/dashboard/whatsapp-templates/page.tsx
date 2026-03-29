@@ -5,7 +5,9 @@ import { WhatsAppTemplateBuilder } from '@/features/whatsapp/WhatsAppTemplateBui
 
 export default async function WhatsAppTemplatesPage() {
   const { orgId } = await auth();
-  if (!orgId) redirect('/sign-in');
+  if (!orgId) {
+    redirect('/sign-in');
+  }
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">

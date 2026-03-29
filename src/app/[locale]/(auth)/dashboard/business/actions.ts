@@ -1,6 +1,6 @@
 'use server';
 
-import { auth } from '@clerk/nextjs/server';
+import { auth, createClerkClient } from '@clerk/nextjs/server';
 import { eq } from 'drizzle-orm';
 
 import { db } from '@/libs/DB';
@@ -23,6 +23,42 @@ export async function getBusinessProfile() {
   return profile || null;
 }
 
+export async function onboardingSaveBusinessProfile(orgId: string, data: { businessName: string; businessType: string }) {
+  // This is called during onboarding, we trust the orgId from the client if they are authenticated
+  const { userId } = await auth();
+  if (!userId) {
+    throw new Error('Unauthorized');
+  }
+
+  const clerk = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
+
+  // 1. Save in Clerk Metadata as a permanent fallback
+  await clerk.organizations.updateOrganizationMetadata(orgId, {
+    publicMetadata: {
+      businessType: data.businessType,
+    },
+  });
+
+  // 2. Save in DB
+  await db.insert(organizationSchema).values({ id: orgId }).onConflictDoNothing();
+
+  // Check if profile exists already
+  const [existing] = await db.select().from(businessProfileSchema).where(eq(businessProfileSchema.organizationId, orgId));
+
+  if (existing) {
+    await db.update(businessProfileSchema).set({
+      businessName: data.businessName,
+      businessType: data.businessType,
+    }).where(eq(businessProfileSchema.organizationId, orgId));
+  } else {
+    await db.insert(businessProfileSchema).values({
+      organizationId: orgId,
+      businessName: data.businessName,
+      businessType: data.businessType,
+    });
+  }
+}
+
 export async function saveBusinessProfile(data: any) {
   const { orgId } = await auth();
   if (!orgId) {
@@ -37,6 +73,7 @@ export async function saveBusinessProfile(data: any) {
     const [updated] = await db.update(businessProfileSchema)
       .set({
         businessName: data.businessName,
+        businessType: data.businessType,
         businessDescription: data.businessDescription,
         phoneNumber: data.phoneNumber,
         address: data.address,
@@ -57,6 +94,7 @@ export async function saveBusinessProfile(data: any) {
       .values({
         organizationId: orgId,
         businessName: data.businessName,
+        businessType: data.businessType,
         businessDescription: data.businessDescription,
         phoneNumber: data.phoneNumber,
         address: data.address,
