@@ -1,6 +1,6 @@
 'use client';
 
-import { format, isToday, isYesterday } from 'date-fns';
+import { format } from 'date-fns';
 import { ar, enUS } from 'date-fns/locale';
 import {
   CheckCheck,
@@ -17,19 +17,14 @@ import {
   UserCheck,
   Users,
   Plus,
-  Settings,
-  PhoneCall,
   Flame,
   Star,
   Zap,
   CreditCard,
   Target,
   ChevronRight,
-  ChevronLeft,
   X,
-  Clock,
-  ExternalLink,
-  StickyNote
+  ExternalLink
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useRef, useState, useMemo } from 'react';
@@ -69,7 +64,7 @@ export const InboxClient = ({ initialConversations, isAr, hasIntegrations }: { i
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [inputText, setInputText] = useState('');
   const [sending, setSending] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'chats' | 'calls'>('chats');
   const [filter, setFilter] = useState<'all' | 'mine' | 'unassigned'>('all');
   const [showLifecycle, setShowLifecycle] = useState(true);
