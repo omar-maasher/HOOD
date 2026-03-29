@@ -39,7 +39,7 @@ const IndexPage = (props: { params: { locale: string } }) => {
       <section className="relative overflow-hidden pb-20 pt-32 lg:pb-32 lg:pt-48">
         {/* Glow Effects */}
         <div className="pointer-events-none absolute left-1/2 top-1/2 size-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/20 opacity-50 blur-[120px]"></div>
-        <div className="pointer-events-none absolute right-0 top-0 size-[500px] rounded-full bg-purple-500/10 opacity-50 blur-[100px]"></div>
+        <div className="pointer-events-none absolute right-0 top-0 size-[500px] rounded-full bg-orange-500/10 opacity-50 blur-[100px]"></div>
 
         <div className="container relative z-10 mx-auto px-4 lg:max-w-7xl">
           <div className="flex flex-col items-center gap-16 lg:flex-row">
@@ -53,7 +53,7 @@ const IndexPage = (props: { params: { locale: string } }) => {
 
               <h1 className="mb-6 animate-fade-in-up text-5xl font-black leading-[1.1] tracking-tighter lg:text-7xl" style={{ animationDelay: '100ms' }}>
                 <span className="block text-foreground">{t('Hero.title1')}</span>
-                <span className="mt-2 block bg-gradient-to-r from-primary to-purple-600 bg-clip-text pb-2 text-transparent">
+                <span className="mt-2 block bg-gradient-to-r from-primary to-orange-600 bg-clip-text pb-2 text-transparent">
                   {t('Hero.title2')}
                 </span>
               </h1>
@@ -93,7 +93,7 @@ const IndexPage = (props: { params: { locale: string } }) => {
             {/* Visual/Image Representation */}
             <div className="w-full flex-1 animate-fade-in-up" style={{ animationDelay: '400ms' }}>
               <div className="relative mx-auto aspect-square w-full max-w-[600px]">
-                <div className="absolute inset-0 rotate-3 scale-105 rounded-[3rem] bg-gradient-to-tr from-primary/20 to-purple-500/20"></div>
+                <div className="absolute inset-0 rotate-3 scale-105 rounded-[3rem] bg-gradient-to-tr from-primary/20 to-orange-500/20"></div>
                 <div className="absolute inset-0 flex flex-col overflow-hidden rounded-[3rem] border border-border bg-card shadow-2xl">
                   {/* Mockup Header */}
                   <div className="flex h-14 items-center gap-3 border-b border-border bg-muted/50 px-6">
@@ -153,7 +153,7 @@ const IndexPage = (props: { params: { locale: string } }) => {
             <div className="group relative overflow-hidden rounded-[2.5rem] border border-border bg-card p-10 shadow-md transition-all hover:shadow-xl md:col-span-2">
               <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100"></div>
               <div className="relative z-10">
-                <div className="mb-6 flex size-14 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-600">
+                <div className="mb-6 flex size-14 items-center justify-center rounded-2xl bg-orange-100 text-orange-600">
                   <Bot className="size-7" />
                 </div>
                 <h3 className="mb-3 text-2xl font-black text-foreground">{t('Features.title')}</h3>
@@ -187,7 +187,7 @@ const IndexPage = (props: { params: { locale: string } }) => {
             </div>
 
             {/* Box 4 */}
-            <div className="group relative overflow-hidden rounded-[2.5rem] border border-slate-800 bg-gradient-to-r from-slate-900 to-indigo-950 p-10 text-white shadow-xl transition-all md:col-span-2">
+            <div className="group relative overflow-hidden rounded-[2.5rem] border border-orange-900 bg-gradient-to-r from-orange-950 to-orange-900 p-10 text-white shadow-xl transition-all md:col-span-2">
               <div className="pointer-events-none absolute right-0 top-0 h-full w-1/2 bg-gradient-to-l from-primary/20 to-transparent"></div>
               <div className="relative z-10 flex h-full flex-col justify-center">
                 <div className="mb-6 inline-flex w-fit items-center gap-2 rounded-full bg-white/10 px-4 py-2 backdrop-blur-md">
@@ -209,7 +209,7 @@ const IndexPage = (props: { params: { locale: string } }) => {
             <h2 className="mb-6 text-4xl font-black leading-tight md:text-5xl">
               {isAr ? 'ما هو نظام' : 'What is the'}
               {' '}
-              <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">Hood Trading</span>
+              <span className="bg-gradient-to-r from-primary to-orange-600 bg-clip-text text-transparent">Hood Trading</span>
               {' '}
               {isAr ? 'وما الذي يجعله النظام الأمثل لتطوير أي بيزنس؟' : 'system and what makes it the ideal system to develop any business?'}
             </h2>
@@ -217,11 +217,11 @@ const IndexPage = (props: { params: { locale: string } }) => {
               {t('Features.desc')}
             </p>
             <div className="mt-8 inline-flex flex-wrap items-center justify-center gap-3 rounded-3xl border border-border bg-muted/50 px-6 py-4 text-lg font-black text-foreground shadow-sm md:text-2xl">
-              <span className="text-blue-500">{t('Features.cs')}</span>
+              <span className="text-orange-500">{t('Features.cs')}</span>
               <span className="text-muted-foreground">+</span>
-              <span className="text-purple-500">{t('Features.lead')}</span>
+              <span className="text-orange-600">{t('Features.lead')}</span>
               <span className="text-muted-foreground">+</span>
-              <span className="text-emerald-500">{t('Features.booking')}</span>
+              <span className="text-orange-700">{t('Features.booking')}</span>
             </div>
           </div>
 
@@ -336,8 +336,8 @@ const IndexPage = (props: { params: { locale: string } }) => {
       </section>
 
       {/* Pricing - Streamlined */}
-      <section className="relative bg-slate-900 py-32 text-white" id="pricing">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%__0%,rgba(99,102,241,0.15),transparent_70%)]"></div>
+      <section className="relative bg-orange-950 py-32 text-white" id="pricing">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%__0%,rgba(249,115,22,0.15),transparent_70%)]"></div>
         <div className="container relative z-10 mx-auto max-w-7xl px-4">
           <div className="mb-20 text-center">
             <h2 className="mb-6 text-4xl font-black text-white md:text-5xl">{t('Pricing.title')}</h2>
@@ -357,7 +357,7 @@ const IndexPage = (props: { params: { locale: string } }) => {
               <ul className="mb-10 space-y-4">
                 {[t('Pricing.p1_l1'), t('Pricing.p1_l2'), t('Pricing.p1_l3')].map((l, i) => (
                   <li key={i} className="flex items-center gap-3 font-bold text-slate-300">
-                    <CheckCircle2 className="size-5 text-indigo-400" />
+                    <CheckCircle2 className="size-5 text-orange-400" />
                     {' '}
                     {l}
                   </li>
@@ -376,16 +376,16 @@ const IndexPage = (props: { params: { locale: string } }) => {
                 {isAr ? 'الأكثر طلباً' : 'Most Popular 🚀'}
               </div>
               <h3 className="mb-2 text-3xl font-black">{t('Pricing.p2_title')}</h3>
-              <p className="mb-8 text-sm font-medium text-indigo-200">{t('Pricing.p2_desc')}</p>
+              <p className="mb-8 text-sm font-medium text-orange-200">{t('Pricing.p2_desc')}</p>
               <div className="mb-10 w-full border-b border-white/10 pb-10 text-6xl font-black text-white">
                 {t('Pricing.p2_price')}
                 {' '}
-                <span className="text-lg uppercase text-indigo-300">{t('Pricing.p2_month')}</span>
+                <span className="text-lg uppercase text-orange-300">{t('Pricing.p2_month')}</span>
               </div>
               <ul className="mb-10 space-y-4">
                 {[t('Pricing.p2_l1'), t('Pricing.p2_l2'), t('Pricing.p2_l3'), t('Pricing.p2_l4')].map((l, i) => (
                   <li key={i} className="flex items-center gap-3 font-bold text-white">
-                    <CheckCircle2 className="size-5 text-emerald-400" />
+                    <CheckCircle2 className="size-5 text-orange-400" />
                     {' '}
                     {l}
                   </li>
@@ -408,7 +408,7 @@ const IndexPage = (props: { params: { locale: string } }) => {
               <ul className="mb-10 space-y-4">
                 {[t('Pricing.p3_l1'), t('Pricing.p3_l2'), t('Pricing.p3_l3')].map((l, i) => (
                   <li key={i} className="flex items-center gap-3 font-bold text-slate-300">
-                    <CheckCircle2 className="size-5 text-indigo-400" />
+                    <CheckCircle2 className="size-5 text-orange-400" />
                     {' '}
                     {l}
                   </li>
