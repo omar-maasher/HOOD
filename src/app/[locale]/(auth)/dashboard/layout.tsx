@@ -62,6 +62,11 @@ export default async function DashboardLayout(props: { children: React.ReactNode
       icon: <Calendar className="size-4" />,
     },
     {
+      href: '/dashboard/comments',
+      label: t('comments'),
+      icon: <MessageSquare className="size-4" />,
+    },
+    {
       href: '#',
       label: t('settings'),
       icon: <Settings className="size-4" />,

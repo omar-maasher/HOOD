@@ -258,6 +258,7 @@ export const messageSchema = pgTable('message', {
   text: text('text'),
   mediaUrl: text('media_url'),
   metadata: text('metadata'), // Extra info like MID or status
+  senderType: text('sender_type').default('customer'), // 'customer' | 'agent' | 'bot'
   createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
 });
 

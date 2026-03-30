@@ -27,7 +27,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -49,12 +49,15 @@ type Conversation = {
 };
 
 type Message = {
-  id: number;
+  id: number | string;
   direction: 'incoming' | 'outgoing';
   text: string | null;
   type: string;
   mediaUrl: string | null;
+  metadata: string | null;
   createdAt: Date | string;
+  status?: 'sending' | 'sent' | 'error';
+  senderType?: 'customer' | 'agent' | 'bot';
 };
 
 export const InboxClient = ({ initialConversations, isAr, hasIntegrations }: { initialConversations: Conversation[]; isAr: boolean; hasIntegrations: boolean }) => {
@@ -91,18 +94,22 @@ export const InboxClient = ({ initialConversations, isAr, hasIntegrations }: { i
     });
   }, [conversations, searchQuery, filter]);
 
-  const loadConversations = async () => {
+  const loadConversations = useCallback(async (_silent = true) => {
     try {
       const res = await fetch('/api/inbox/conversations');
       if (res.ok) {
         const data = await res.json();
-        // Only update if there is a change to prevent unnecessary re-renders
-        setConversations(data);
+        if (Array.isArray(data)) {
+          // Only update if data actually changed to avoid UI flickers
+          if (JSON.stringify(data) !== JSON.stringify(conversations)) {
+            setConversations(data);
+          }
+        }
       }
     } catch (error) {
       console.error('Failed to load conversations', error);
     }
-  };
+  }, [conversations]);
 
   const loadMessages = async (convId: number, silent = false) => {
     if (!silent) {
@@ -112,13 +119,15 @@ export const InboxClient = ({ initialConversations, isAr, hasIntegrations }: { i
       const res = await fetch(`/api/inbox/messages?conversationId=${convId}`);
       if (res.ok) {
         const data = await res.json();
-        // Only update if the message count has changed to avoid focus/scroll jumps
-        setMessages((prev) => {
-          if (JSON.stringify(prev) !== JSON.stringify(data)) {
-            return data;
-          }
-          return prev;
-        });
+        if (Array.isArray(data)) {
+          // Only update if the content has changed
+          setMessages((prev) => {
+            if (JSON.stringify(prev) !== JSON.stringify(data)) {
+              return data;
+            }
+            return prev;
+          });
+        }
       }
     } catch (error) {
       console.error('Failed to load messages', error);
@@ -136,7 +145,7 @@ export const InboxClient = ({ initialConversations, isAr, hasIntegrations }: { i
     }, 10000); // 10 seconds
 
     return () => clearInterval(interval);
-  }, []);
+  }, [loadConversations]);
 
   // Initial load and poll messages
   useEffect(() => {
@@ -166,6 +175,21 @@ export const InboxClient = ({ initialConversations, isAr, hasIntegrations }: { i
     const textToSend = inputText.trim();
     setInputText('');
 
+    // Create optimistic message
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMsg: Message = {
+      id: tempId,
+      direction: 'outgoing',
+      text: textToSend,
+      type: 'text',
+      mediaUrl: null,
+      metadata: null,
+      createdAt: new Date(),
+      status: 'sending',
+    };
+
+    setMessages(prev => [...prev, optimisticMsg]);
+
     try {
       const res = await fetch('/api/inbox/send', {
         method: 'POST',
@@ -180,15 +204,21 @@ export const InboxClient = ({ initialConversations, isAr, hasIntegrations }: { i
 
       if (res.ok) {
         const data = await res.json();
-        setMessages(prev => [...prev, data.message]);
+        // Replace optimistic message with the real one from server
+        setMessages(prev => prev.map(m => m.id === tempId ? { ...data.message, status: 'sent' } : m));
+
         setConversations(prev => prev.map(c =>
           c.id === selectedConvId
             ? { ...c, lastMessage: textToSend, lastMessageAt: new Date().toISOString() }
             : c,
         ));
+      } else {
+        // Mark as error
+        setMessages(prev => prev.map(m => m.id === tempId ? { ...m, status: 'error' } : m));
       }
     } catch (error) {
       console.error('Failed to send message', error);
+      setMessages(prev => prev.map(m => m.id === tempId ? { ...m, status: 'error' } : m));
     } finally {
       setSending(false);
     }
@@ -217,6 +247,7 @@ export const InboxClient = ({ initialConversations, isAr, hasIntegrations }: { i
         </div>
         <div className="mt-4 flex flex-col gap-4">
           <button
+            type="button"
             title={isAr ? 'الكل' : 'All'}
             onClick={() => setFilter('all')}
             className={cn('p-2.5 rounded-xl transition-all', filter === 'all' ? 'bg-primary/10 dark:bg-white/10 text-primary dark:text-white ring-1 ring-primary/20 dark:ring-white/5' : 'text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-white/5')}
@@ -224,6 +255,7 @@ export const InboxClient = ({ initialConversations, isAr, hasIntegrations }: { i
             <Users size={20} />
           </button>
           <button
+            type="button"
             title={isAr ? 'محادثاتي' : 'Mine'}
             onClick={() => setFilter('mine')}
             className={cn('p-2.5 rounded-xl transition-all', filter === 'mine' ? 'bg-primary/10 dark:bg-white/10 text-primary dark:text-white ring-1 ring-primary/20 dark:ring-white/5' : 'text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-white/5')}
@@ -231,6 +263,7 @@ export const InboxClient = ({ initialConversations, isAr, hasIntegrations }: { i
             <UserCheck size={20} />
           </button>
           <button
+            type="button"
             title={isAr ? 'غير المعين' : 'Unassigned'}
             onClick={() => setFilter('unassigned')}
             className={cn('p-2.5 rounded-xl transition-all', filter === 'unassigned' ? 'bg-primary/10 dark:bg-white/10 text-primary dark:text-white ring-1 ring-primary/20 dark:ring-white/5' : 'text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-white/5')}
@@ -240,6 +273,7 @@ export const InboxClient = ({ initialConversations, isAr, hasIntegrations }: { i
         </div>
         <div className="mt-auto flex flex-col gap-4">
           <button
+            type="button"
             onClick={() => router.push('/dashboard/integrations')}
             className="p-2.5 text-slate-500 transition-colors hover:text-white"
             title={isAr ? 'الإعدادات' : 'Integrations'}
@@ -255,19 +289,29 @@ export const InboxClient = ({ initialConversations, isAr, hasIntegrations }: { i
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-black tracking-tight text-foreground dark:text-white">{isAr ? 'البريد الوارد' : 'Inbox'}</h2>
             <div className="flex gap-1">
-              <button className="p-2 text-slate-400 transition-all hover:text-primary active:scale-95 dark:text-slate-500 dark:hover:text-white"><Search size={16} /></button>
-              <button className="p-2 text-slate-400 transition-all hover:text-primary active:scale-95 dark:text-slate-500 dark:hover:text-white"><Filter size={16} /></button>
+              <button
+                type="button"
+                onClick={() => loadConversations(false)}
+                className="p-2 text-slate-400 transition-all hover:text-primary active:scale-95 dark:text-slate-500 dark:hover:text-white"
+                title={isAr ? 'تحديث' : 'Refresh'}
+              >
+                <Zap size={16} className={cn(loadingMessages && 'animate-pulse')} />
+              </button>
+              <button type="button" className="p-2 text-slate-400 transition-all hover:text-primary active:scale-95 dark:text-slate-500 dark:hover:text-white"><Search size={16} /></button>
+              <button type="button" className="p-2 text-slate-400 transition-all hover:text-primary active:scale-95 dark:text-slate-500 dark:hover:text-white"><Filter size={16} /></button>
             </div>
           </div>
 
           <div className="flex rounded-xl border-b border-border bg-slate-50 p-1 dark:border-white/5 dark:bg-white/[0.02]">
             <button
+              type="button"
               onClick={() => setActiveTab('chats')}
               className={cn('flex-1 py-2 text-[11px] font-black uppercase tracking-widest transition-all rounded-lg', activeTab === 'chats' ? 'bg-white dark:bg-white/5 text-primary shadow-sm' : 'text-slate-400 dark:text-slate-500')}
             >
               {isAr ? 'الدردشات' : 'Chats'}
             </button>
             <button
+              type="button"
               onClick={() => setActiveTab('calls')}
               className={cn('flex-1 py-2 text-[11px] font-black uppercase tracking-widest transition-all rounded-lg', activeTab === 'calls' ? 'bg-white dark:bg-white/5 text-primary shadow-sm' : 'text-slate-400 dark:text-slate-500')}
             >
@@ -295,6 +339,7 @@ export const InboxClient = ({ initialConversations, isAr, hasIntegrations }: { i
                   filteredConversations.map(conv => (
                     <button
                       key={conv.id}
+                      type="button"
                       onClick={() => setSelectedConvId(conv.id)}
                       className={cn(
                         'group flex w-full items-center gap-3 rounded-2xl p-4 transition-all duration-300 relative',
@@ -344,7 +389,7 @@ export const InboxClient = ({ initialConversations, isAr, hasIntegrations }: { i
                     <div>
                       <h3 className="text-base font-black leading-tight tracking-tighter text-slate-900 dark:text-white">{selectedConv.customerName || selectedConv.externalId}</h3>
                       <div className="mt-0.5 flex items-center gap-2">
-                        <span className="shadow-glow size-2 animate-pulse rounded-full bg-emerald-500 shadow-emerald-500/50" />
+                        <span className="size-2 animate-pulse rounded-full bg-emerald-500 shadow-emerald-500/50" />
                         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">{selectedConv.platform}</span>
                         <div className="mx-2 h-3 w-px bg-border dark:bg-white/5" />
                         <Badge variant="outline" className="h-5 rounded-lg border-border bg-slate-100 px-2 text-[9px] font-black text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-400">
@@ -355,12 +400,13 @@ export const InboxClient = ({ initialConversations, isAr, hasIntegrations }: { i
                   </div>
                   <div className="flex items-center gap-3">
                     <button
+                      type="button"
                       onClick={() => setShowLifecycle(!showLifecycle)}
                       className={cn('p-2 text-slate-400 dark:text-slate-500 hover:text-primary dark:hover:text-white transition-all active:scale-90', !showLifecycle && 'rotate-180')}
                     >
                       <ChevronRight size={20} />
                     </button>
-                    <button className="p-2 text-slate-400 hover:text-primary dark:text-slate-500 dark:hover:text-white"><MoreVertical size={20} /></button>
+                    <button type="button" className="p-2 text-slate-400 hover:text-primary dark:text-slate-500 dark:hover:text-white"><MoreVertical size={20} /></button>
                   </div>
                 </div>
 
@@ -377,19 +423,42 @@ export const InboxClient = ({ initialConversations, isAr, hasIntegrations }: { i
                           messages.map(msg => (
                             <div key={msg.id} className={cn('flex flex-col group', msg.direction === 'outgoing' ? 'items-end' : 'items-start')}>
                               <div className={cn(
-                                'max-w-[65%] rounded-3xl p-5 text-sm font-bold leading-relaxed shadow-sm dark:shadow-2xl transition-all duration-300',
+                                'max-w-[65%] rounded-3xl p-5 text-sm font-bold leading-relaxed shadow-sm dark:shadow-2xl transition-all duration-300 relative',
                                 msg.direction === 'outgoing'
                                   ? 'bg-primary text-white rounded-tr-none shadow-orange-950/20 dark:shadow-orange-950/40'
                                   : 'bg-white dark:bg-white/5 text-slate-800 dark:text-slate-200 rounded-tl-none border border-border dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/[0.08]',
+                                msg.status === 'error' && 'bg-red-500 border-red-600 text-white',
+                                msg.status === 'sending' && 'opacity-70',
                               )}
                               >
                                 {msg.text}
+                                {msg.status === 'sending' && (
+                                  <div className="absolute -left-8 top-1/2 -translate-y-1/2">
+                                    <Loader2 size={14} className="animate-spin text-slate-400" />
+                                  </div>
+                                )}
                               </div>
-                              <div className="mt-2 flex items-center gap-2 px-1 opacity-0 transition-opacity group-hover:opacity-100">
-                                <span className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-700">
-                                  {format(new Date(msg.createdAt), 'p', { locale: isAr ? ar : enUS })}
+                              <div className="mt-2 flex items-center gap-2 px-1 transition-opacity">
+                                <span className={cn('text-[10px] font-black uppercase text-slate-400 dark:text-slate-700', msg.status === 'error' && 'text-red-500')}>
+                                  {msg.status === 'error'
+                                    ? (isAr ? 'فشل الإرسال' : 'Failed to send')
+                                    : format(new Date(msg.createdAt), 'p', { locale: isAr ? ar : enUS })}
                                 </span>
-                                {msg.direction === 'outgoing' && <CheckCheck size={12} className="text-primary" />}
+                                { (msg.senderType === 'bot' || (msg.direction === 'outgoing' && !msg.senderType && msg.metadata && !msg.metadata.startsWith('{'))) && (
+                                  <span className="flex items-center gap-1 rounded-full bg-indigo-500/10 px-2 py-0.5 text-[9px] font-black uppercase text-indigo-500 dark:bg-indigo-500/20 dark:text-indigo-400">
+                                    <Zap size={10} strokeWidth={3} />
+                                    {isAr ? 'روبوت' : 'AI BOT'}
+                                  </span>
+                                )}
+                                { (msg.senderType === 'agent' || (msg.direction === 'outgoing' && !msg.senderType && (!msg.metadata || msg.metadata.startsWith('{')))) && (
+                                  <span className="flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-black uppercase text-slate-400 dark:bg-white/5 dark:text-slate-500">
+                                    <User size={10} strokeWidth={3} />
+                                    {isAr ? 'أنت' : 'AGENT'}
+                                  </span>
+                                )}
+                                {msg.direction === 'outgoing' && msg.status !== 'error' && (
+                                  <CheckCheck size={12} className={cn(msg.status === 'sending' ? 'text-slate-400' : 'text-primary')} />
+                                )}
                               </div>
                             </div>
                           ))
@@ -479,7 +548,7 @@ export const InboxClient = ({ initialConversations, isAr, hasIntegrations }: { i
         >
           <div className="flex items-center justify-between border-b border-border p-6 dark:border-white/5">
             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">{isAr ? 'ملف العميل' : 'Profile'}</h3>
-            <button onClick={() => setShowLifecycle(false)} className="text-slate-400 hover:text-foreground dark:text-slate-600"><X size={16} /></button>
+            <button type="button" onClick={() => setShowLifecycle(false)} className="text-slate-400 hover:text-foreground dark:text-slate-600"><X size={16} /></button>
           </div>
 
           <ScrollArea className="flex-1">
@@ -517,6 +586,7 @@ export const InboxClient = ({ initialConversations, isAr, hasIntegrations }: { i
                     ].map(stage => (
                       <button
                         key={stage.id}
+                        type="button"
                         onClick={() => updateLifecycle(selectedConv.id, stage.id as any)}
                         className={cn(
                           'flex w-full items-center justify-between rounded-xl p-3 border transition-all active:scale-95',

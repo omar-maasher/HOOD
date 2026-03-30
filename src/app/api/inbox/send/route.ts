@@ -12,6 +12,7 @@ import {
   conversationSchema,
   integrationSchema,
   messageSchema,
+  webhookEventSchema,
 } from '@/models/Schema';
 
 export const POST = async (request: Request) => {
@@ -84,10 +85,17 @@ export const POST = async (request: Request) => {
       direction: 'outgoing',
       text,
       type: 'text',
+      senderType: 'agent',
       metadata: JSON.stringify(metaResponse),
     }).returning();
 
-    // 5. Update Conversation last message
+    // 5. Deduplication: Register the MID so the webhook echo doesn't duplicate it
+    const metaId = platform === 'whatsapp' ? metaResponse.messages?.[0]?.id : metaResponse.message_id;
+    if (metaId) {
+      await db.insert(webhookEventSchema).values({ mid: metaId }).onConflictDoNothing();
+    }
+
+    // 6. Update Conversation last message
     await db.update(conversationSchema)
       .set({
         lastMessage: text,

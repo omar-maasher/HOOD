@@ -249,7 +249,8 @@ export const POST = async (request: Request) => {
               conversationId: conversation[0].id,
               direction: isEcho ? 'outgoing' : 'incoming',
               text: messageText,
-              type: hasAttachments ? 'image' : 'text', // Simplified for now, can be more specific
+              type: hasAttachments ? 'image' : 'text',
+              senderType: isEcho ? 'bot' : 'customer',
               metadata: mid,
             });
           }
@@ -356,6 +357,7 @@ export const POST = async (request: Request) => {
                   organizationId: orgId,
                   conversationId: conversation[0].id,
                   direction: 'incoming',
+                  senderType: 'customer',
                   text,
                   type: msgType,
                   metadata: mid,
@@ -445,6 +447,7 @@ export const POST = async (request: Request) => {
                 organizationId: orgId,
                 conversationId: conversation[0].id,
                 direction: 'incoming',
+                senderType: 'customer',
                 text,
                 type: 'text', // Comments are text
                 metadata: commentId,

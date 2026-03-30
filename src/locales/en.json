@@ -140,8 +140,20 @@
     "subscription": "Subscription",
     "business": "Business Settings",
     "whatsapp_templates": "WA Templates",
+    "comments": "Comments",
     "org_settings": "Org Settings",
     "super_admin": "Super Admin"
+  },
+  "Comments": {
+    "title": "Comments Management",
+    "subtitle": "Monitor and reply to comments on your social media posts.",
+    "col_post": "Post / Context",
+    "col_comment": "Comment Content",
+    "col_author": "Author",
+    "col_date": "Date",
+    "reply": "Reply",
+    "loading": "Loading comments...",
+    "no_comments": "No comments found yet."
   },
   "Products": {
     "title": "Product Management",
