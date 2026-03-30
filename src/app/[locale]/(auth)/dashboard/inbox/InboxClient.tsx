@@ -91,25 +91,65 @@ export const InboxClient = ({ initialConversations, isAr, hasIntegrations }: { i
     });
   }, [conversations, searchQuery, filter]);
 
-  const loadMessages = async (convId: number) => {
-    setLoadingMessages(true);
+  const loadConversations = async () => {
+    try {
+      const res = await fetch('/api/inbox/conversations');
+      if (res.ok) {
+        const data = await res.json();
+        // Only update if there is a change to prevent unnecessary re-renders
+        setConversations(data);
+      }
+    } catch (error) {
+      console.error('Failed to load conversations', error);
+    }
+  };
+
+  const loadMessages = async (convId: number, silent = false) => {
+    if (!silent) {
+      setLoadingMessages(true);
+    }
     try {
       const res = await fetch(`/api/inbox/messages?conversationId=${convId}`);
       if (res.ok) {
         const data = await res.json();
-        setMessages(data);
+        // Only update if the message count has changed to avoid focus/scroll jumps
+        setMessages((prev) => {
+          if (JSON.stringify(prev) !== JSON.stringify(data)) {
+            return data;
+          }
+          return prev;
+        });
       }
     } catch (error) {
       console.error('Failed to load messages', error);
     } finally {
-      setLoadingMessages(false);
+      if (!silent) {
+        setLoadingMessages(false);
+      }
     }
   };
 
+  // Poll for new conversations
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadConversations();
+    }, 10000); // 10 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Initial load and poll messages
   useEffect(() => {
     if (selectedConvId) {
       loadMessages(selectedConvId);
+
+      const interval = setInterval(() => {
+        loadMessages(selectedConvId, true);
+      }, 4000); // 4 seconds
+
+      return () => clearInterval(interval);
     }
+    return undefined;
   }, [selectedConvId]);
 
   useEffect(() => {
