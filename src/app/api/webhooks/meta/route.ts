@@ -128,9 +128,14 @@ export const POST = async (request: Request) => {
     const messaging = entry.messaging || [];
     const changes = entry.changes || [];
 
-    // Search for integration by providerId
-    const results = await db.select().from(integrationSchema).where(eq(integrationSchema.providerId, entryId)).limit(1);
-    let integration = results[0];
+    // Search for integration by providerId or by config (for Instagram Comments)
+    let integration = await db.query.integrationSchema.findFirst({
+      where: (i, { or, eq: eqFn, ilike }) =>
+        or(
+          eqFn(i.providerId, entryId),
+          ilike(i.config, `%${entryId}%`),
+        ),
+    });
 
     // --- FALLBACK: Try to detect platform and find any active integration for the org ---
     if (!integration) {
@@ -398,9 +403,15 @@ export const POST = async (request: Request) => {
         const senderName = value?.from?.username || value?.from?.name;
         const text = value?.text || value?.message || '';
 
+        let igAccountId = null;
+        try {
+          const cfg = JSON.parse(integration.config || '{}');
+          igAccountId = cfg.igAccountId;
+        } catch {}
+
         // منع التكرار (الصدى): إذا كان الشخص الذي علق هو نفسه صاحب الحساب/البوت
-        if (senderId === integration.providerId) {
-          logger.info({ senderId, providerId: integration.providerId }, '[WEBHOOK] Skipping self-comment (echo)');
+        if (senderId === integration.providerId || (igAccountId && senderId === igAccountId)) {
+          logger.info({ senderId, providerId: integration.providerId, igAccountId }, '[WEBHOOK] Skipping self-comment (echo)');
           continue;
         }
 
