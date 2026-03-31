@@ -67,163 +67,182 @@ export const GET = async (request: Request) => {
     if (platform === 'messenger') {
       try {
         const pagesRes = await fetch(`https://graph.facebook.com/v21.0/me/accounts?access_token=${accessToken}`);
-        if (pagesRes.ok) {
-          const pagesData = await pagesRes.json();
-          if (pagesData.data && pagesData.data.length > 0) {
-            const page = pagesData.data[0];
-            const pageToken = page.access_token;
-            const pageId = page.id;
+        if (!pagesRes.ok) {
+          return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=pages_fetch_failed`, request.url));
+        }
 
-            const existingMsg = await db.query.integrationSchema.findFirst({
-              where: and(
-                eq(integrationSchema.organizationId, orgId),
-                eq(integrationSchema.type, 'messenger'),
-              ),
-            });
+        const pagesData = await pagesRes.json();
+        if (pagesData.data && pagesData.data.length > 0) {
+          const page = pagesData.data[0];
+          const pageToken = page.access_token;
+          const pageId = page.id;
 
-            if (existingMsg) {
-              await db.update(integrationSchema)
-                .set({
-                  accessToken: pageToken,
-                  providerId: pageId,
-                  updatedAt: new Date(),
-                })
-                .where(
-                  and(
-                    eq(integrationSchema.organizationId, orgId),
-                    eq(integrationSchema.type, 'messenger'),
-                  ),
-                );
-            } else {
-              await db.insert(integrationSchema).values({
-                organizationId: orgId,
-                type: 'messenger',
-                providerId: pageId,
+          const existingMsg = await db.query.integrationSchema.findFirst({
+            where: and(
+              eq(integrationSchema.organizationId, orgId),
+              eq(integrationSchema.type, 'messenger'),
+            ),
+          });
+
+          if (existingMsg) {
+            await db.update(integrationSchema)
+              .set({
                 accessToken: pageToken,
-                status: 'active',
-              });
-            }
+                providerId: pageId,
+                updatedAt: new Date(),
+              })
+              .where(
+                and(
+                  eq(integrationSchema.organizationId, orgId),
+                  eq(integrationSchema.type, 'messenger'),
+                ),
+              );
+          } else {
+            await db.insert(integrationSchema).values({
+              organizationId: orgId,
+              type: 'messenger',
+              providerId: pageId,
+              accessToken: pageToken,
+              status: 'active',
+            });
           }
+        } else {
+          return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=no_facebook_pages`, request.url));
         }
       } catch (e) {
         logger.error(e, 'Auto-connect Messenger Error');
+        return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=messenger_connect_failed`, request.url));
       }
     } else if (platform === 'instagram') {
       // Instagram via Facebook Login (through Facebook Pages)
       try {
         const pagesRes = await fetch(`https://graph.facebook.com/v21.0/me/accounts?access_token=${accessToken}`);
-        if (pagesRes.ok) {
-          const pagesData = await pagesRes.json();
-          if (pagesData.data && pagesData.data.length > 0) {
-            // Find a page linked to an Instagram account
-            let igAccountId = '';
-            let igPageToken = '';
-            let igPageId = '';
+        if (!pagesRes.ok) {
+          return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=pages_fetch_failed`, request.url));
+        }
 
-            for (const page of pagesData.data) {
-              const igRes = await fetch(`https://graph.facebook.com/v21.0/${page.id}?fields=instagram_business_account&access_token=${page.access_token}`);
-              if (igRes.ok) {
-                const igData = await igRes.json();
-                if (igData.instagram_business_account) {
-                  igAccountId = igData.instagram_business_account.id;
-                  igPageToken = page.access_token;
-                  igPageId = page.id;
-                  break;
-                }
-              }
+        const pagesData = await pagesRes.json();
+        if (!pagesData.data || pagesData.data.length === 0) {
+          return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=no_facebook_pages`, request.url));
+        }
+
+        // Find a page linked to an Instagram account
+        let igAccountId = '';
+        let igPageToken = '';
+        let igPageId = '';
+
+        for (const page of pagesData.data) {
+          const igRes = await fetch(`https://graph.facebook.com/v21.0/${page.id}?fields=instagram_business_account&access_token=${page.access_token}`);
+          if (igRes.ok) {
+            const igData = await igRes.json();
+            if (igData.instagram_business_account) {
+              igAccountId = igData.instagram_business_account.id;
+              igPageToken = page.access_token;
+              igPageId = page.id;
+              break;
             }
+          }
+        }
 
-            if (igAccountId) {
-              const existingIg = await db.query.integrationSchema.findFirst({
-                where: and(
+        if (igAccountId) {
+          const existingIg = await db.query.integrationSchema.findFirst({
+            where: and(
+              eq(integrationSchema.organizationId, orgId),
+              eq(integrationSchema.type, 'instagram'),
+            ),
+          });
+
+          const integrationData = {
+            accessToken: igPageToken,
+            providerId: igPageId, // Facebook Page ID for webhook matching
+            config: JSON.stringify({ igAccountId, method: 'facebook_login' }),
+            status: 'active' as const,
+            updatedAt: new Date(),
+          };
+
+          if (existingIg) {
+            await db.update(integrationSchema)
+              .set(integrationData)
+              .where(
+                and(
                   eq(integrationSchema.organizationId, orgId),
                   eq(integrationSchema.type, 'instagram'),
                 ),
+              );
+          } else {
+            await db.insert(integrationSchema).values({
+              organizationId: orgId,
+              type: 'instagram',
+              ...integrationData,
+            });
+          }
+        } else {
+          return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=no_instagram_account&pages_found=${pagesData.data.length}`, request.url));
+        }
+      } catch (e) {
+        logger.error(e, 'Auto-connect Instagram Error');
+        return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=instagram_connect_failed`, request.url));
+      }
+    } else if (platform === 'whatsapp') {
+      try {
+        const wabaRes = await fetch(`https://graph.facebook.com/v21.0/me/whatsapp_business_accounts?access_token=${accessToken}`);
+        if (!wabaRes.ok) {
+          return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=waba_fetch_failed`, request.url));
+        }
+
+        const wabaData = await wabaRes.json();
+        if (wabaData.data && wabaData.data.length > 0) {
+          const wabaId = wabaData.data[0].id;
+
+          const phoneRes = await fetch(`https://graph.facebook.com/v21.0/${wabaId}/phone_numbers?access_token=${accessToken}`);
+          if (phoneRes.ok) {
+            const phoneData = await phoneRes.json();
+            if (phoneData.data && phoneData.data.length > 0) {
+              const phoneNumberId = phoneData.data[0].id;
+
+              const existingWa = await db.query.integrationSchema.findFirst({
+                where: and(
+                  eq(integrationSchema.organizationId, orgId),
+                  eq(integrationSchema.type, 'whatsapp'),
+                ),
               });
 
-              const integrationData = {
-                accessToken: igPageToken,
-                providerId: igPageId, // Facebook Page ID for webhook matching
-                config: JSON.stringify({ igAccountId, method: 'facebook_login' }),
-                status: 'active' as const,
-                updatedAt: new Date(),
-              };
-
-              if (existingIg) {
+              if (existingWa) {
                 await db.update(integrationSchema)
-                  .set(integrationData)
+                  .set({
+                    accessToken,
+                    providerId: wabaId,
+                    config: JSON.stringify({ phoneNumberId }),
+                    updatedAt: new Date(),
+                  })
                   .where(
                     and(
                       eq(integrationSchema.organizationId, orgId),
-                      eq(integrationSchema.type, 'instagram'),
+                      eq(integrationSchema.type, 'whatsapp'),
                     ),
                   );
               } else {
                 await db.insert(integrationSchema).values({
                   organizationId: orgId,
-                  type: 'instagram',
-                  ...integrationData,
+                  type: 'whatsapp',
+                  providerId: wabaId,
+                  accessToken,
+                  config: JSON.stringify({ phoneNumberId }),
+                  status: 'active',
                 });
               }
             } else {
-              return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=no_instagram_account&pages_found=${pagesData.data.length}`, request.url));
+              return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=no_whatsapp_phone`, request.url));
             }
+          } else {
+            return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=waba_phone_fetch_failed`, request.url));
           }
-        }
-      } catch (e) {
-        logger.error(e, 'Auto-connect Instagram Error');
-      }
-    } else if (platform === 'whatsapp') {
-      try {
-        const wabaRes = await fetch(`https://graph.facebook.com/v21.0/me/whatsapp_business_accounts?access_token=${accessToken}`);
-        if (wabaRes.ok) {
-          const wabaData = await wabaRes.json();
-          if (wabaData.data && wabaData.data.length > 0) {
-            const wabaId = wabaData.data[0].id;
-
-            const phoneRes = await fetch(`https://graph.facebook.com/v21.0/${wabaId}/phone_numbers?access_token=${accessToken}`);
-            if (phoneRes.ok) {
-              const phoneData = await phoneRes.json();
-              if (phoneData.data && phoneData.data.length > 0) {
-                const phoneNumberId = phoneData.data[0].id;
-
-                const existingWa = await db.query.integrationSchema.findFirst({
-                  where: and(
-                    eq(integrationSchema.organizationId, orgId),
-                    eq(integrationSchema.type, 'whatsapp'),
-                  ),
-                });
-
-                if (existingWa) {
-                  await db.update(integrationSchema)
-                    .set({
-                      accessToken,
-                      providerId: wabaId,
-                      config: JSON.stringify({ phoneNumberId }),
-                      updatedAt: new Date(),
-                    })
-                    .where(
-                      and(
-                        eq(integrationSchema.organizationId, orgId),
-                        eq(integrationSchema.type, 'whatsapp'),
-                      ),
-                    );
-                } else {
-                  await db.insert(integrationSchema).values({
-                    organizationId: orgId,
-                    type: 'whatsapp',
-                    providerId: wabaId,
-                    accessToken,
-                    config: JSON.stringify({ phoneNumberId }),
-                    status: 'active',
-                  });
-                }
-              }
-            }
-          }
+        } else {
+          return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=no_waba_account`, request.url));
         }
       } catch (e) {
         console.error('Auto-connect WhatsApp Error:', e);
+        return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=whatsapp_connect_failed`, request.url));
       }
     }
 

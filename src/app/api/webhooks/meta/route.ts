@@ -454,6 +454,7 @@ export const POST = async (request: Request) => {
               .returning();
 
             if (conversation[0]) {
+              const mediaId = value?.media?.id;
               await db.insert(messageSchema).values({
                 organizationId: orgId,
                 conversationId: conversation[0].id,
@@ -461,7 +462,7 @@ export const POST = async (request: Request) => {
                 senderType: 'customer',
                 text,
                 type: 'text', // Comments are text
-                metadata: commentId,
+                metadata: JSON.stringify({ commentId, mediaId }),
               });
             }
 

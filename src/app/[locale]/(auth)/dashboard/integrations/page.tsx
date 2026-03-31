@@ -95,6 +95,58 @@ export default async function IntegrationsPage(props: { searchParams: Promise<an
         </div>
       )}
 
+      {error === 'no_facebook_pages' && (
+        <div className={`rounded-2xl border border-red-200 bg-red-50 p-6 ${isAr ? 'text-start' : 'text-left'}`}>
+          <h3 className="text-lg font-bold text-red-900">
+            {isAr ? 'لم يتم العثور على صفحات فيسبوك' : 'No Facebook Pages Found'}
+          </h3>
+          <p className="mt-1 text-sm text-red-800/80">
+            {isAr
+              ? 'لم نتمكن من الوصول إلى أي صفحات فيسبوك مرتبطة بحسابك. تأكد من منح الأذونات اللازمة لاختيار الصفحات أثناء عملية تسجيل الدخول.'
+              : 'We couldn\'t find any Facebook pages linked to your account. Make sure you granted necessary permissions during the login process.'}
+          </p>
+        </div>
+      )}
+
+      {(error === 'pages_fetch_failed' || error === 'token_exchange_failed' || error === 'server_error') && (
+        <div className={`rounded-2xl border border-red-200 bg-red-50 p-6 ${isAr ? 'text-start' : 'text-left'}`}>
+          <h3 className="text-lg font-bold text-red-900">
+            {isAr ? 'حدث خطأ أثناء الربط' : 'Error During Connection'}
+          </h3>
+          <p className="mt-1 text-sm text-red-800/80">
+            {isAr
+              ? 'فشل الاتصال بخوادم ميتا (Meta). يرجى المحاولة مرة أخرى أو التحقق من استقرار اتصالك.'
+              : 'Failed to communicate with Meta servers. Please try again or check your connection.'}
+          </p>
+        </div>
+      )}
+
+      {(error === 'instagram_connect_failed' || error === 'messenger_connect_failed' || error === 'whatsapp_connect_failed') && (
+        <div className={`rounded-2xl border border-red-200 bg-red-50 p-6 ${isAr ? 'text-start' : 'text-left'}`}>
+          <h3 className="text-lg font-bold text-red-900">
+            {isAr ? 'فشل إعداد القناة' : 'Channel Setup Failed'}
+          </h3>
+          <p className="mt-1 text-sm text-red-800/80">
+            {isAr
+              ? 'تم التحقق من هويتك ولكن فشل إعداد القناة المحددة تلقائياً. تأكد من استيفاء المتطلبات الأساسية للقناة.'
+              : 'Authentication was successful but auto-setup for the selected channel failed. Ensure channel prerequisites are met.'}
+          </p>
+        </div>
+      )}
+
+      {error === 'no_waba_account' && (
+        <div className={`rounded-2xl border border-red-200 bg-red-50 p-6 ${isAr ? 'text-start' : 'text-left'}`}>
+          <h3 className="text-lg font-bold text-red-900">
+            {isAr ? 'لم يتم العثور على حساب واتساب أعمال' : 'No WhatsApp Business Account Found'}
+          </h3>
+          <p className="mt-1 text-sm text-red-800/80">
+            {isAr
+              ? 'لم نجد أي حساب WhatsApp Business مرتبط بحسابك. تأكد من إنشاء WABA في Meta Business Suite.'
+              : 'No WhatsApp Business Account (WABA) found linked to your account. Ensure you created one in Meta Business Suite.'}
+          </p>
+        </div>
+      )}
+
       {success === 'connected' && (
         <div className={`rounded-2xl border border-emerald-200 bg-emerald-50 p-6 ${isAr ? 'text-start' : 'text-left'}`}>
           <h3 className="text-lg font-bold text-emerald-900">

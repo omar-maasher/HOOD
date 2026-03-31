@@ -666,3 +666,34 @@ export async function getSenderProfile(
     return null;
   }
 }
+
+/**
+ * Fetch Instagram Media (Post) details.
+ * Docs: https://developers.facebook.com/docs/instagram-api/reference/ig-media
+ */
+export async function getInstagramMedia(
+  mediaId: string,
+  accessToken: string,
+): Promise<{ id: string; media_url?: string; permalink?: string; caption?: string; media_type?: string } | null> {
+  try {
+    const fields = 'id,media_url,permalink,caption,media_type,thumbnail_url';
+    const url = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${mediaId}?fields=${fields}&access_token=${accessToken}`;
+
+    const res = await fetch(url);
+    if (!res.ok) {
+      return null;
+    }
+
+    const data = await res.json();
+    return {
+      id: data.id,
+      media_url: data.media_url || data.thumbnail_url,
+      permalink: data.permalink,
+      caption: data.caption,
+      media_type: data.media_type,
+    };
+  } catch (e) {
+    logger.error({ e, mediaId }, 'Failed to fetch Instagram media details');
+    return null;
+  }
+}
