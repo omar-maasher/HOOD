@@ -19,7 +19,7 @@ export const GET = async (request: Request) => {
   const locale = searchParams.get('locale') || 'ar';
 
   // State can be used to pass the orgId safely
-  const state = JSON.stringify({ orgId, userId, platform, locale });
+  const state = JSON.stringify({ orgId, userId, platform, locale, mode });
   const authUrl = getMetaAuthUrl(
     Buffer.from(state).toString('base64'),
     platform || undefined,

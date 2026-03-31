@@ -21,46 +21,55 @@ export const GET = async (request: Request) => {
 
   try {
     const state = JSON.parse(Buffer.from(stateBase64, 'base64').toString());
-    const { orgId, platform, locale } = state;
+    const { orgId, platform, locale, mode } = state;
     lang = locale || 'ar';
 
-    // ─── FACEBOOK-BASED PLATFORMS (Messenger, WhatsApp) ────────────────
-    // Exchange short-lived code for token
-    const tokenResponse = await exchangeCodeForToken(code);
+    // ─── TOKEN EXCHANGE ──────────────────────────────────────────────
+    let tokenResponse: any;
+    if (mode === 'instagram_direct') {
+      const { exchangeInstagramCodeForToken } = await import('@/libs/Meta');
+      tokenResponse = await exchangeInstagramCodeForToken(code);
+    } else {
+      tokenResponse = await exchangeCodeForToken(code);
+    }
 
-    if (tokenResponse.error) {
-      console.error('Meta Token Exchange Error:', tokenResponse.error);
+    if (tokenResponse.error || !tokenResponse.access_token) {
+      console.error('Meta Token Exchange Error:', tokenResponse.error || 'No access token');
       return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=token_exchange_failed`, request.url));
     }
 
-    // Get long-lived token (60 days)
-    const longLivedResponse = await getLongLivedToken(tokenResponse.access_token);
-    const accessToken = longLivedResponse.access_token || tokenResponse.access_token;
+    // Get long-lived token (60 days) - Only for Facebook-based tokens
+    let accessToken = tokenResponse.access_token;
 
-    // Save root Facebook token
-    const existingIntegration = await db.query.integrationSchema.findFirst({
-      where: and(
-        eq(integrationSchema.organizationId, orgId),
-        eq(integrationSchema.type, 'facebook_root'),
-      ),
-    });
+    if (mode !== 'instagram_direct') {
+      const longLivedResponse = await getLongLivedToken(tokenResponse.access_token);
+      accessToken = longLivedResponse.access_token || tokenResponse.access_token;
 
-    if (existingIntegration) {
-      await db.update(integrationSchema)
-        .set({ accessToken, updatedAt: new Date() })
-        .where(
-          and(
-            eq(integrationSchema.organizationId, orgId),
-            eq(integrationSchema.type, 'facebook_root'),
-          ),
-        );
-    } else {
-      await db.insert(integrationSchema).values({
-        organizationId: orgId,
-        type: 'facebook_root',
-        accessToken,
-        status: 'active',
+      // Save root Facebook token
+      const existingIntegration = await db.query.integrationSchema.findFirst({
+        where: and(
+          eq(integrationSchema.organizationId, orgId),
+          eq(integrationSchema.type, 'facebook_root'),
+        ),
       });
+
+      if (existingIntegration) {
+        await db.update(integrationSchema)
+          .set({ accessToken, updatedAt: new Date() })
+          .where(
+            and(
+              eq(integrationSchema.organizationId, orgId),
+              eq(integrationSchema.type, 'facebook_root'),
+            ),
+          );
+      } else {
+        await db.insert(integrationSchema).values({
+          organizationId: orgId,
+          type: 'facebook_root',
+          accessToken,
+          status: 'active',
+        });
+      }
     }
 
     // CREATE DISPLAY RECORD BASED ON PLATFORM CLICKED
@@ -114,32 +123,46 @@ export const GET = async (request: Request) => {
         return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=messenger_connect_failed`, request.url));
       }
     } else if (platform === 'instagram') {
-      // Instagram via Facebook Login (through Facebook Pages)
       try {
-        const pagesRes = await fetch(`https://graph.facebook.com/v21.0/me/accounts?access_token=${accessToken}`);
-        if (!pagesRes.ok) {
-          return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=pages_fetch_failed`, request.url));
-        }
-
-        const pagesData = await pagesRes.json();
-        if (!pagesData.data || pagesData.data.length === 0) {
-          return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=no_facebook_pages`, request.url));
-        }
-
-        // Find a page linked to an Instagram account
         let igAccountId = '';
-        let igPageToken = '';
-        let igPageId = '';
+        let igPageToken = accessToken;
+        let igPageId = ''; // For direct IG, we might not have a FB Page ID immediately
+        let method = 'facebook_login';
 
-        for (const page of pagesData.data) {
-          const igRes = await fetch(`https://graph.facebook.com/v21.0/${page.id}?fields=instagram_business_account&access_token=${page.access_token}`);
-          if (igRes.ok) {
-            const igData = await igRes.json();
-            if (igData.instagram_business_account) {
-              igAccountId = igData.instagram_business_account.id;
-              igPageToken = page.access_token;
-              igPageId = page.id;
-              break;
+        if (mode === 'instagram_direct') {
+          method = 'instagram_direct';
+          igAccountId = tokenResponse.user_id?.toString();
+
+          // If user_id is missing, try fetching it
+          if (!igAccountId) {
+            const igMeRes = await fetch(`https://graph.instagram.com/me?fields=id,username&access_token=${accessToken}`);
+            if (igMeRes.ok) {
+              const igMeData = await igMeRes.json();
+              igAccountId = igMeData.id;
+            }
+          }
+        } else {
+          // Instagram via Facebook Login (through Facebook Pages)
+          const pagesRes = await fetch(`https://graph.facebook.com/v21.0/me/accounts?access_token=${accessToken}`);
+          if (!pagesRes.ok) {
+            return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=pages_fetch_failed`, request.url));
+          }
+
+          const pagesData = await pagesRes.json();
+          if (!pagesData.data || pagesData.data.length === 0) {
+            return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=no_facebook_pages`, request.url));
+          }
+
+          for (const page of pagesData.data) {
+            const igRes = await fetch(`https://graph.facebook.com/v21.0/${page.id}?fields=instagram_business_account&access_token=${page.access_token}`);
+            if (igRes.ok) {
+              const igData = await igRes.json();
+              if (igData.instagram_business_account) {
+                igAccountId = igData.instagram_business_account.id;
+                igPageToken = page.access_token;
+                igPageId = page.id;
+                break;
+              }
             }
           }
         }
@@ -154,8 +177,8 @@ export const GET = async (request: Request) => {
 
           const integrationData = {
             accessToken: igPageToken,
-            providerId: igPageId, // Facebook Page ID for webhook matching
-            config: JSON.stringify({ igAccountId, method: 'facebook_login' }),
+            providerId: igPageId || igAccountId, // fallback to igAccountId if no FB Page
+            config: JSON.stringify({ igAccountId, method }),
             status: 'active' as const,
             updatedAt: new Date(),
           };
@@ -177,10 +200,10 @@ export const GET = async (request: Request) => {
             });
           }
         } else {
-          return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=no_instagram_account&pages_found=${pagesData.data.length}`, request.url));
+          return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=no_instagram_account`, request.url));
         }
       } catch (e) {
-        logger.error(e, 'Auto-connect Instagram Error');
+        logger.error(e, 'Connect Instagram Error');
         return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=instagram_connect_failed`, request.url));
       }
     } else if (platform === 'whatsapp') {
