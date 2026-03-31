@@ -1,6 +1,6 @@
 import { auth } from '@clerk/nextjs/server';
 import { eq } from 'drizzle-orm';
-import { DatabaseZap, Info, Instagram, Link as LinkIcon, MessageSquare, Phone, ScanEye, ShoppingCart } from 'lucide-react';
+import { DatabaseZap, Facebook, Info, Instagram, Link as LinkIcon, MessageSquare, Phone, ScanEye, ShoppingCart } from 'lucide-react';
 import { getLocale } from 'next-intl/server';
 
 import { StoreConnect } from '@/features/integrations/StoreConnect';
@@ -208,15 +208,34 @@ export default async function IntegrationsPage(props: { searchParams: Promise<an
                           ? (
                               <WhatsAppConnect appId={META_APP_ID} isAr={isAr} />
                             )
-                          : (
-                              <a
-                                href={`/api/auth/meta?platform=${channel.key}&locale=${locale}`}
-                                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-4 font-bold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 active:scale-[0.98]"
-                              >
-                                <LinkIcon className="size-4" />
-                                {isAr ? 'ربط الحساب' : 'Connect Account'}
-                              </a>
-                            )}
+                          : channel.key === 'instagram'
+                            ? (
+                                <div className="flex flex-col gap-3">
+                                  <a
+                                    href={`/api/auth/meta?platform=instagram&locale=${locale}&mode=instagram_direct`}
+                                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-tr from-pink-600 to-purple-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-pink-500/20 transition-all hover:opacity-90 active:scale-[0.98]"
+                                  >
+                                    <Instagram className="size-4" />
+                                    {isAr ? 'ربط عبر إنستجرام' : 'Connect via Instagram'}
+                                  </a>
+                                  <a
+                                    href={`/api/auth/meta?platform=instagram&locale=${locale}`}
+                                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#1877F2] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-500/20 transition-all hover:opacity-90 active:scale-[0.98]"
+                                  >
+                                    <Facebook className="size-4" />
+                                    {isAr ? 'ربط عبر فيسبوك' : 'Connect via Facebook'}
+                                  </a>
+                                </div>
+                              )
+                            : (
+                                <a
+                                  href={`/api/auth/meta?platform=${channel.key}&locale=${locale}`}
+                                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-4 font-bold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 active:scale-[0.98]"
+                                >
+                                  <LinkIcon className="size-4" />
+                                  {isAr ? 'ربط الحساب' : 'Connect Account'}
+                                </a>
+                              )}
                       </>
                     )}
               </div>

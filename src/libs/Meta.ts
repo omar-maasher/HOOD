@@ -60,19 +60,43 @@ const handleMetaError = (error: any) => {
   }
 };
 
-export const getMetaAuthUrl = (state: string, platform?: MetaPlatform) => {
+export const getMetaAuthUrl = (state: string, platform?: MetaPlatform, mode?: string) => {
+  if (mode === 'instagram_direct') {
+    const params = new URLSearchParams({
+      client_id: META_CONFIG.instagramAppId || '',
+      redirect_uri: META_CONFIG.redirectUri || '',
+      state,
+      response_type: 'code',
+      scope: [
+        'instagram_business_basic',
+        'instagram_business_manage_messages',
+        'instagram_business_manage_comments',
+        'instagram_business_content_publish',
+        'instagram_business_manage_insights',
+      ].join(','),
+      force_reauth: 'true',
+    });
+    return `https://www.instagram.com/oauth/authorize?${params.toString()}`;
+  }
+
   const scopes = platform
     ? PLATFORM_SCOPES[platform]
     : [...new Set(Object.values(PLATFORM_SCOPES).flat())];
 
-  const params = new URLSearchParams({
+  const params: Record<string, string> = {
     client_id: META_CONFIG.appId || '',
     redirect_uri: META_CONFIG.redirectUri || '',
     state,
     scope: scopes.join(','),
-  });
+    response_type: 'code',
+  };
 
-  return `https://www.facebook.com/${META_CONFIG.graphVersion}/dialog/oauth?${params.toString()}`;
+  if (mode === 'instagram_first') {
+    params.extras = JSON.stringify({ setup: { channel: 'IG_API_ONBOARDING' } });
+  }
+
+  const urlParams = new URLSearchParams(params);
+  return `https://www.facebook.com/${META_CONFIG.graphVersion}/dialog/oauth?${urlParams.toString()}`;
 };
 
 /**

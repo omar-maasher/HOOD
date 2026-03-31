@@ -15,11 +15,16 @@ export const GET = async (request: Request) => {
 
   const { searchParams } = new URL(request.url);
   const platform = searchParams.get('platform') as any;
+  const mode = searchParams.get('mode');
   const locale = searchParams.get('locale') || 'ar';
 
   // State can be used to pass the orgId safely
   const state = JSON.stringify({ orgId, userId, platform, locale });
-  const authUrl = getMetaAuthUrl(Buffer.from(state).toString('base64'), platform || undefined);
+  const authUrl = getMetaAuthUrl(
+    Buffer.from(state).toString('base64'),
+    platform || undefined,
+    mode || undefined,
+  );
 
   logger.info({
     platform,
