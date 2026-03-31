@@ -86,6 +86,18 @@ export const GET = async (request: Request) => {
           const pageToken = page.access_token;
           const pageId = page.id;
 
+          // --- WEBHOOK SUBSCRIPTION ---
+          try {
+            await fetch(`https://graph.facebook.com/v21.0/${pageId}/subscribed_apps?access_token=${pageToken}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ subscribed_fields: ['messages', 'messaging_postbacks'] }),
+            });
+            logger.info({ pageId }, '[WEBHOOK] Successfully subscribed Messenger Page to notifications');
+          } catch (e) {
+            logger.error(e, '[WEBHOOK] Failed to subscribe Messenger Page');
+          }
+
           const existingMsg = await db.query.integrationSchema.findFirst({
             where: and(
               eq(integrationSchema.organizationId, orgId),
@@ -168,6 +180,20 @@ export const GET = async (request: Request) => {
         }
 
         if (igAccountId) {
+          // --- WEBHOOK SUBSCRIPTION ---
+          if (igPageId && igPageToken) {
+            try {
+              await fetch(`https://graph.facebook.com/v21.0/${igPageId}/subscribed_apps?access_token=${igPageToken}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ subscribed_fields: ['messages', 'messaging_postbacks', 'comments', 'mentions'] }),
+              });
+              logger.info({ igPageId }, '[WEBHOOK] Successfully subscribed Instagram Page to notifications');
+            } catch (e) {
+              logger.error(e, '[WEBHOOK] Failed to subscribe Instagram Page');
+            }
+          }
+
           const existingIg = await db.query.integrationSchema.findFirst({
             where: and(
               eq(integrationSchema.organizationId, orgId),

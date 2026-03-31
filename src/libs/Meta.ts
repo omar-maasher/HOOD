@@ -21,13 +21,11 @@ const PLATFORM_SCOPES: Record<MetaPlatform, string[]> = {
     'instagram_manage_comments',
     'public_profile',
     'pages_read_engagement',
-    'pages_manage_metadata',
   ],
   messenger: [
     'pages_show_list',
     'pages_messaging',
     'pages_read_engagement',
-    'pages_manage_metadata',
     'pages_messaging_subscriptions',
     'public_profile',
   ],
