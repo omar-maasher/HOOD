@@ -8,7 +8,6 @@ import {
   aiSettingsSchema,
   businessProfileSchema,
   conversationSchema,
-  integrationSchema,
   leadSchema,
   messageSchema,
   organizationSchema,
@@ -129,33 +128,20 @@ export const POST = async (request: Request) => {
     const changes = entry.changes || [];
 
     // Search for integration by providerId or by config (for Instagram Comments)
-    let integration = await db.query.integrationSchema.findFirst({
-      where: (i, { or, eq: eqFn, ilike }) =>
-        or(
-          eqFn(i.providerId, entryId),
-          ilike(i.config, `%${entryId}%`),
+    // We MUST ensure the integration belongs to an organization and is ACTIVE
+    const integration = await db.query.integrationSchema.findFirst({
+      where: (i, { and: andFn, or, eq: eqFn, ilike }) =>
+        andFn(
+          eqFn(i.status, 'active'),
+          or(
+            eqFn(i.providerId, entryId),
+            ilike(i.config, `%${entryId}%`),
+          ),
         ),
     });
 
-    // --- FALLBACK: Try to detect platform and find any active integration for the org ---
     if (!integration) {
-      const hasMessaging = messaging.length > 0;
-      const hasChanges = changes.length > 0;
-
-      if (hasMessaging) {
-        // Find if any messenger or instagram integration exists globally as a fallback
-        integration = await db.query.integrationSchema.findFirst({
-          where: (i, { or, eq: eqFn }) => or(eqFn(i.type, 'messenger'), eqFn(i.type, 'instagram')),
-        });
-      } else if (hasChanges) {
-        integration = await db.query.integrationSchema.findFirst({
-          where: eq(integrationSchema.type, 'whatsapp'),
-        });
-      }
-    }
-
-    if (!integration) {
-      logger.warn({ entryId }, '[WEBHOOK DEBUG] No integration found for this Provider ID. Skipping.');
+      logger.warn({ entryId }, '[WEBHOOK DEBUG] No ACTIVE integration found for this Provider ID. Skipping.');
       continue;
     }
 

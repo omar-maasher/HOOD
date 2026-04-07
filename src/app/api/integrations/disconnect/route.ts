@@ -3,6 +3,7 @@ import { and, eq, or } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/DB';
+import { logger } from '@/libs/Logger';
 import { integrationSchema } from '@/models/Schema';
 
 export const POST = async (request: Request) => {
@@ -14,6 +15,32 @@ export const POST = async (request: Request) => {
 
     const { platform } = await request.json();
 
+    // 1. Fetch integration to get token before deleting
+    const integration = await db.query.integrationSchema.findFirst({
+      where: and(
+        eq(integrationSchema.organizationId, orgId),
+        eq(integrationSchema.type, platform),
+      ),
+    });
+
+    if (integration && (platform === 'instagram' || platform === 'messenger')) {
+      const pageId = integration.providerId;
+      const pageToken = integration.accessToken;
+
+      if (pageId && pageToken) {
+        // --- META UNSUBSCRIBE (Best Practice: Official Unsubscription) ---
+        try {
+          await fetch(`https://graph.facebook.com/v21.0/${pageId}/subscribed_apps?access_token=${pageToken}`, {
+            method: 'DELETE',
+          });
+          logger.info({ pageId, platform }, '[META] Officially unsubscribed from webhooks on disconnect');
+        } catch (e) {
+          logger.error(e, '[META] Failed to unsubscribe during disconnect');
+        }
+      }
+    }
+
+    // 2. Database Deletion Logic
     if (platform === 'instagram' || platform === 'messenger') {
       // Delete the specific selected integration
       await db.delete(integrationSchema).where(
