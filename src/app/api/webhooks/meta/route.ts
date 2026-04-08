@@ -141,7 +141,13 @@ export const POST = async (request: Request) => {
     });
 
     if (!integration) {
-      logger.warn({ entryId }, '[WEBHOOK DEBUG] No ACTIVE integration found for this Provider ID. Skipping.');
+      // DEBUG: If not found by entryId, fetch all active integrations of this type to see what we actually have saved
+      const allActiveMeta = await db.query.integrationSchema.findMany({
+        where: (i, { eq: eqFn }) => eqFn(i.status, 'active'),
+      });
+      const availableProviders = allActiveMeta.map(i => ({ type: i.type, providerId: i.providerId, config: i.config }));
+
+      logger.warn({ entryId, availableProviders }, '[WEBHOOK DEBUG] No ACTIVE integration found for this Provider ID. Skipping.');
       continue;
     }
 
