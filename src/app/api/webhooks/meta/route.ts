@@ -205,7 +205,15 @@ export const POST = async (request: Request) => {
           let finalUsername = senderId;
 
           if (!isEcho) {
-            const profile = await getSenderProfile(senderId, platform, integration.accessToken || '');
+            let isDirectLogin = false;
+            try {
+              const cfg = JSON.parse(integration.config || '{}');
+              if (cfg.method === 'instagram_direct') {
+                isDirectLogin = true;
+              }
+            } catch {}
+
+            const profile = await getSenderProfile(senderId, platform, integration.accessToken || '', isDirectLogin);
             finalName = profile?.name || senderId;
             finalUsername = platform === 'instagram' ? (profile?.username || senderId) : senderId;
 

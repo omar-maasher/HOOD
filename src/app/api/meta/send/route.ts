@@ -66,11 +66,15 @@ export const POST = async (request: Request) => {
 
       // We stored the Facebook Page ID inside the 'config' field dynamically
       let pageIdForSending = platformIntegration.providerId; // fallback
+      let isDirectLogin = false;
       if (platformIntegration.config) {
         try {
           const configObj = JSON.parse(platformIntegration.config);
           if (configObj.pageId) {
             pageIdForSending = configObj.pageId;
+          }
+          if (configObj.method === 'instagram_direct') {
+            isDirectLogin = true;
           }
         } catch (e) {
           console.error('Failed to parse Instagram integration config', e);
@@ -86,14 +90,15 @@ export const POST = async (request: Request) => {
         orgId,
         providerId: platformIntegration.providerId,
         pageIdForSending,
+        isDirectLogin,
         tokenPrefix: `${token.substring(0, 10)}...`,
       }, '[SEND DEBUG] Attempting to send Instagram message');
 
       if (commentId) {
         // If commentId is provided, we reply to a comment instead of sending a DM
-        responseData = await replyToInstagramComment(commentId, finalMessage, token);
+        responseData = await replyToInstagramComment(commentId, finalMessage, token, isDirectLogin);
       } else if (recipientId) {
-        responseData = await sendInstagramMessage(pageIdForSending, recipientId, finalMessage, token);
+        responseData = await sendInstagramMessage(pageIdForSending, recipientId, finalMessage, token, isDirectLogin);
       }
     } else if (platform === 'messenger') {
       if (!platformIntegration) {

@@ -176,13 +176,16 @@ export const getLongLivedToken = async (shortLivedToken: string) => {
  * Docs: https://developers.facebook.com/docs/instagram-platform/instagram-api-with-instagram-login/messaging
  */
 export const sendInstagramMessage = async (
-  pageId: string, // For the Facebook-based flow, this is the Page ID Correlated with Instagram
+  pageId: string, // For the Facebook-based flow, this is the Page ID. For IG Direct, it's the IG Account ID
   recipientId: string, // Instagram-scoped user ID of the recipient
   text: string,
-  accessToken: string, // Page Access Token
+  accessToken: string, // Page/IG Access Token
+  isDirectLogin: boolean = false, // Flag to differentiate endpoints
 ) => {
-  // MUST use graph.facebook.com for the Page-based Instagram messaging flow
-  const url = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${pageId}/messages`;
+  // Use graph.instagram.com for direct login, otherwise graph.facebook.com
+  const baseUrl = isDirectLogin ? 'https://graph.instagram.com' : 'https://graph.facebook.com';
+  const endpoint = isDirectLogin ? 'me/messages' : `${pageId}/messages`;
+  const url = `${baseUrl}/${META_CONFIG.graphVersion}/${endpoint}`;
 
   const response = await fetch(url, {
     method: 'POST',
@@ -198,7 +201,7 @@ export const sendInstagramMessage = async (
 
   if (!response.ok) {
     const errorData = await response.json();
-    logger.error({ errorData }, 'Failed to send Instagram message');
+    logger.error({ errorData, isDirectLogin, url }, 'Failed to send Instagram message');
     handleMetaError(errorData);
   }
 
@@ -213,8 +216,10 @@ export const replyToInstagramComment = async (
   commentId: string,
   text: string,
   accessToken: string,
+  isDirectLogin: boolean = false,
 ) => {
-  const url = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${commentId}/replies`;
+  const baseUrl = isDirectLogin ? 'https://graph.instagram.com' : 'https://graph.facebook.com';
+  const url = `${baseUrl}/${META_CONFIG.graphVersion}/${commentId}/replies`;
 
   const response = await fetch(url, {
     method: 'POST',
@@ -229,7 +234,7 @@ export const replyToInstagramComment = async (
 
   if (!response.ok) {
     const errorData = await response.json();
-    logger.error({ errorData, commentId }, 'Failed to reply to Instagram comment');
+    logger.error({ errorData, commentId, isDirectLogin }, 'Failed to reply to Instagram comment');
     handleMetaError(errorData);
   }
 
@@ -665,10 +670,12 @@ export async function getSenderProfile(
   senderId: string,
   platform: 'messenger' | 'instagram',
   accessToken: string,
+  isDirectLogin: boolean = false,
 ): Promise<{ name: string; username: string } | null> {
   try {
     const fields = platform === 'instagram' ? 'name,username' : 'name,first_name,last_name';
-    const url = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${senderId}?fields=${fields}&access_token=${accessToken}`;
+    const baseUrl = (platform === 'instagram' && isDirectLogin) ? 'https://graph.instagram.com' : 'https://graph.facebook.com';
+    const url = `${baseUrl}/${META_CONFIG.graphVersion}/${senderId}?fields=${fields}&access_token=${accessToken}`;
 
     const res = await fetch(url);
     if (!res.ok) {

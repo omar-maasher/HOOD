@@ -27,8 +27,16 @@ export const GET = async (request: Request) => {
     // ─── TOKEN EXCHANGE ──────────────────────────────────────────────
     let tokenResponse: any;
     if (mode === 'instagram_direct') {
-      const { exchangeInstagramCodeForToken } = await import('@/libs/Meta');
-      tokenResponse = await exchangeInstagramCodeForToken(code);
+      const { exchangeInstagramCodeForToken, getInstagramLongLivedToken } = await import('@/libs/Meta');
+      const shortTokenRes = await exchangeInstagramCodeForToken(code);
+      if (shortTokenRes.access_token) {
+        // Exchange for long lived token
+        const longTokenRes = await getInstagramLongLivedToken(shortTokenRes.access_token);
+        tokenResponse = longTokenRes.access_token ? longTokenRes : shortTokenRes;
+        tokenResponse.user_id = shortTokenRes.user_id;
+      } else {
+        tokenResponse = shortTokenRes;
+      }
     } else {
       tokenResponse = await exchangeCodeForToken(code);
     }
