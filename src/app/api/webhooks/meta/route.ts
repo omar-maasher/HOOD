@@ -151,6 +151,10 @@ export const POST = async (request: Request) => {
       continue;
     }
 
+    if (!integration) {
+      continue;
+    }
+
     const orgId = integration.organizationId;
     logger.info({ entryId, orgId, type: integration.type }, '[WEBHOOK DEBUG] Found Integration');
 
