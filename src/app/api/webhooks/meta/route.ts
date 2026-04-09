@@ -165,6 +165,7 @@ export const POST = async (request: Request) => {
           const debugUrl = `https://graph.facebook.com/v21.0/debug_token?input_token=${candidate.accessToken}&access_token=${igAppId}|${igAppSecret}`;
           const debugRes = await fetch(debugUrl);
           const debugData = await debugRes.json();
+          logger.warn({ debugData, entryId }, '[WEBHOOK DEBUG] Inspector: Token Dump');
 
           const dataNode = debugData.data || {};
           // The debug token tells us all the target_ids this token can manage
