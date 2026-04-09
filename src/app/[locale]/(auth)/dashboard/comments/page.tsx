@@ -15,7 +15,7 @@ export async function generateMetadata() {
   };
 }
 
-export default async function CommentsPage() {
+export default async function CommentsPage(props: { searchParams?: Promise<{ postId?: string }> }) {
   const { orgId } = await auth();
   const locale = await getLocale();
 
@@ -27,19 +27,20 @@ export default async function CommentsPage() {
     where: eq(aiSettingsSchema.organizationId, orgId),
   });
 
-  // Fetch conversations that are from Instagram or Messenger (which support comments)
-  // For now, let's just fetch all conversations and we'll filter on client side if needed
-  // or just show all for the demo.
   const conversations = await db.query.conversationSchema.findMany({
     where: eq(conversationSchema.organizationId, orgId),
     orderBy: (conv, { desc }) => [desc(conv.lastMessageAt)],
   });
+
+  const searchParams = props.searchParams ? await props.searchParams : {};
+  const initialPostId = searchParams.postId || null;
 
   return (
     <CommentsClient
       initialConversations={JSON.parse(JSON.stringify(conversations))}
       isAr={locale === 'ar'}
       botName={aiSettings?.botName ?? (locale === 'ar' ? 'مساعد المتجر' : 'Store Assistant')}
+      initialPostId={initialPostId}
     />
   );
 }

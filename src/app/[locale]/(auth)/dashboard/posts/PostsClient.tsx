@@ -281,17 +281,26 @@ export const PostsClient = ({ isAr }: { isAr: boolean }) => {
                       <span>{p.timestamp ? new Date(p.timestamp).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' }) : 'Unknown Date'}</span>
                     </div>
 
-                    {p.permalink && (
-                      <a
-                        href={p.permalink}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="group/link flex w-full items-center justify-center gap-2 rounded-xl bg-white/5 py-2.5 text-xs font-black text-[#F8FAFC] transition-colors hover:bg-white/10"
+                    <div className="flex gap-2">
+                      <Link
+                        href={`/${locale}/dashboard/comments?postId=${p.id}`}
+                        className="group/btn flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary/20 py-2.5 text-xs font-black text-primary transition-all hover:bg-primary/30"
                       >
-                        <span>{t('open')}</span>
-                        <ExternalLink className="size-3.5 transition-transform duration-300 group-hover/link:-translate-y-0.5 group-hover/link:translate-x-0.5" />
-                      </a>
-                    )}
+                        <span>{isAr ? 'إدارة التعليقات' : 'Manage Comments'}</span>
+                      </Link>
+
+                      {p.permalink && (
+                        <a
+                          href={p.permalink}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="group/link flex size-[38px] shrink-0 items-center justify-center rounded-xl bg-white/5 text-xs font-black text-[#F8FAFC] transition-colors hover:bg-white/10"
+                          title={t('open')}
+                        >
+                          <ExternalLink className="size-3.5 transition-transform duration-300 group-hover/link:scale-110" />
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
 
