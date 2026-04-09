@@ -159,7 +159,10 @@ export const POST = async (request: Request) => {
         }
         try {
           // Check what the debug_token reveals about this candidate's token
-          const debugUrl = `https://graph.facebook.com/v21.0/debug_token?input_token=${candidate.accessToken}&access_token=${process.env.META_APP_ID}|${process.env.META_APP_SECRET}`;
+          // Use Instagram specific app credentials if set
+          const igAppId = process.env.INSTAGRAM_APP_ID || process.env.META_APP_ID;
+          const igAppSecret = process.env.INSTAGRAM_APP_SECRET || process.env.META_APP_SECRET;
+          const debugUrl = `https://graph.facebook.com/v21.0/debug_token?input_token=${candidate.accessToken}&access_token=${igAppId}|${igAppSecret}`;
           const debugRes = await fetch(debugUrl);
           const debugData = await debugRes.json();
 
