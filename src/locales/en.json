@@ -141,8 +141,24 @@
     "business": "Business Settings",
     "whatsapp_templates": "WA Templates",
     "comments": "Comments",
+    "posts": "Posts",
     "org_settings": "Org Settings",
     "super_admin": "Super Admin"
+  },
+  "Posts": {
+    "badge": "POSTS",
+    "title": "Posts",
+    "subtitle": "Browse your latest Instagram and Facebook posts in one place.",
+    "search": "Search captions...",
+    "count": "{count} posts",
+    "loading": "Loading posts...",
+    "not_connected": "Platform not connected",
+    "error": "Couldn't load posts",
+    "no_posts": "No posts found",
+    "no_media": "No media preview",
+    "no_caption": "No caption",
+    "open": "Open",
+    "go_integrations": "Go to integrations"
   },
   "Comments": {
     "title": "Comments Management",

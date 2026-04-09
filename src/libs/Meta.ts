@@ -728,3 +728,72 @@ export async function getInstagramMedia(
     return null;
   }
 }
+
+export type MetaPostListItem = {
+  id: string;
+  platform: 'instagram' | 'facebook';
+  caption: string;
+  mediaUrl?: string;
+  permalink?: string;
+  timestamp?: string;
+};
+
+export async function getInstagramMediaList(
+  igAccountId: string,
+  accessToken: string,
+  limit = 24,
+): Promise<MetaPostListItem[]> {
+  try {
+    const fields = 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp';
+    const url = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${igAccountId}/media?fields=${fields}&limit=${limit}&access_token=${accessToken}`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!response.ok) {
+      handleMetaError(data);
+    }
+
+    const items = Array.isArray(data?.data) ? data.data : [];
+    return items.map((m: any) => ({
+      id: m.id?.toString?.() ?? `${m.id}`,
+      platform: 'instagram' as const,
+      caption: m.caption || '',
+      mediaUrl: m.media_url || m.thumbnail_url,
+      permalink: m.permalink,
+      timestamp: m.timestamp,
+    }));
+  } catch (e) {
+    logger.error({ e, igAccountId }, 'Failed to fetch Instagram media list');
+    throw e;
+  }
+}
+
+export async function getFacebookPagePostsList(
+  pageId: string,
+  pageAccessToken: string,
+  limit = 24,
+): Promise<MetaPostListItem[]> {
+  try {
+    const fields = 'id,message,permalink_url,created_time,full_picture';
+    const url = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${pageId}/posts?fields=${fields}&limit=${limit}&access_token=${pageAccessToken}`;
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (!response.ok) {
+      handleMetaError(data);
+    }
+
+    const items = Array.isArray(data?.data) ? data.data : [];
+    return items.map((p: any) => ({
+      id: p.id?.toString?.() ?? `${p.id}`,
+      platform: 'facebook' as const,
+      caption: p.message || '',
+      mediaUrl: p.full_picture,
+      permalink: p.permalink_url,
+      timestamp: p.created_time,
+    }));
+  } catch (e) {
+    logger.error({ e, pageId }, 'Failed to fetch Facebook page posts list');
+    throw e;
+  }
+}

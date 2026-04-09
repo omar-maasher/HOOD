@@ -146,8 +146,24 @@
     "business": "بيانات النشاط",
     "whatsapp_templates": "قوالب الواتساب",
     "comments": "التعليقات",
+    "posts": "المنشورات",
     "org_settings": "إعدادات المنظمة",
     "super_admin": "الإدارة العليا"
+  },
+  "Posts": {
+    "badge": "المنشورات",
+    "title": "المنشورات",
+    "subtitle": "تصفح أحدث منشورات Instagram وFacebook في مكان واحد.",
+    "search": "ابحث في النص...",
+    "count": "{count} منشور",
+    "loading": "جاري تحميل المنشورات...",
+    "not_connected": "المنصة غير مربوطة",
+    "error": "تعذر تحميل المنشورات",
+    "no_posts": "لا توجد منشورات",
+    "no_media": "لا توجد معاينة",
+    "no_caption": "بدون نص",
+    "open": "فتح",
+    "go_integrations": "اذهب للربط"
   },
   "Comments": {
     "title": "إدارة التعليقات",

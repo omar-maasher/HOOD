@@ -22,6 +22,14 @@ export default withSentryConfig(
       eslint: {
         dirs: ['.'],
       },
+      images: {
+        remotePatterns: [
+          // Instagram CDN (e.g. scontent-*.cdninstagram.com)
+          { protocol: 'https', hostname: '*.cdninstagram.com' },
+          // Facebook CDN (common for Page post thumbnails)
+          { protocol: 'https', hostname: '*.fbcdn.net' },
+        ],
+      },
       poweredByHeader: false,
       reactStrictMode: true,
       experimental: {

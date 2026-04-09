@@ -1,5 +1,5 @@
 import { currentUser } from '@clerk/nextjs/server';
-import { Calendar, Crown, Home, LayoutTemplate, MessageSquare, Puzzle, Settings, ShieldAlert, ShoppingBag, Sparkles, Store, Users } from 'lucide-react';
+import { Calendar, Crown, Home, Image as ImageIcon, LayoutTemplate, MessageSquare, Puzzle, Settings, ShieldAlert, ShoppingBag, Sparkles, Store, Users } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
 import {
@@ -65,6 +65,11 @@ export default async function DashboardLayout(props: { children: React.ReactNode
       href: '/dashboard/comments',
       label: t('comments'),
       icon: <MessageSquare className="size-4" />,
+    },
+    {
+      href: '/dashboard/posts',
+      label: t('posts'),
+      icon: <ImageIcon className="size-4" />,
     },
     {
       href: '#',

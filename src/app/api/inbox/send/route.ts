@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/DB';
 import {
+  replyToInstagramComment,
   sendInstagramMessage,
   sendMessengerMessage,
   sendWhatsAppMessage,
@@ -22,9 +23,10 @@ export const POST = async (request: Request) => {
   }
 
   try {
-    const { conversationId, platform, externalId, text } = await request.json();
+    const { conversationId, platform, externalId, text, commentId } = await request.json();
 
-    if (!conversationId || !platform || !externalId || !text) {
+    // externalId is optional if replying to an Instagram comment via commentId
+    if (!conversationId || !platform || !text || (!externalId && !commentId)) {
       return new NextResponse('Missing required fields', { status: 400 });
     }
 
@@ -54,6 +56,7 @@ export const POST = async (request: Request) => {
 
     const accessToken = integration.accessToken;
     let providerId = integration.providerId; // FB Page ID
+    let isDirectLogin = false;
 
     // For WhatsApp, we need the phoneNumberId from config, not the WABA ID
     if (platform === 'whatsapp' && integration.config) {
@@ -67,13 +70,28 @@ export const POST = async (request: Request) => {
       }
     }
 
+    if (platform === 'instagram' && integration.config) {
+      try {
+        const config = JSON.parse(integration.config);
+        if (config.method === 'instagram_direct') {
+          isDirectLogin = true;
+        }
+      } catch {
+        // ignore
+      }
+    }
+
     // 3. Send via Meta API
     let metaResponse: any;
 
     if (platform === 'whatsapp') {
       metaResponse = await sendWhatsAppMessage(providerId!, externalId, text, accessToken);
     } else if (platform === 'instagram') {
-      metaResponse = await sendInstagramMessage(providerId!, externalId, text, accessToken);
+      if (commentId) {
+        metaResponse = await replyToInstagramComment(commentId, text, accessToken, isDirectLogin);
+      } else {
+        metaResponse = await sendInstagramMessage(providerId!, externalId, text, accessToken, isDirectLogin);
+      }
     } else if (platform === 'messenger') {
       metaResponse = await sendMessengerMessage(providerId!, externalId, text, accessToken);
     }
@@ -90,7 +108,7 @@ export const POST = async (request: Request) => {
     }).returning();
 
     // 5. Deduplication: Register the MID so the webhook echo doesn't duplicate it
-    const metaId = platform === 'whatsapp' ? metaResponse.messages?.[0]?.id : metaResponse.message_id;
+    const metaId = platform === 'whatsapp' ? metaResponse.messages?.[0]?.id : (metaResponse.message_id || metaResponse.id);
     if (metaId) {
       await db.insert(webhookEventSchema).values({ mid: metaId }).onConflictDoNothing();
     }
