@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { getLocale, getTranslations } from 'next-intl/server';
 
 import { db } from '@/libs/DB';
-import { aiSettingsSchema, conversationSchema } from '@/models/Schema';
+import { aiSettingsSchema } from '@/models/Schema';
 
 import { CommentsClient } from './CommentsClient';
 
@@ -27,17 +27,11 @@ export default async function CommentsPage(props: { searchParams?: Promise<{ pos
     where: eq(aiSettingsSchema.organizationId, orgId),
   });
 
-  const conversations = await db.query.conversationSchema.findMany({
-    where: eq(conversationSchema.organizationId, orgId),
-    orderBy: (conv, { desc }) => [desc(conv.lastMessageAt)],
-  });
-
   const searchParams = props.searchParams ? await props.searchParams : {};
   const initialPostId = searchParams.postId || null;
 
   return (
     <CommentsClient
-      initialConversations={JSON.parse(JSON.stringify(conversations))}
       isAr={locale === 'ar'}
       botName={aiSettings?.botName ?? (locale === 'ar' ? 'مساعد المتجر' : 'Store Assistant')}
       initialPostId={initialPostId}
