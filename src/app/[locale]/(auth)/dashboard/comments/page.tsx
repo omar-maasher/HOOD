@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { getLocale, getTranslations } from 'next-intl/server';
 
 import { db } from '@/libs/DB';
-import { conversationSchema } from '@/models/Schema';
+import { aiSettingsSchema, conversationSchema } from '@/models/Schema';
 
 import { CommentsClient } from './CommentsClient';
 
@@ -23,6 +23,10 @@ export default async function CommentsPage() {
     return <div>Unauthorized</div>;
   }
 
+  const aiSettings = await db.query.aiSettingsSchema.findFirst({
+    where: eq(aiSettingsSchema.organizationId, orgId),
+  });
+
   // Fetch conversations that are from Instagram or Messenger (which support comments)
   // For now, let's just fetch all conversations and we'll filter on client side if needed
   // or just show all for the demo.
@@ -35,6 +39,7 @@ export default async function CommentsPage() {
     <CommentsClient
       initialConversations={JSON.parse(JSON.stringify(conversations))}
       isAr={locale === 'ar'}
+      botName={aiSettings?.botName ?? (locale === 'ar' ? 'مساعد المتجر' : 'Store Assistant')}
     />
   );
 }
