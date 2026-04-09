@@ -35,6 +35,35 @@ export default withSentryConfig(
       experimental: {
         serverComponentsExternalPackages: ['@electric-sql/pglite'],
       },
+      async rewrites() {
+        return [
+          {
+            source: '/ai',
+            destination: '/ai/index.html',
+          },
+          {
+            source: '/ai/:path*',
+            destination: '/ai/:path*',
+          },
+        ];
+      },
+      async headers() {
+        return [
+          {
+            source: '/ai/(.*)',
+            headers: [
+              { key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' },
+              { key: 'X-Content-Type-Options', value: 'nosniff' },
+            ],
+          },
+          {
+            source: '/ai/images/(.*)',
+            headers: [
+              { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+            ],
+          },
+        ];
+      },
     }),
   ),
   {
