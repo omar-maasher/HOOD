@@ -1,25 +1,22 @@
 'use client';
 
-import { format } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { ar, enUS } from 'date-fns/locale';
 import {
-  AtSign,
   Heart,
   Image as ImageIcon,
   Loader2,
-  MessageSquare,
-  Reply,
+  MessageCircle,
+  MoreHorizontal,
+  RefreshCw,
   Send,
-  User,
+  Trash2,
   Zap,
 } from 'lucide-react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { cn } from '@/utils/Helpers';
 
 type PostItem = {
@@ -45,22 +42,29 @@ type AllCommentItem = {
   } | null;
 };
 
-const Avatar = ({ text, size = 'md' }: { text: string; size?: 'sm' | 'md' | 'lg' | 'xl' }) => {
-  const sizes = {
-    sm: 'size-8 text-xs rounded-xl',
-    md: 'size-10 text-sm rounded-2xl',
-    lg: 'size-14 text-xl rounded-2xl',
-    xl: 'size-24 text-3xl rounded-[2.5rem]',
-  };
+// Instagram-style round avatar
+const IgAvatar = ({ name, size = 32 }: { name: string; size?: number }) => {
+  const colors = [
+    'from-[#833AB4] to-[#FD1D1D]',
+    'from-[#405DE6] to-[#5851DB]',
+    'from-[#E1306C] to-[#F77737]',
+    'from-[#FCAF45] to-[#F77737]',
+    'from-[#833AB4] to-[#405DE6]',
+    'from-[#C13584] to-[#E1306C]',
+  ];
+  const colorIdx = (name || 'U').charCodeAt(0) % colors.length;
 
   return (
-    <div className={cn(
-      'flex shrink-0 items-center justify-center font-black shadow-inner shadow-white/10 ring-1 ring-white/10',
-      'bg-gradient-to-br from-[#334155] to-[#0F172A] text-[#F8FAFC]',
-      sizes[size],
-    )}
+    <div
+      className={cn('shrink-0 rounded-full bg-gradient-to-br p-[2px]', colors[colorIdx])}
+      style={{ width: size, height: size }}
     >
-      {text?.[0]?.toUpperCase() || 'U'}
+      <div
+        className="flex size-full items-center justify-center rounded-full bg-[#121212] font-bold text-white"
+        style={{ fontSize: size * 0.38 }}
+      >
+        {(name || 'U')[0]!.toUpperCase()}
+      </div>
     </div>
   );
 };
@@ -79,29 +83,31 @@ export const CommentsClient = ({
   const [commentsLoading, setCommentsLoading] = useState(true);
   const [allComments, setAllComments] = useState<AllCommentItem[]>([]);
   const [postsDict, setPostsDict] = useState<Record<string, PostItem>>({});
-
   const [searchQuery, setSearchQuery] = useState('');
   const [activeReplyId, setActiveReplyId] = useState<number | null>(null);
   const [replyText, setReplyText] = useState('');
   const [sendingReply, setSendingReply] = useState<number | null>(null);
+  const [likedComments, setLikedComments] = useState<Set<number>>(new Set());
 
   const l = <T,>(arContent: T, enContent: T): T => (isAr ? arContent : enContent);
 
   const lang = {
-    search: l('ابحث في جميع التعليقات...', 'Search all comments...'),
-    noComments: l('لا توجد تعليقات حتى الآن', 'No comments yet'),
-    refresh: l('تحديث التعليقات', 'Refresh Comments'),
-    reply: l('رد', 'Reply'),
-    like: l('إعجاب', 'Like'),
-    writeReply: l('اكتب ردك المباشر للعميل...', 'Write direct reply...'),
-    send: l('إرسال', 'Send'),
-    loadingComments: l('جاري تحميل التعليقات...', 'Loading comments...'),
+    search: l('بحث...', 'Search...'),
+    noComments: l('لا توجد تعليقات بعد', 'No comments yet'),
+    refresh: l('تحديث', 'Refresh'),
+    reply: l('الرد', 'Reply'),
+    replyPlaceholder: l('أضف رد...', 'Add a reply...'),
+    post: l('نشر', 'Post'),
+    loading: l('جاري التحميل...', 'Loading...'),
+    viewReplies: l('عرض الردود', 'View replies'),
+    liked: l('أعجبني', 'Liked'),
+    delete: l('حذف', 'Delete'),
+    deleting: l('جاري الحذف...', 'Deleting...'),
   };
 
   const loadEverything = useCallback(async () => {
     setCommentsLoading(true);
     try {
-      // 1. Fetch Posts to map mediaId to Post Thumbnail
       const postsRes = await fetch('/api/meta/posts?platform=instagram&limit=100', { cache: 'no-store' });
       const pd: Record<string, PostItem> = {};
       if (postsRes.ok) {
@@ -115,7 +121,6 @@ export const CommentsClient = ({
         setPostsDict(pd);
       }
 
-      // 2. Fetch ALL comments globally
       const comRes = await fetch('/api/comments/all', { cache: 'no-store' });
       if (comRes.ok) {
         const cData = await comRes.json();
@@ -138,15 +143,24 @@ export const CommentsClient = ({
     }
   }, [initialPostId]);
 
-  const filteredComments = useMemo(() => {
+  // Group comments by post
+  const groupedByPost = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    if (!q) {
-      return allComments;
-    }
-    return allComments.filter(c =>
-      (c.customerName || '').toLowerCase().includes(q)
-      || (c.text || '').toLowerCase().includes(q),
-    );
+    const filtered = q
+      ? allComments.filter(c =>
+        (c.customerName || '').toLowerCase().includes(q)
+        || (c.text || '').toLowerCase().includes(q))
+      : allComments;
+
+    const groups: Record<string, AllCommentItem[]> = {};
+    filtered.forEach((c) => {
+      const key = c.metaMediaId || '_no_post';
+      if (!groups[key]) {
+        groups[key] = [];
+      }
+      groups[key]!.push(c);
+    });
+    return groups;
   }, [allComments, searchQuery]);
 
   const handleReply = async (comment: AllCommentItem, e: React.FormEvent) => {
@@ -172,7 +186,7 @@ export const CommentsClient = ({
       if (res.ok) {
         setReplyText('');
         setActiveReplyId(null);
-        // Optionally inject the sent reply locally so they know it sent, but for now we trust it.
+        await loadEverything();
       }
     } catch (error) {
       console.error('Failed to send reply', error);
@@ -181,213 +195,280 @@ export const CommentsClient = ({
     }
   };
 
+  const toggleLike = (id: number) => {
+    setLikedComments((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const timeAgo = (date: string | Date) => {
+    try {
+      return formatDistanceToNow(new Date(date), { addSuffix: false, locale: l(ar, enUS) });
+    } catch {
+      return '';
+    }
+  };
+
+  const handleDelete = async (comment: AllCommentItem) => {
+    // eslint-disable-next-line no-alert
+    if (!window.confirm(isAr ? 'هل أنت متأكد من حذف هذه المحادثة والتعليق؟' : 'Are you sure you want to delete this conversation and comment?')) {
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/inbox/delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversationId: comment.conversationId }),
+      });
+
+      if (res.ok) {
+        setAllComments(prev => prev.filter(c => c.conversationId !== comment.conversationId));
+        setActiveReplyId(null);
+      }
+    } catch (error) {
+      console.error('Failed to delete', error);
+    }
+  };
+
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 pb-24" dir={isAr ? 'rtl' : 'ltr'}>
+    <div className="mx-auto flex w-full max-w-2xl flex-col gap-0 pb-16" dir={isAr ? 'rtl' : 'ltr'}>
 
-      {/* ─── UNIFIED HEADER ──────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-[2.5rem] border border-white/5 bg-[#0F172A]/80 p-8 shadow-2xl backdrop-blur-2xl md:p-12">
-        <div className="pointer-events-none absolute inset-0 opacity-40 [background:radial-gradient(circle_at_20%_0%,rgba(139,92,246,0.15),transparent_40%),radial-gradient(circle_at_80%_100%,rgba(236,72,153,0.1),transparent_50%)]"></div>
-
-        <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-          <div className="flex-1">
-            <div className="mb-6 flex items-center gap-3">
-              <span className="flex items-center gap-2 rounded-full border border-pink-500/20 bg-pink-500/10 px-4 py-1.5 text-xs font-black uppercase tracking-widest text-pink-400 shadow-inner">
-                <MessageSquare size={14} />
-                {isAr ? 'خزانة التعليقات الشاملة' : 'UNIFIED COMMENTS FEED'}
-              </span>
-            </div>
-            <h1 className="bg-gradient-to-br from-[#F8FAFC] to-[#94A3B8] bg-clip-text text-4xl font-extrabold tracking-tight text-transparent md:text-5xl">
-              {t('title')}
-            </h1>
-            <p className="mt-4 max-w-xl text-lg font-medium leading-relaxed text-[#94A3B8]">
-              {isAr ? 'شاشة واحدة فقط، لا داعي للدخول لمنشور تلو الآخر. ستجد هنا جميع التعليقات من كل المنشورات جاهزة للرد.' : 'One unified inbox for all your Instagram comments. No need to click into posts anymore.'}
-            </p>
-            <div className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-white/5 bg-[#1E293B] px-4 py-2 text-xs font-black text-[#94A3B8]">
-              <Zap size={14} className="text-indigo-500" />
-              {isAr ? 'البوت:' : 'Bot:'}
-              {' '}
-              <span className="text-white">{botName}</span>
-            </div>
-          </div>
-
-          <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
-            <Button
-              onClick={loadEverything}
-              className="group relative h-14 overflow-hidden rounded-2xl border-none bg-[#1E293B] px-8 font-bold text-[#94A3B8] shadow-xl hover:bg-[#273548] hover:text-white"
-            >
-              <Zap size={18} className={cn('mr-2', isAr && 'ml-2 mr-0 text-yellow-400', commentsLoading && 'animate-pulse text-indigo-400')} />
-              <span>{lang.refresh}</span>
-            </Button>
-          </div>
+      {/* ─── HEADER BAR (Instagram-style) ──────────────────── */}
+      <div className="sticky top-0 z-20 flex items-center justify-between border-b border-white/10 bg-[#121212]/95 px-4 py-3 backdrop-blur-xl">
+        <h1 className="text-base font-bold text-white">{t('title')}</h1>
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1 rounded-full bg-[#262626] px-2.5 py-1 text-[10px] font-bold text-[#A8A8A8]">
+            <Zap size={10} className="text-indigo-400" />
+            {botName}
+          </span>
+          <button
+            type="button"
+            onClick={loadEverything}
+            className="flex size-8 items-center justify-center rounded-full text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+          >
+            <RefreshCw size={16} className={cn(commentsLoading && 'animate-spin')} />
+          </button>
         </div>
       </div>
 
-      <div className="flex items-center justify-between rounded-[2rem] border border-white/5 bg-[#0F172A]/80 px-6 py-4 shadow-xl backdrop-blur-md">
-        <Input
+      {/* ─── SEARCH ────────────────────────────────────────── */}
+      <div className="border-b border-white/5 px-4 py-2">
+        <input
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
           placeholder={lang.search}
-          className="h-12 w-full max-w-md rounded-xl border-white/10 bg-[#1E293B]/50 font-semibold text-white placeholder:text-[#64748B] hover:border-white/20 focus:border-primary"
+          className="h-9 w-full rounded-lg bg-[#262626] px-3 text-sm text-white outline-none placeholder:text-[#8E8E8E] focus:ring-1 focus:ring-white/20"
         />
-        <div className="text-sm font-black text-[#94A3B8]">
-          {allComments.length}
-          {' '}
-          {isAr ? 'تعليق مكتشف' : 'Comments'}
-        </div>
       </div>
 
-      {/* ─── THE MASSIVE FEED ────────────────────────────────────────── */}
+      {/* ─── LOADING ───────────────────────────────────────── */}
       {(() => {
         if (commentsLoading) {
           return (
-            <div className="flex flex-col items-center justify-center py-40">
-              <Loader2 className="size-16 animate-spin text-primary" />
-              <p className="mt-6 text-sm font-black uppercase tracking-widest text-[#64748B]">{lang.loadingComments}</p>
+            <div className="flex flex-col items-center justify-center py-24">
+              <Loader2 className="size-8 animate-spin text-white/30" />
+              <span className="mt-3 text-xs text-[#8E8E8E]">{lang.loading}</span>
             </div>
           );
         }
 
-        if (filteredComments.length === 0) {
+        const postIds = Object.keys(groupedByPost);
+
+        if (postIds.length === 0) {
           return (
-            <div className="flex flex-col items-center justify-center rounded-[2.5rem] border border-white/5 bg-[#0F172A]/40 py-40 text-center shadow-xl">
-              <div className="mb-6 flex size-24 items-center justify-center rounded-full border border-dashed border-white/10 bg-white/5">
-                <MessageSquare className="size-10 text-[#64748B]" />
-              </div>
-              <h3 className="text-2xl font-black text-white">{lang.noComments}</h3>
+            <div className="flex flex-col items-center justify-center py-24 text-center">
+              <MessageCircle className="mb-3 size-12 text-[#363636]" />
+              <span className="text-sm font-semibold text-[#8E8E8E]">{lang.noComments}</span>
             </div>
           );
         }
 
-        return (
-          <div className="flex flex-col gap-6">
-            {filteredComments.map((comment) => {
-              const name = comment.customerName || comment.externalId;
-              const post = comment.metaMediaId ? postsDict[comment.metaMediaId] : null;
+        return postIds.map((postId) => {
+          const post = postsDict[postId];
+          const comments = groupedByPost[postId]!;
 
-              return (
-                <Card key={comment.messageId} className="overflow-hidden rounded-[2rem] border-white/5 bg-[#0F172A]/70 shadow-2xl backdrop-blur-md transition-all hover:border-white/10 hover:bg-[#0F172A]">
-                  <CardContent className="p-0">
-                    <div className="flex flex-col md:flex-row">
-                      {/* Post Context Sidebar (Right side visually if RTL, but let's keep it contextual) */}
-                      <div className="flex w-full shrink-0 flex-row gap-4 border-b border-white/5 bg-black/20 p-4 md:w-64 md:flex-col md:border-b-0 md:border-r md:border-white/5 md:p-6">
-                        <div className="relative size-16 shrink-0 overflow-hidden rounded-xl border border-white/10 shadow-lg md:aspect-square md:size-auto md:w-full">
-                          {post?.mediaUrl
-                            ? (
-                                <Image src={post.mediaUrl} alt="Post" fill className="object-cover" unoptimized />
-                              )
-                            : (
-                                <div className="flex size-full items-center justify-center bg-[#1E293B]">
-                                  <ImageIcon className="size-6 text-[#334155]" />
-                                </div>
-                              )}
+          return (
+            <div key={postId} className="border-b border-white/10">
+              {/* ─── Post Header (Instagram-style) ─── */}
+              <div className="flex items-center gap-3 px-4 py-3">
+                <div className="relative size-8 overflow-hidden rounded-full border border-white/10">
+                  {post?.mediaUrl
+                    ? (
+                        <Image src={post.mediaUrl} alt="" fill className="object-cover" unoptimized />
+                      )
+                    : (
+                        <div className="flex size-full items-center justify-center bg-[#262626]">
+                          <ImageIcon className="size-3.5 text-[#555]" />
                         </div>
-                        <div className="flex-1 overflow-hidden">
-                          <div className="mb-1 text-[10px] font-black uppercase tracking-widest text-pink-400">
-                            {isAr ? 'من هذا المنشور' : 'From this post'}
-                          </div>
-                          <div className="line-clamp-2 text-xs font-semibold leading-relaxed text-[#94A3B8] lg:line-clamp-4">
-                            {post?.caption || <span className="italic">No caption</span>}
-                          </div>
-                        </div>
-                      </div>
+                      )}
+                </div>
+                <div className="flex-1 overflow-hidden">
+                  <p className="truncate text-sm font-semibold text-white">
+                    {post?.caption || <span className="text-[#8E8E8E]">Post</span>}
+                  </p>
+                </div>
+                <button type="button" className="text-white/40 hover:text-white">
+                  <MoreHorizontal size={18} />
+                </button>
+              </div>
 
-                      {/* Comment Content */}
-                      <div className="flex min-w-0 flex-1 flex-col p-6 md:p-8">
-                        <div className="mb-4 flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <Avatar text={name} size="lg" />
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-lg font-black text-white">{name}</span>
-                                {comment.isUnread === 'true' && <span className="size-2 animate-pulse rounded-full bg-pink-500" />}
-                              </div>
-                              <div className="text-xs font-bold text-[#64748B]" dir="ltr">
-                                {format(new Date(comment.createdAt), 'PP p', { locale: l(ar, enUS) })}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
+              {/* ─── Post Image ─── */}
+              {post?.mediaUrl && (
+                <div className="relative aspect-square w-full bg-black">
+                  <Image
+                    src={post.mediaUrl}
+                    alt={post.caption || 'Post'}
+                    fill
+                    className="object-contain"
+                    unoptimized
+                  />
+                </div>
+              )}
 
-                        <p className="mb-6 text-base font-semibold leading-relaxed text-gray-200">
-                          {comment.text}
-                        </p>
+              {/* ─── Action Bar ─── */}
+              <div className="flex items-center gap-4 px-4 py-2.5">
+                <MessageCircle size={22} className="text-white" />
+                <Send size={20} className={cn('text-white', isAr && 'rotate-180')} />
+                <div className="ml-auto text-xs font-semibold text-[#8E8E8E]">
+                  {comments.length}
+                  {' '}
+                  {l('تعليق', 'comments')}
+                </div>
+              </div>
 
-                        {/* Bot Reply Preview */}
-                        {comment.lastReply && (
-                          <div className="mb-6 flex flex-col gap-2 rounded-2xl border border-[#334155]/30 bg-[#1E293B]/30 p-4">
-                            <div className="flex items-center justify-between">
-                              <span className={cn(
-                                'flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-widest',
-                                comment.lastReply.senderType === 'bot' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-[#64748B]/20 text-[#64748B]',
-                              )}
-                              >
-                                {comment.lastReply.senderType === 'bot' ? <Zap size={10} /> : <User size={10} />}
-                                {comment.lastReply.senderType === 'bot' ? botName : (isAr ? 'رد المتجر' : 'STORE REPLY')}
-                              </span>
-                              <span className="text-[9px] font-bold text-[#64748B]">
-                                {format(new Date(comment.lastReply.createdAt), 'p', { locale: l(ar, enUS) })}
-                              </span>
-                            </div>
-                            <p className="text-sm font-semibold text-[#94A3B8]">
-                              {comment.lastReply.text}
-                            </p>
-                          </div>
-                        )}
+              {/* ─── Comments List (Instagram-style) ─── */}
+              <div className="flex flex-col gap-0 px-4 pb-3">
+                {comments.map((comment) => {
+                  const name = comment.customerName || comment.externalId;
+                  const isLiked = likedComments.has(comment.messageId);
+                  const isReplying = activeReplyId === comment.messageId;
 
-                        <div className="mt-auto flex items-center gap-4 border-t border-white/10 pt-4">
-                          <button type="button" className="group flex items-center gap-1.5 text-xs font-bold text-[#64748B] transition-colors hover:text-pink-500">
-                            <Heart size={16} className="transition-transform group-hover:scale-110" />
+                  return (
+                    <div key={comment.messageId} className="py-2">
+                      {/* Main Comment */}
+                      <div className="flex gap-3">
+                        <IgAvatar name={name} size={32} />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm leading-relaxed text-white">
+                            <span className="font-bold">{name}</span>
                             {' '}
-                            {lang.like}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setActiveReplyId(activeReplyId === comment.messageId ? null : comment.messageId)}
-                            className={cn('group flex items-center gap-1.5 text-xs font-bold transition-colors', activeReplyId === comment.messageId ? 'text-primary' : 'text-[#64748B] hover:text-primary')}
-                          >
-                            <Reply size={16} className={cn('transition-transform', !activeReplyId && 'group-hover:-rotate-12')} />
-                            {lang.reply}
-                          </button>
+                            <span className="text-[#E0E0E0]">{comment.text}</span>
+                          </p>
+                          <div className="mt-1 flex items-center gap-4">
+                            <span className="text-[11px] text-[#8E8E8E]">{timeAgo(comment.createdAt)}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveReplyId(isReplying ? null : comment.messageId);
+                                setReplyText('');
+                              }}
+                              className="text-[11px] font-bold text-[#8E8E8E] hover:text-white"
+                            >
+                              {lang.reply}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(comment)}
+                              className="flex items-center gap-1 text-[11px] font-bold text-red-500/60 hover:text-red-500"
+                            >
+                              <Trash2 size={10} />
+                              {lang.delete}
+                            </button>
+                          </div>
                         </div>
-
-                        {/* Expandable Reply Box */}
-                        {activeReplyId === comment.messageId && (
-                          <form onSubmit={e => handleReply(comment, e)} className="mt-6 flex flex-col gap-4 rounded-2xl border border-primary/20 bg-primary/5 p-2 shadow-inner">
-                            <textarea
-                              value={replyText}
-                              onChange={e => setReplyText(e.target.value)}
-                              placeholder={lang.writeReply}
-                              className="min-h-[80px] w-full resize-none border-none bg-transparent px-4 py-3 text-sm font-semibold text-white outline-none placeholder:text-[#64748B]"
-                            />
-                            <div className="flex items-center justify-between px-2 pb-1">
-                              <div className="flex gap-2 text-[#64748B]">
-                                <button type="button" className="rounded-full p-2 hover:bg-white/5 hover:text-white"><AtSign size={16} /></button>
-                              </div>
-                              <Button
-                                type="submit"
-                                disabled={!replyText.trim() || sendingReply === comment.messageId || !comment.metaCommentId}
-                                className="h-10 rounded-xl bg-primary px-6 font-black shadow-xl transition-all hover:scale-105 disabled:opacity-50"
-                              >
-                                {sendingReply === comment.messageId
-                                  ? <Loader2 className="size-4 animate-spin" />
-                                  : (
-                                      <>
-                                        {lang.send}
-                                        <Send size={14} className={cn('ml-2', isAr && 'ml-0 mr-2 rotate-180')} />
-                                      </>
-                                    )}
-                              </Button>
-                            </div>
-                          </form>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => toggleLike(comment.messageId)}
+                          className="mt-1 shrink-0"
+                        >
+                          <Heart
+                            size={12}
+                            className={cn(
+                              'transition-all',
+                              isLiked ? 'fill-red-500 text-red-500' : 'text-[#8E8E8E] hover:text-white',
+                            )}
+                          />
+                        </button>
                       </div>
+
+                      {/* Bot Reply (shown as threaded reply — Instagram-style) */}
+                      {comment.lastReply && (
+                        <div className={cn('mt-2 flex gap-3', isAr ? 'mr-10' : 'ml-10')}>
+                          <div className="relative flex shrink-0 items-center justify-center">
+                            <div className={cn(
+                              'absolute -top-4 h-4 w-px',
+                              isAr ? '-right-[13px]' : '-left-[13px]',
+                              'bg-[#363636]',
+                            )}
+                            />
+                            <div className="flex size-6 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 ring-1 ring-black">
+                              {comment.lastReply.senderType === 'bot'
+                                ? <Zap size={10} className="text-white" />
+                                : <span className="text-[8px] font-black text-white">A</span>}
+                            </div>
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm leading-relaxed text-white">
+                              <span className="font-bold text-indigo-400">
+                                {comment.lastReply.senderType === 'bot' ? botName : l('المتجر', 'Store')}
+                              </span>
+                              {' '}
+                              <span className="text-[#E0E0E0]">{comment.lastReply.text}</span>
+                            </p>
+                            <div className="mt-1 flex items-center gap-3">
+                              <span className="text-[11px] text-[#8E8E8E]">{timeAgo(comment.lastReply.createdAt)}</span>
+                              <span className={cn(
+                                'rounded px-1.5 py-0.5 text-[9px] font-bold uppercase',
+                                comment.lastReply.senderType === 'bot'
+                                  ? 'bg-indigo-500/20 text-indigo-400'
+                                  : 'bg-[#363636] text-[#8E8E8E]',
+                              )}
+                              >
+                                {comment.lastReply.senderType === 'bot' ? 'AI' : l('يدوي', 'Manual')}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Inline Reply Input (Instagram-style) */}
+                      {isReplying && (
+                        <form
+                          onSubmit={e => handleReply(comment, e)}
+                          className={cn('mt-3 flex items-center gap-2', isAr ? 'mr-10' : 'ml-10')}
+                        >
+                          <IgAvatar name={botName} size={24} />
+                          <input
+                            value={replyText}
+                            onChange={e => setReplyText(e.target.value)}
+                            placeholder={lang.replyPlaceholder}
+                            className="h-9 flex-1 rounded-full border border-[#363636] bg-transparent px-3 text-sm text-white outline-none placeholder:text-[#8E8E8E] focus:border-white/30"
+                          />
+                          <button
+                            type="submit"
+                            disabled={!replyText.trim() || sendingReply === comment.messageId || !comment.metaCommentId}
+                            className="text-sm font-bold text-[#0095F6] transition-opacity disabled:opacity-30"
+                          >
+                            {sendingReply === comment.messageId
+                              ? <Loader2 className="size-4 animate-spin" />
+                              : lang.post}
+                          </button>
+                        </form>
+                      )}
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        );
+                  );
+                })}
+              </div>
+            </div>
+          );
+        });
       })()}
     </div>
   );
