@@ -148,18 +148,21 @@ export const GET = async (request: Request) => {
         let igPageToken = accessToken;
         let igPageId = ''; // For direct IG, we might not have a FB Page ID immediately
         let method = 'facebook_login';
+        let igUsername = '';
+        let igProfilePic = '';
 
         if (mode === 'instagram_direct') {
           method = 'instagram_direct';
           igAccountId = tokenResponse.user_id?.toString();
 
-          // If user_id is missing, try fetching it
-          if (!igAccountId) {
-            const igMeRes = await fetch(`https://graph.instagram.com/me?fields=id,username&access_token=${accessToken}`);
-            if (igMeRes.ok) {
-              const igMeData = await igMeRes.json();
+          const igMeRes = await fetch(`https://graph.instagram.com/v21.0/me?fields=id,username,name,profile_picture_url&access_token=${accessToken}`);
+          if (igMeRes.ok) {
+            const igMeData = await igMeRes.json();
+            if (!igAccountId) {
               igAccountId = igMeData.id;
             }
+            igUsername = igMeData.username || '';
+            igProfilePic = igMeData.profile_picture_url || '';
           }
         } else {
           // Instagram via Facebook Login (through Facebook Pages)
@@ -174,11 +177,13 @@ export const GET = async (request: Request) => {
           }
 
           for (const page of pagesData.data) {
-            const igRes = await fetch(`https://graph.facebook.com/v21.0/${page.id}?fields=instagram_business_account&access_token=${page.access_token}`);
+            const igRes = await fetch(`https://graph.facebook.com/v21.0/${page.id}?fields=instagram_business_account{id,username,profile_picture_url}&access_token=${page.access_token}`);
             if (igRes.ok) {
               const igData = await igRes.json();
               if (igData.instagram_business_account) {
                 igAccountId = igData.instagram_business_account.id;
+                igUsername = igData.instagram_business_account.username || '';
+                igProfilePic = igData.instagram_business_account.profile_picture_url || '';
                 igPageToken = page.access_token;
                 igPageId = page.id;
                 break;
@@ -212,7 +217,7 @@ export const GET = async (request: Request) => {
           const integrationData = {
             accessToken: igPageToken,
             providerId: igPageId || igAccountId, // fallback to igAccountId if no FB Page
-            config: JSON.stringify({ igAccountId, method }),
+            config: JSON.stringify({ igAccountId, method, username: igUsername, profilePic: igProfilePic }),
             status: 'active' as const,
             updatedAt: new Date(),
           };

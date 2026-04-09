@@ -34,25 +34,35 @@ export default async function IntegrationsPage(props: { searchParams: Promise<an
   }
 
   // Check specific statuses
-  const isMessengerConnected = integrations.some(i => i.type === 'messenger' && i.status === 'active');
-  const isInstagramConnected = integrations.some(i => i.type === 'instagram' && i.status === 'active');
-  const isWhatsappConnected = integrations.some(i => i.type === 'whatsapp' && i.status === 'active');
+  const messengerIntegration = integrations.find(i => i.type === 'messenger' && i.status === 'active');
+  const instagramIntegration = integrations.find(i => i.type === 'instagram' && i.status === 'active');
+  const whatsappIntegration = integrations.find(i => i.type === 'whatsapp' && i.status === 'active');
+
+  let igProfile = null;
+  if (instagramIntegration?.config) {
+    try {
+      igProfile = JSON.parse(instagramIntegration.config);
+    } catch {
+      // ignore
+    }
+  }
 
   const channels = [
     {
       key: 'instagram',
       name: isAr ? 'إنستجرام (Instagram)' : 'Instagram',
       description: isAr ? 'الرد الآلي على الرسائل المباشرة والتعليقات .' : 'Automated replies for DMs, comments.',
-      status: isInstagramConnected ? 'connected' : 'not_connected',
+      status: instagramIntegration ? 'connected' : 'not_connected',
       icon: Instagram,
       color: 'text-pink-600',
       bg: 'bg-pink-50',
+      profile: igProfile, // Pass the profile info to be displayed
     },
     {
       key: 'messenger',
       name: isAr ? 'ماسنجر (Messenger)' : 'Messenger',
       description: isAr ? 'إدارة رسائل صفحة الفيسبوك الخاصة بك تلقائياً.' : 'Automatically manage your Facebook Page messages.',
-      status: isMessengerConnected ? 'connected' : 'not_connected',
+      status: messengerIntegration ? 'connected' : 'not_connected',
       icon: MessageSquare,
       color: 'text-blue-600',
       bg: 'bg-blue-50',
@@ -61,7 +71,7 @@ export default async function IntegrationsPage(props: { searchParams: Promise<an
       key: 'whatsapp',
       name: isAr ? 'واتساب (WhatsApp)' : 'WhatsApp',
       description: isAr ? 'ربط واجهة Cloud API للردود السريعة  .' : 'Connect Cloud API for quick replies .',
-      status: isWhatsappConnected ? 'connected' : 'not_connected',
+      status: whatsappIntegration ? 'connected' : 'not_connected',
       icon: Phone,
       color: 'text-emerald-600',
       bg: 'bg-emerald-50',
@@ -190,9 +200,23 @@ export default async function IntegrationsPage(props: { searchParams: Promise<an
                 <h3 className="mb-2 flex items-center gap-2 text-xl font-bold">
                   {channel.name}
                 </h3>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  {channel.description}
-                </p>
+                {channel.profile && channel.profile.username
+                  ? (
+                      <div className="mt-2 flex items-center gap-2">
+                        {channel.profile.profilePic && (
+                          <img src={channel.profile.profilePic} alt={channel.profile.username} className="size-8 rounded-full border shadow-sm" />
+                        )}
+                        <span className="text-sm font-semibold text-foreground">
+                          @
+                          {channel.profile.username}
+                        </span>
+                      </div>
+                    )
+                  : (
+                      <p className="text-sm leading-relaxed text-muted-foreground">
+                        {channel.description}
+                      </p>
+                    )}
               </div>
 
               <div className="mt-8 border-t border-dashed pt-6">
