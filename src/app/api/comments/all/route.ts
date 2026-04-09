@@ -12,7 +12,7 @@ export const GET = async (_request: Request) => {
   }
 
   try {
-    // 1. Fetch all incoming comments
+    // 1. Fetch all incoming messages for Instagram that have metadata (likely comments)
     const incomingRows = await db
       .select({
         messageId: messageSchema.id,
@@ -36,7 +36,7 @@ export const GET = async (_request: Request) => {
       ))
       .orderBy(desc(messageSchema.createdAt));
 
-    // 2. Fetch all outgoing replies for the same org (to avoid per-row subqueries in JS loop)
+    // 2. Fetch all outgoing replies for the same org
     const outgoingRows = await db
       .select({
         id: messageSchema.id,
@@ -61,14 +61,11 @@ export const GET = async (_request: Request) => {
       outgoingByConv[row.conversationId]!.push(row);
     });
 
-    // Filter incoming to only those that are actually comments (have commentId in JSON metadata)
+    // Filter incoming to only those that are actually comments (have commentId or mediaId in metadata)
     const filtered = incomingRows.filter((r) => {
       try {
         const meta = JSON.parse(r.metadata || '{}');
-        if (meta.commentId || meta.mediaId) {
-          return true;
-        }
-        return false;
+        return !!(meta.commentId || meta.mediaId);
       } catch {
         return false;
       }
@@ -77,22 +74,25 @@ export const GET = async (_request: Request) => {
     const enriched = filtered.map((r) => {
       const meta = JSON.parse(r.metadata || '{}');
 
-      // Find the latest reply in this conversation that happened AFTER this comment
-      // (Simplified: we assume a reply in the same conv after the comment is related)
+      // Find the reply.
       const convReplies = outgoingByConv[r.conversationId] || [];
-      const latestReply = convReplies.find(rep =>
-        new Date(rep.createdAt) >= new Date(r.createdAt),
+
+      // Since convReplies is desc, we find the one that is after r.createdAt.
+      // We'll use a 5-minute buffer to be very safe against delayed timestamps.
+      // Usually, a reply after a comment in the same conversation is what we want to show.
+      const reply = convReplies.find(rep =>
+        new Date(rep.createdAt).getTime() >= new Date(r.createdAt).getTime() - (5 * 60 * 1000),
       );
 
       return {
         ...r,
         metaMediaId: meta.mediaId,
         metaCommentId: meta.commentId,
-        lastReply: latestReply
+        lastReply: reply
           ? {
-              text: latestReply.text,
-              createdAt: latestReply.createdAt,
-              senderType: latestReply.senderType,
+              text: reply.text,
+              createdAt: reply.createdAt,
+              senderType: reply.senderType,
             }
           : null,
       };
