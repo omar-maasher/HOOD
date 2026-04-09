@@ -158,11 +158,8 @@ export const POST = async (request: Request) => {
           continue;
         }
         try {
-          // Check what the debug_token reveals about this candidate's token
-          // Use Instagram specific app credentials if set
-          const igAppId = process.env.INSTAGRAM_APP_ID || process.env.META_APP_ID;
-          const igAppSecret = process.env.INSTAGRAM_APP_SECRET || process.env.META_APP_SECRET;
-          const debugUrl = `https://graph.facebook.com/v21.0/debug_token?input_token=${candidate.accessToken}&access_token=${igAppId}|${igAppSecret}`;
+          // Use the token itself to debug itself (avoids App Secret mismatch across old/new tokens)
+          const debugUrl = `https://graph.facebook.com/v21.0/debug_token?input_token=${candidate.accessToken}&access_token=${candidate.accessToken}`;
           const debugRes = await fetch(debugUrl);
           const debugData = await debugRes.json();
           logger.warn({ debugData, entryId }, '[WEBHOOK DEBUG] Inspector: Token Dump');
