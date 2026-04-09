@@ -10,6 +10,7 @@ import {
   MessageSquare,
   Reply,
   Send,
+  User,
   Zap,
 } from 'lucide-react';
 import Image from 'next/image';
@@ -37,6 +38,11 @@ type AllCommentItem = {
   isUnread: string | null;
   metaMediaId?: string;
   metaCommentId?: string;
+  lastReply?: {
+    text: string;
+    createdAt: string | Date;
+    senderType: string;
+  } | null;
 };
 
 const Avatar = ({ text, size = 'md' }: { text: string; size?: 'sm' | 'md' | 'lg' | 'xl' }) => {
@@ -305,6 +311,28 @@ export const CommentsClient = ({
                         <p className="mb-6 text-base font-semibold leading-relaxed text-gray-200">
                           {comment.text}
                         </p>
+
+                        {/* Bot Reply Preview */}
+                        {comment.lastReply && (
+                          <div className="mb-6 flex flex-col gap-2 rounded-2xl border border-[#334155]/30 bg-[#1E293B]/30 p-4">
+                            <div className="flex items-center justify-between">
+                              <span className={cn(
+                                'flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-widest',
+                                comment.lastReply.senderType === 'bot' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-[#64748B]/20 text-[#64748B]',
+                              )}
+                              >
+                                {comment.lastReply.senderType === 'bot' ? <Zap size={10} /> : <User size={10} />}
+                                {comment.lastReply.senderType === 'bot' ? botName : (isAr ? 'رد المتجر' : 'STORE REPLY')}
+                              </span>
+                              <span className="text-[9px] font-bold text-[#64748B]">
+                                {format(new Date(comment.lastReply.createdAt), 'p', { locale: l(ar, enUS) })}
+                              </span>
+                            </div>
+                            <p className="text-sm font-semibold text-[#94A3B8]">
+                              {comment.lastReply.text}
+                            </p>
+                          </div>
+                        )}
 
                         <div className="mt-auto flex items-center gap-4 border-t border-white/10 pt-4">
                           <button type="button" className="group flex items-center gap-1.5 text-xs font-bold text-[#64748B] transition-colors hover:text-pink-500">

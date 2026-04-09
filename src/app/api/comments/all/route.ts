@@ -12,7 +12,8 @@ export const GET = async (_request: Request) => {
   }
 
   try {
-    const rows = await db
+    // 1. Fetch all incoming comments
+    const incomingRows = await db
       .select({
         messageId: messageSchema.id,
         conversationId: messageSchema.conversationId,
@@ -35,13 +36,37 @@ export const GET = async (_request: Request) => {
       ))
       .orderBy(desc(messageSchema.createdAt));
 
-    // Filter to only messages that have commentId (meaning they are comments, not just DMs)
-    const filtered = rows.filter((r) => {
+    // 2. Fetch all outgoing replies for the same org (to avoid per-row subqueries in JS loop)
+    const outgoingRows = await db
+      .select({
+        id: messageSchema.id,
+        conversationId: messageSchema.conversationId,
+        text: messageSchema.text,
+        createdAt: messageSchema.createdAt,
+        senderType: messageSchema.senderType,
+      })
+      .from(messageSchema)
+      .where(and(
+        eq(messageSchema.organizationId, orgId),
+        eq(messageSchema.direction, 'outgoing'),
+      ))
+      .orderBy(desc(messageSchema.createdAt));
+
+    // Group outgoing by conversation for faster lookup
+    const outgoingByConv: Record<number, any[]> = {};
+    outgoingRows.forEach((row) => {
+      if (!outgoingByConv[row.conversationId]) {
+        outgoingByConv[row.conversationId] = [];
+      }
+      outgoingByConv[row.conversationId]!.push(row);
+    });
+
+    // Filter incoming to only those that are actually comments (have commentId in JSON metadata)
+    const filtered = incomingRows.filter((r) => {
       try {
         const meta = JSON.parse(r.metadata || '{}');
         if (meta.commentId || meta.mediaId) {
-          // Append extracted info directly
-          return { ...r, metaMediaId: meta.mediaId, metaCommentId: meta.commentId };
+          return true;
         }
         return false;
       } catch {
@@ -51,12 +76,31 @@ export const GET = async (_request: Request) => {
 
     const enriched = filtered.map((r) => {
       const meta = JSON.parse(r.metadata || '{}');
-      return { ...r, metaMediaId: meta.mediaId, metaCommentId: meta.commentId };
+
+      // Find the latest reply in this conversation that happened AFTER this comment
+      // (Simplified: we assume a reply in the same conv after the comment is related)
+      const convReplies = outgoingByConv[r.conversationId] || [];
+      const latestReply = convReplies.find(rep =>
+        new Date(rep.createdAt) >= new Date(r.createdAt),
+      );
+
+      return {
+        ...r,
+        metaMediaId: meta.mediaId,
+        metaCommentId: meta.commentId,
+        lastReply: latestReply
+          ? {
+              text: latestReply.text,
+              createdAt: latestReply.createdAt,
+              senderType: latestReply.senderType,
+            }
+          : null,
+      };
     });
 
     return NextResponse.json({ items: enriched });
   } catch (error) {
-    console.error('Failed to fetch all comments', error);
+    console.error('Failed to fetch all comments with replies', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 };
