@@ -217,7 +217,7 @@ export const CommentsClient = ({
 
   const handleDelete = async (comment: AllCommentItem) => {
     // eslint-disable-next-line no-alert
-    if (!window.confirm(isAr ? 'هل أنت متأكد من حذف هذه المحادثة والتعليق؟' : 'Are you sure you want to delete this conversation and comment?')) {
+    if (!window.confirm(isAr ? 'هل أنت متأكد من حذف هذا التعليق فقط؟' : 'Are you sure you want to delete this specific comment?')) {
       return;
     }
 
@@ -225,11 +225,11 @@ export const CommentsClient = ({
       const res = await fetch('/api/inbox/delete', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversationId: comment.conversationId }),
+        body: JSON.stringify({ messageId: comment.messageId }),
       });
 
       if (res.ok) {
-        setAllComments(prev => prev.filter(c => c.conversationId !== comment.conversationId));
+        setAllComments(prev => prev.filter(c => c.messageId !== comment.messageId));
         setActiveReplyId(null);
       }
     } catch (error) {

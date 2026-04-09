@@ -3,7 +3,7 @@ import { and, eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/DB';
-import { conversationSchema } from '@/models/Schema';
+import { conversationSchema, messageSchema } from '@/models/Schema';
 
 export const DELETE = async (request: Request) => {
   const { orgId } = await auth();
@@ -12,23 +12,33 @@ export const DELETE = async (request: Request) => {
   }
 
   try {
-    const { conversationId } = await request.json();
+    const { messageId, conversationId } = await request.json();
 
-    if (!conversationId) {
-      return new NextResponse('Missing conversationId', { status: 400 });
+    if (messageId) {
+      // Delete specific message/comment
+      await db.delete(messageSchema).where(
+        and(
+          eq(messageSchema.id, messageId),
+          eq(messageSchema.organizationId, orgId),
+        ),
+      );
+      return NextResponse.json({ success: true, mode: 'message' });
     }
 
-    // Delete the conversation. Messages will be deleted via cascade
-    await db.delete(conversationSchema).where(
-      and(
-        eq(conversationSchema.id, conversationId),
-        eq(conversationSchema.organizationId, orgId),
-      ),
-    );
+    if (conversationId) {
+      // Delete the entire conversation with all its messages
+      await db.delete(conversationSchema).where(
+        and(
+          eq(conversationSchema.id, conversationId),
+          eq(conversationSchema.organizationId, orgId),
+        ),
+      );
+      return NextResponse.json({ success: true, mode: 'conversation' });
+    }
 
-    return NextResponse.json({ success: true });
+    return new NextResponse('Missing messageId or conversationId', { status: 400 });
   } catch (error) {
-    console.error('Delete conversation error:', error);
+    console.error('Delete error:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 };
