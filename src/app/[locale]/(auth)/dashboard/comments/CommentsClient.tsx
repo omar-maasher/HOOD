@@ -33,6 +33,7 @@ type AllCommentItem = {
   customerName: string | null;
   externalId: string;
   isUnread: string | null;
+  displayName: string;
   metaMediaId?: string;
   metaCommentId?: string;
   lastReply?: {

@@ -3,7 +3,7 @@ import { and, desc, eq, isNotNull } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/DB';
-import { conversationSchema, messageSchema } from '@/models/Schema';
+import { conversationSchema, leadSchema, messageSchema } from '@/models/Schema';
 
 export const GET = async (_request: Request) => {
   const { orgId } = await auth();
@@ -24,9 +24,14 @@ export const GET = async (_request: Request) => {
         externalId: conversationSchema.externalId,
         platform: conversationSchema.platform,
         isUnread: conversationSchema.isUnread,
+        username: leadSchema.username,
       })
       .from(messageSchema)
       .innerJoin(conversationSchema, eq(messageSchema.conversationId, conversationSchema.id))
+      .leftJoin(leadSchema, and(
+        eq(leadSchema.externalId, conversationSchema.externalId),
+        eq(leadSchema.organizationId, orgId),
+      ))
       .where(and(
         eq(messageSchema.organizationId, orgId),
         eq(conversationSchema.organizationId, orgId),
@@ -61,7 +66,7 @@ export const GET = async (_request: Request) => {
       outgoingByConv[row.conversationId]!.push(row);
     });
 
-    // Filter incoming to only those that are actually comments (have commentId or mediaId in metadata)
+    // Filter incoming to only those that are actually comments
     const filtered = incomingRows.filter((r) => {
       try {
         const meta = JSON.parse(r.metadata || '{}');
@@ -73,19 +78,17 @@ export const GET = async (_request: Request) => {
 
     const enriched = filtered.map((r) => {
       const meta = JSON.parse(r.metadata || '{}');
-
-      // Find the reply.
       const convReplies = outgoingByConv[r.conversationId] || [];
 
-      // Since convReplies is desc, we find the one that is after r.createdAt.
-      // We'll use a 5-minute buffer to be very safe against delayed timestamps.
-      // Usually, a reply after a comment in the same conversation is what we want to show.
-      const reply = convReplies.find(rep =>
+      // We want to find the first reply that occurred AFTER this comment.
+      // Since outgoingByConv is DESC, we look from the end of the array.
+      const reply = [...convReplies].reverse().find(rep =>
         new Date(rep.createdAt).getTime() >= new Date(r.createdAt).getTime() - (5 * 60 * 1000),
       );
 
       return {
         ...r,
+        displayName: r.username || r.customerName || r.externalId,
         metaMediaId: meta.mediaId,
         metaCommentId: meta.commentId,
         lastReply: reply
