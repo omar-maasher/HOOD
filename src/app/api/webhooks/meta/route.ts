@@ -8,6 +8,7 @@ import {
   aiSettingsSchema,
   businessProfileSchema,
   conversationSchema,
+  integrationSchema,
   leadSchema,
   messageSchema,
   organizationSchema,
@@ -129,7 +130,7 @@ export const POST = async (request: Request) => {
 
     // Search for integration by providerId or by config (for Instagram Comments)
     // We MUST ensure the integration belongs to an organization and is ACTIVE
-    const integration = await db.query.integrationSchema.findFirst({
+    let integration = await db.query.integrationSchema.findFirst({
       where: (i, { and: andFn, or, eq: eqFn, ilike }) =>
         andFn(
           eqFn(i.status, 'active'),
@@ -142,13 +143,52 @@ export const POST = async (request: Request) => {
 
     if (!integration) {
       // DEBUG: If not found by entryId, fetch all active integrations of this type to see what we actually have saved
-      const allActiveMeta = await db.query.integrationSchema.findMany({
-        where: (i, { eq: eqFn }) => eqFn(i.status, 'active'),
+      // --- AUTO HEAL: Map App-Scoped ID to Global ID ---
+      const allDirectIg = await db.query.integrationSchema.findMany({
+        where: (i, { and: andFn, eq: eqFn, ilike }) => andFn(
+          eqFn(i.status, 'active'),
+          eqFn(i.type, 'instagram'),
+          ilike(i.config, '%"method":"instagram_direct"%'),
+        ),
       });
-      const availableProviders = allActiveMeta.map(i => ({ type: i.type, providerId: i.providerId, config: i.config }));
 
-      logger.warn({ entryId, availableProviders }, '[WEBHOOK DEBUG] No ACTIVE integration found for this Provider ID. Skipping.');
-      continue;
+      let healed = false;
+      for (const candidate of allDirectIg) {
+        if (!candidate.accessToken) {
+          continue;
+        }
+        try {
+          // Check what the debug_token reveals about this candidate's token
+          const debugUrl = `https://graph.facebook.com/v21.0/debug_token?input_token=${candidate.accessToken}&access_token=${process.env.META_APP_ID}|${process.env.META_APP_SECRET}`;
+          const debugRes = await fetch(debugUrl);
+          const debugData = await debugRes.json();
+
+          const dataNode = debugData.data || {};
+          // The debug token tells us all the target_ids this token can manage
+          const isMatch = dataNode.profile_id === entryId
+            || dataNode.user_id === entryId
+            || (dataNode.granular_scopes && JSON.stringify(dataNode.granular_scopes).includes(entryId));
+
+          if (isMatch) {
+            // Match found! Auto-heal the providerId in DB
+            await db.update(integrationSchema)
+              .set({ providerId: entryId })
+              .where(eq(integrationSchema.id, candidate.id));
+
+            integration = { ...candidate, providerId: entryId };
+            healed = true;
+            logger.info({ entryId, orgId: candidate.organizationId }, '[WEBHOOK DEBUG] Auto-healed Instagram Direct providerId via debug_token!');
+            break;
+          }
+        } catch (e) {
+          logger.error({ error: String(e) }, '[WEBHOOK DEBUG] Error during token debug');
+        }
+      }
+
+      if (!healed) {
+        logger.warn({ entryId }, '[WEBHOOK DEBUG] No ACTIVE integration found for this Provider ID. Skipping.');
+        continue;
+      }
     }
 
     if (!integration) {
