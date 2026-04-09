@@ -158,19 +158,34 @@ export const POST = async (request: Request) => {
           continue;
         }
         try {
-          // Use the token itself to debug itself (avoids App Secret mismatch across old/new tokens)
-          const debugUrl = `https://graph.facebook.com/v21.0/debug_token?input_token=${candidate.accessToken}&access_token=${candidate.accessToken}`;
-          const debugRes = await fetch(debugUrl);
-          const debugData = await debugRes.json();
-          logger.warn({ debugData, entryId }, '[WEBHOOK DEBUG] Inspector: Token Dump');
+          // --- BRUTE FORCE ALIGNMENT: Can this token send a typing indicator to the sender? ---
+          // The messaging payload contains sender.id. We extract it.
+          let customerSenderId = '';
+          if (entry.messaging && entry.messaging.length > 0) {
+            customerSenderId = entry.messaging[0].sender?.id;
+          } else if (entry.standby && entry.standby.length > 0) {
+            customerSenderId = entry.standby[0].sender?.id;
+          }
 
-          const dataNode = debugData.data || {};
-          // The debug token tells us all the target_ids this token can manage
-          const isMatch = dataNode.profile_id === entryId
-            || dataNode.user_id === entryId
-            || (dataNode.granular_scopes && JSON.stringify(dataNode.granular_scopes).includes(entryId));
+          if (!customerSenderId) {
+            continue;
+          }
 
-          if (isMatch) {
+          // Try to send typing_on
+          const testUrl = `https://graph.instagram.com/v21.0/me/messages`;
+          const testRes = await fetch(testUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${candidate.accessToken}`,
+            },
+            body: JSON.stringify({
+              recipient: { id: customerSenderId },
+              sender_action: 'typing_on',
+            }),
+          });
+
+          if (testRes.ok) {
             // Match found! Auto-heal the providerId in DB
             await db.update(integrationSchema)
               .set({ providerId: entryId })
@@ -178,8 +193,11 @@ export const POST = async (request: Request) => {
 
             integration = { ...candidate, providerId: entryId };
             healed = true;
-            logger.info({ entryId, orgId: candidate.organizationId }, '[WEBHOOK DEBUG] Auto-healed Instagram Direct providerId via debug_token!');
+            logger.info({ entryId, orgId: candidate.organizationId }, '[WEBHOOK DEBUG] Auto-healed Instagram Direct providerId via Typing brute-force!');
             break;
+          } else {
+            const err = await testRes.json();
+            logger.warn({ errorMessage: err.error?.message, candidateId: candidate.id }, '[WEBHOOK DEBUG] Typing brute force failed for candidate');
           }
         } catch (e) {
           logger.error({ error: String(e) }, '[WEBHOOK DEBUG] Error during token debug');
