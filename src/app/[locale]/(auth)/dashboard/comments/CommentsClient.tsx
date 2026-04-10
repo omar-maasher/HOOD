@@ -43,6 +43,11 @@ type AllCommentItem = {
     createdAt: string | Date;
     senderType: string;
   } | null;
+  replies?: {
+    text: string;
+    createdAt: string | Date;
+    senderType: string;
+  }[];
 };
 
 // Instagram-style round avatar
@@ -427,42 +432,48 @@ export const CommentsClient = ({
                         </button>
                       </div>
 
-                      {/* Bot Reply (shown as threaded reply — Instagram-style) */}
-                      {comment.lastReply && (
-                        <div className={cn('mt-2 flex gap-3', isAr ? 'mr-10' : 'ml-10')}>
-                          <div className="relative flex shrink-0 items-center justify-center">
-                            <div className={cn(
-                              'absolute -top-4 h-4 w-px',
-                              isAr ? '-right-[13px]' : '-left-[13px]',
-                              'bg-[#363636]',
-                            )}
-                            />
-                            <div className="flex size-6 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 ring-1 ring-black">
-                              {comment.lastReply.senderType === 'bot'
-                                ? <Zap size={10} className="text-white" />
-                                : <span className="text-[8px] font-black text-white">A</span>}
+                      {/* Thread of Replies */}
+                      {comment.replies && comment.replies.length > 0 && (
+                        <div className="flex flex-col">
+                          {comment.replies.map((reply, ridx) => (
+                            <div key={ridx} className={cn('mt-2 flex gap-3', isAr ? 'mr-10' : 'ml-10')}>
+                              <div className="relative flex shrink-0 items-center justify-center">
+                                {/* Thread Line */}
+                                <div className={cn(
+                                  'absolute h-full w-px bg-[#363636]',
+                                  isAr ? '-right-[13px]' : '-left-[13px]',
+                                  ridx === 0 ? '-top-4' : '-top-2',
+                                  ridx === (comment.replies?.length ?? 0) - 1 ? 'h-[20px]' : 'h-[calc(100%+8px)]',
+                                )}
+                                />
+                                <div className="z-10 flex size-6 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 ring-1 ring-black">
+                                  {reply.senderType === 'bot'
+                                    ? <Zap size={10} className="text-white" />
+                                    : <span className="text-[8px] font-black text-white">A</span>}
+                                </div>
+                              </div>
+                              <div className={cn('min-w-0 flex-1', isAr && 'text-right')}>
+                                <div className={cn('flex flex-wrap gap-1.5 text-sm leading-relaxed text-white', isAr ? 'flex-row-reverse' : 'flex-row')}>
+                                  <span className="shrink-0 font-bold text-indigo-400">
+                                    {reply.senderType === 'bot' ? botName : l('المتجر', 'Store')}
+                                  </span>
+                                  <span className="break-words text-[#E0E0E0]">{reply.text}</span>
+                                </div>
+                                <div className="mt-1 flex items-center gap-3">
+                                  <span className="text-[11px] text-[#8E8E8E]">{timeAgo(reply.createdAt)}</span>
+                                  <span className={cn(
+                                    'rounded px-1.5 py-0.5 text-[9px] font-bold uppercase',
+                                    reply.senderType === 'bot'
+                                      ? 'bg-indigo-500/20 text-indigo-400'
+                                      : 'bg-[#363636] text-[#8E8E8E]',
+                                  )}
+                                  >
+                                    {reply.senderType === 'bot' ? 'AI' : l('يدوي', 'Manual')}
+                                  </span>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                          <div className={cn('min-w-0 flex-1', isAr && 'text-right')}>
-                            <div className="flex flex-wrap gap-1.5 text-sm leading-relaxed text-white">
-                              <span className="shrink-0 font-bold text-indigo-400">
-                                {comment.lastReply.senderType === 'bot' ? botName : l('المتجر', 'Store')}
-                              </span>
-                              <span className="break-words text-[#E0E0E0]">{comment.lastReply.text}</span>
-                            </div>
-                            <div className="mt-1 flex items-center gap-3">
-                              <span className="text-[11px] text-[#8E8E8E]">{timeAgo(comment.lastReply.createdAt)}</span>
-                              <span className={cn(
-                                'rounded px-1.5 py-0.5 text-[9px] font-bold uppercase',
-                                comment.lastReply.senderType === 'bot'
-                                  ? 'bg-indigo-500/20 text-indigo-400'
-                                  : 'bg-[#363636] text-[#8E8E8E]',
-                              )}
-                              >
-                                {comment.lastReply.senderType === 'bot' ? 'AI' : l('يدوي', 'Manual')}
-                              </span>
-                            </div>
-                          </div>
+                          ))}
                         </div>
                       )}
 

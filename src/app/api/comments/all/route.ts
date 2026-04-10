@@ -76,28 +76,34 @@ export const GET = async (_request: Request) => {
       }
     });
 
-    const enriched = filtered.map((r) => {
+    const enriched = filtered.map((r, index) => {
       const meta = JSON.parse(r.metadata || '{}');
       const convReplies = outgoingByConv[r.conversationId] || [];
 
-      // We want to find the first reply that occurred AFTER this comment.
-      // Since outgoingByConv is DESC, we look from the end of the array.
-      const reply = [...convReplies].reverse().find(rep =>
-        new Date(rep.createdAt).getTime() >= new Date(r.createdAt).getTime() - (5 * 60 * 1000),
-      );
+      // Find the next incoming comment in the same conversation if it exists
+      const nextIncomingInConv = filtered.slice(0, index).reverse().find(next => next.conversationId === r.conversationId);
+
+      // Filter outgoing messages that belong to this comment thread
+      // For now, any outgoing message in the same conversation that is AFTER this comment
+      // and BEFORE the next incoming comment is considered a reply.
+      const replies = convReplies.filter((rep) => {
+        const repTime = new Date(rep.createdAt).getTime();
+        const rTime = new Date(r.createdAt).getTime();
+        const nextTime = nextIncomingInConv ? new Date(nextIncomingInConv.createdAt).getTime() : Infinity;
+        return repTime >= rTime && repTime < nextTime;
+      }).reverse(); // Reverse back to CHRONOLOGICAL within the thread
 
       return {
         ...r,
         displayName: r.username || r.customerName || r.externalId,
         metaMediaId: meta.mediaId,
         metaCommentId: meta.commentId,
-        lastReply: reply
-          ? {
-              text: reply.text,
-              createdAt: reply.createdAt,
-              senderType: reply.senderType,
-            }
-          : null,
+        replies: replies.map(rep => ({
+          text: rep.text,
+          createdAt: rep.createdAt,
+          senderType: rep.senderType,
+        })),
+        lastReply: replies[replies.length - 1] || null, // For backward compatibility
       };
     });
 
