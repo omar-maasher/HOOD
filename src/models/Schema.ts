@@ -174,6 +174,7 @@ export const aiSettingsSchema = pgTable('ai_settings', {
     .unique()
     .references(() => organizationSchema.id),
   isActive: text('is_active').default('true'), // 'true' | 'false' (using text due to sqlite/pg quirks)
+  isCommentsActive: text('is_comments_active').default('true'),
   botName: text('bot_name').default('مساعد المتجر'),
   systemPrompt: text('system_prompt'),
   tone: text('tone'),

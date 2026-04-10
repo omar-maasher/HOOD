@@ -19,6 +19,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { cn } from '@/utils/Helpers';
 
+import { saveAiSettings } from '../ai-settings/actions';
+
 type PostItem = {
   id: string;
   caption: string;
@@ -74,14 +76,17 @@ export const CommentsClient = ({
   isAr,
   botName,
   initialPostId,
+  aiSettings,
 }: {
   isAr: boolean;
   botName: string;
   initialPostId?: string | null;
+  aiSettings?: any;
 }) => {
   const t = useTranslations('Comments');
 
   const [commentsLoading, setCommentsLoading] = useState(true);
+  const [isBotActive, setIsBotActive] = useState(aiSettings?.isCommentsActive === 'true' || aiSettings?.isCommentsActive === true || !aiSettings);
   const [allComments, setAllComments] = useState<AllCommentItem[]>([]);
   const [postsDict, setPostsDict] = useState<Record<string, PostItem>>({});
   const [searchQuery, setSearchQuery] = useState('');
@@ -133,6 +138,21 @@ export const CommentsClient = ({
       setCommentsLoading(false);
     }
   }, []);
+
+  const handleToggleBot = async () => {
+    const newState = !isBotActive;
+    setIsBotActive(newState);
+    try {
+      await saveAiSettings({
+        ...aiSettings,
+        isActive: aiSettings?.isActive ?? 'true',
+        isCommentsActive: newState ? 'true' : 'false',
+      });
+    } catch (e) {
+      console.error(e);
+      setIsBotActive(!newState);
+    }
+  };
 
   useEffect(() => {
     loadEverything();
@@ -245,10 +265,19 @@ export const CommentsClient = ({
       <div className="sticky top-0 z-20 flex items-center justify-between border-b border-white/10 bg-[#121212]/95 px-4 py-3 backdrop-blur-xl">
         <h1 className="text-base font-bold text-white">{t('title')}</h1>
         <div className="flex items-center gap-3">
-          <span className="flex items-center gap-1 rounded-full bg-[#262626] px-2.5 py-1 text-[10px] font-bold text-[#A8A8A8]">
-            <Zap size={10} className="text-indigo-400" />
-            {botName}
-          </span>
+          <button
+            type="button"
+            onClick={handleToggleBot}
+            className={cn(
+              'flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-bold transition-all border',
+              isBotActive
+                ? 'bg-indigo-500/10 border-indigo-500/50 text-indigo-400'
+                : 'bg-white/5 border-white/10 text-white/40',
+            )}
+          >
+            <Zap size={10} className={cn(isBotActive ? 'text-indigo-400' : 'text-white/20')} />
+            {isBotActive ? botName : l('البوت متوقف', 'Bot Stopped')}
+          </button>
           <button
             type="button"
             onClick={loadEverything}

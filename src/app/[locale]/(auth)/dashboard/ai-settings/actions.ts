@@ -28,6 +28,7 @@ export async function getAiSettings() {
     tone: settings.tone || '',
     escalationRules: settings.escalationRules || '',
     welcomeMessage: settings.welcomeMessage || '',
+    isCommentsActive: settings.isCommentsActive || 'true',
     workingHours: settings.workingHours || { enabled: false, start: '09:00', end: '17:00', outOfHoursMessage: 'عذراً، نحن خارج أوقات العمل حالياً. سنقوم بالرد عليك في أقرب وقت.' },
     antiSpam: settings.antiSpam || { enabled: true, maxMessagesPerWindow: 3, windowMinutes: 5, warningMessage: 'تم استلام طلبك، يرجى الانتظار قليلاً لتجنب تكرار الرسائل.' },
   };
@@ -49,6 +50,7 @@ export async function saveAiSettings(data: any) {
   const values = {
     organizationId: orgId,
     isActive: data.isActive,
+    isCommentsActive: data.isCommentsActive,
     botName: data.botName,
     systemPrompt: data.systemPrompt,
     tone: data.tone,

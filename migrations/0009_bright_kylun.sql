@@ -1,0 +1,1 @@
+ALTER TABLE "ai_settings" ADD COLUMN "is_comments_active" text DEFAULT 'true';

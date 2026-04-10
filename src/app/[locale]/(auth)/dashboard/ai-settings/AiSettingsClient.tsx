@@ -31,6 +31,7 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
 
   const [formData, setFormData] = useState({
     isActive: settings?.isActive ? (settings.isActive === 'true' || settings.isActive === true) : true,
+    isCommentsActive: settings?.isCommentsActive ? (settings.isCommentsActive === 'true' || settings.isCommentsActive === true) : true,
     botName: settings?.botName || 'مساعد المتجر',
     systemPrompt: settings?.systemPrompt || '',
     tone: settings?.tone || 'friendly',
@@ -71,7 +72,11 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
     setIsSaved(false);
 
     try {
-      await saveAiSettings({ ...formData, isActive: formData.isActive ? 'true' : 'false' });
+      await saveAiSettings({
+        ...formData,
+        isActive: formData.isActive ? 'true' : 'false',
+        isCommentsActive: formData.isCommentsActive ? 'true' : 'false',
+      });
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 3000);
     } catch (error) {
@@ -86,10 +91,32 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
     setFormData({ ...formData, isActive: newState });
     setIsLoading(true);
     try {
-      await saveAiSettings({ ...formData, isActive: newState ? 'true' : 'false' });
+      await saveAiSettings({
+        ...formData,
+        isActive: newState ? 'true' : 'false',
+        isCommentsActive: formData.isCommentsActive ? 'true' : 'false',
+      });
     } catch (error) {
       console.error('Failed to save AI settings', error);
       setFormData({ ...formData, isActive: !newState });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleToggleComments = async () => {
+    const newState = !formData.isCommentsActive;
+    setFormData({ ...formData, isCommentsActive: newState });
+    setIsLoading(true);
+    try {
+      await saveAiSettings({
+        ...formData,
+        isActive: formData.isActive ? 'true' : 'false',
+        isCommentsActive: newState ? 'true' : 'false',
+      });
+    } catch (error) {
+      console.error('Failed to save AI settings', error);
+      setFormData({ ...formData, isCommentsActive: !newState });
     } finally {
       setIsLoading(false);
     }
@@ -163,6 +190,27 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
                     </div>
                   </div>
                   <div className="grid gap-6">
+                    {/* Comments Toggle */}
+                    <div className="flex items-center justify-between rounded-2xl border bg-muted/20 p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                          <MessageCircle className="size-5" />
+                        </div>
+                        <div className="flex flex-col text-start">
+                          <span className="text-sm font-bold">الرد التلقائي على التعليقات</span>
+                          <span className="text-xs text-muted-foreground">تفعيل أو إيقاف رد البوت على تعليقات انستقرام</span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleToggleComments}
+                        disabled={isLoading}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 focus:outline-none ${formData.isCommentsActive ? 'bg-primary' : 'bg-gray-300'} ${isLoading ? 'cursor-not-allowed opacity-50' : ''}`}
+                      >
+                        <span className={`inline-block size-4 rounded-full bg-white transition-transform duration-300${formData.isCommentsActive ? 'translate-x-1 rtl:-translate-x-6' : 'translate-x-6 rtl:-translate-x-1'}`} />
+                      </button>
+                    </div>
+
                     <div className="grid gap-2 text-start">
                       <Label htmlFor="botName" className="text-base font-bold">{t('bot_name')}</Label>
                       <Input

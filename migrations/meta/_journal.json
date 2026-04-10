@@ -64,6 +64,13 @@
       "when": 1774853603234,
       "tag": "0008_cloudy_talon",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1775814507308,
+      "tag": "0009_bright_kylun",
+      "breakpoints": true
     }
   ]
 }

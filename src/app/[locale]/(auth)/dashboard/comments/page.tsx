@@ -35,6 +35,7 @@ export default async function CommentsPage(props: { searchParams?: Promise<{ pos
       isAr={locale === 'ar'}
       botName={aiSettings?.botName ?? (locale === 'ar' ? 'مساعد المتجر' : 'Store Assistant')}
       initialPostId={initialPostId}
+      aiSettings={aiSettings}
     />
   );
 }

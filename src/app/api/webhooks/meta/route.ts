@@ -230,7 +230,7 @@ export const POST = async (request: Request) => {
       organizationId: orgId,
       integrationType: integration.type,
       metaAccessToken: integration.accessToken || '',
-      aiConfig: aiSettingsResults[0] || { isActive: 'false' },
+      aiConfig: aiSettingsResults[0] || { isActive: 'false', isCommentsActive: 'true' },
       businessSummary: {
         name: businessProfile?.businessName || '',
         description: businessProfile?.businessDescription || '',
