@@ -383,35 +383,33 @@ export const CommentsClient = ({
                   return (
                     <div key={comment.messageId} className="py-2">
                       {/* Main Comment */}
-                      <div className={cn('flex gap-3', isAr ? 'flex-row-reverse' : 'flex-row')}>
-                        <div className={cn('flex gap-3 w-full', isAr ? 'flex-row-reverse' : 'flex-row')}>
-                          <IgAvatar name={name} size={32} />
-                          <div className={cn('min-w-0 flex-1', isAr && 'text-right')}>
-                            <div className={cn('flex gap-1.5 text-sm leading-relaxed text-white', isAr ? 'flex-row-reverse' : 'flex-row')}>
-                              <span className="shrink-0 font-bold">{name}</span>
-                              <span className="break-words text-[#E0E0E0]">{comment.text}</span>
-                            </div>
-                            <div className={cn('mt-1 flex items-center gap-4', isAr ? 'flex-row-reverse justify-start' : 'flex-row')}>
-                              <span className="text-[11px] text-[#8E8E8E]">{timeAgo(comment.createdAt)}</span>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setActiveReplyId(isReplying ? null : comment.messageId);
-                                  setReplyText('');
-                                }}
-                                className="text-[11px] font-bold text-[#8E8E8E] hover:text-white"
-                              >
-                                {lang.reply}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDelete(comment)}
-                                className="flex items-center gap-1 text-[11px] font-bold text-red-500/60 hover:text-red-500"
-                              >
-                                <Trash2 size={10} />
-                                {lang.delete}
-                              </button>
-                            </div>
+                      <div className="flex w-full gap-3">
+                        <IgAvatar name={name} size={32} />
+                        <div className={cn('min-w-0 flex-1', isAr && 'text-right')}>
+                          <div className="flex flex-wrap gap-1.5 text-sm leading-relaxed text-white">
+                            <span className="shrink-0 font-bold">{name}</span>
+                            <span className="break-words text-[#E0E0E0]">{comment.text}</span>
+                          </div>
+                          <div className="mt-1 flex items-center gap-4">
+                            <span className="text-[11px] text-[#8E8E8E]">{timeAgo(comment.createdAt)}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveReplyId(isReplying ? null : comment.messageId);
+                                setReplyText('');
+                              }}
+                              className="text-[11px] font-bold text-[#8E8E8E] hover:text-white"
+                            >
+                              {lang.reply}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(comment)}
+                              className="flex items-center gap-1 text-[11px] font-bold text-red-500/60 hover:text-red-500"
+                            >
+                              <Trash2 size={10} />
+                              {lang.delete}
+                            </button>
                           </div>
                         </div>
                         <button
@@ -431,7 +429,7 @@ export const CommentsClient = ({
 
                       {/* Bot Reply (shown as threaded reply — Instagram-style) */}
                       {comment.lastReply && (
-                        <div className={cn('mt-2 flex gap-3', isAr ? 'mr-10 flex-row-reverse' : 'ml-10 flex-row')}>
+                        <div className={cn('mt-2 flex gap-3', isAr ? 'mr-10' : 'ml-10')}>
                           <div className="relative flex shrink-0 items-center justify-center">
                             <div className={cn(
                               'absolute -top-4 h-4 w-px',
@@ -446,13 +444,13 @@ export const CommentsClient = ({
                             </div>
                           </div>
                           <div className={cn('min-w-0 flex-1', isAr && 'text-right')}>
-                            <div className={cn('flex gap-1.5 text-sm leading-relaxed text-white', isAr ? 'flex-row-reverse' : 'flex-row')}>
+                            <div className="flex flex-wrap gap-1.5 text-sm leading-relaxed text-white">
                               <span className="shrink-0 font-bold text-indigo-400">
                                 {comment.lastReply.senderType === 'bot' ? botName : l('المتجر', 'Store')}
                               </span>
                               <span className="break-words text-[#E0E0E0]">{comment.lastReply.text}</span>
                             </div>
-                            <div className={cn('mt-1 flex items-center gap-3', isAr && 'flex-row-reverse')}>
+                            <div className="mt-1 flex items-center gap-3">
                               <span className="text-[11px] text-[#8E8E8E]">{timeAgo(comment.lastReply.createdAt)}</span>
                               <span className={cn(
                                 'rounded px-1.5 py-0.5 text-[9px] font-bold uppercase',
@@ -472,17 +470,14 @@ export const CommentsClient = ({
                       {isReplying && (
                         <form
                           onSubmit={e => handleReply(comment, e)}
-                          className={cn('mt-3 flex items-center gap-2', isAr ? 'mr-10 flex-row-reverse' : 'ml-10 flex-row')}
+                          className={cn('mt-3 flex items-center gap-2', isAr ? 'mr-10' : 'ml-10')}
                         >
                           <IgAvatar name={botName} size={24} />
                           <input
                             value={replyText}
                             onChange={e => setReplyText(e.target.value)}
                             placeholder={lang.replyPlaceholder}
-                            className={cn(
-                              'h-9 flex-1 rounded-full border border-[#363636] bg-transparent px-3 text-sm text-white outline-none placeholder:text-[#8E8E8E] focus:border-white/30',
-                              isAr && 'text-right',
-                            )}
+                            className="h-9 flex-1 rounded-full border border-[#363636] bg-transparent px-3 text-sm text-white outline-none placeholder:text-[#8E8E8E] focus:border-white/30"
                           />
                           <button
                             type="submit"
