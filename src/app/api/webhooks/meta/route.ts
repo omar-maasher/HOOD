@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/DB';
@@ -491,9 +491,35 @@ export const POST = async (request: Request) => {
           igAccountId = cfg.igAccountId;
         } catch {}
 
-        // منع التكرار (الصدى): إذا كان الشخص الذي علق هو نفسه صاحب الحساب/البوت
+        // Handling self-comments (e.g., bot replies)
         if (senderId === integration.providerId || (igAccountId && senderId === igAccountId)) {
-          logger.info({ senderId, providerId: integration.providerId, igAccountId }, '[WEBHOOK] Skipping self-comment (echo)');
+          logger.info({ senderId, providerId: integration.providerId, igAccountId }, '[WEBHOOK] processing self-comment (echo) as outgoing');
+
+          processingPromises.push((async () => {
+            const parentId = value?.parent_id;
+            if (parentId) {
+              // Find the original comment to get the conversationId
+              const originalComment = await db.query.messageSchema.findFirst({
+                where: and(
+                  eq(messageSchema.organizationId, orgId),
+                  sql`${messageSchema.metadata}->>'commentId' = ${parentId}`,
+                ),
+              });
+
+              if (originalComment) {
+                await db.insert(messageSchema).values({
+                  organizationId: orgId,
+                  conversationId: originalComment.conversationId,
+                  direction: 'outgoing',
+                  senderType: 'bot',
+                  text,
+                  type: 'text',
+                  metadata: JSON.stringify({ commentId, parentId }),
+                });
+              }
+            }
+            return null;
+          })());
           continue;
         }
 
