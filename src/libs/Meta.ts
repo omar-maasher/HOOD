@@ -26,7 +26,6 @@ const PLATFORM_SCOPES: Record<MetaPlatform, string[]> = {
     'pages_show_list',
     'pages_messaging',
     'pages_read_engagement',
-    'pages_messaging_subscriptions',
     'public_profile',
   ],
   whatsapp: [
@@ -69,8 +68,6 @@ export const getMetaAuthUrl = (state: string, platform?: MetaPlatform, mode?: st
         'instagram_business_basic',
         'instagram_business_manage_messages',
         'instagram_business_manage_comments',
-        'instagram_business_content_publish',
-        'instagram_business_manage_insights',
       ].join(','),
       force_reauth: 'true',
     });
