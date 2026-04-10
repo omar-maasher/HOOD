@@ -387,11 +387,10 @@ export const CommentsClient = ({
                         {/* Avatar on right for Arabic */}
                         <div className={cn('flex gap-3 w-full', isAr ? 'flex-row-reverse' : 'flex-row')}>
                           <div className={cn('min-w-0 flex-1', isAr && 'text-right')}>
-                            <p className="text-sm leading-relaxed text-white">
-                              <span className="font-bold">{name}</span>
-                              {' '}
-                              <span className="text-[#E0E0E0]">{comment.text}</span>
-                            </p>
+                            <div className={cn('flex gap-1.5 text-sm leading-relaxed text-white', isAr ? 'flex-row-reverse' : 'flex-row')}>
+                              <span className="shrink-0 font-bold">{name}</span>
+                              <span className="break-words text-[#E0E0E0]">{comment.text}</span>
+                            </div>
                             <div className={cn('mt-1 flex items-center gap-4', isAr && 'flex-row-reverse')}>
                               <span className="text-[11px] text-[#8E8E8E]">{timeAgo(comment.createdAt)}</span>
                               <button
@@ -435,13 +434,12 @@ export const CommentsClient = ({
                       {comment.lastReply && (
                         <div className={cn('mt-2 flex gap-3', isAr ? 'mr-10 flex-row-reverse' : 'ml-10 flex-row')}>
                           <div className={cn('min-w-0 flex-1', isAr && 'text-right')}>
-                            <p className="text-sm leading-relaxed text-white">
-                              <span className="font-bold text-indigo-400">
+                            <div className={cn('flex gap-1.5 text-sm leading-relaxed text-white', isAr ? 'flex-row-reverse' : 'flex-row')}>
+                              <span className="shrink-0 font-bold text-indigo-400">
                                 {comment.lastReply.senderType === 'bot' ? botName : l('المتجر', 'Store')}
                               </span>
-                              {' '}
-                              <span className="text-[#E0E0E0]">{comment.lastReply.text}</span>
-                            </p>
+                              <span className="break-words text-[#E0E0E0]">{comment.lastReply.text}</span>
+                            </div>
                             <div className="mt-1 flex items-center gap-3">
                               <span className="text-[11px] text-[#8E8E8E]">{timeAgo(comment.lastReply.createdAt)}</span>
                               <span className={cn(
