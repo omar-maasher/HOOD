@@ -383,35 +383,38 @@ export const CommentsClient = ({
                   return (
                     <div key={comment.messageId} className="py-2">
                       {/* Main Comment */}
-                      <div className="flex gap-3">
-                        <IgAvatar name={name} size={32} />
-                        <div className={cn('min-w-0 flex-1', isAr && 'text-right')}>
-                          <p className="text-sm leading-relaxed text-white">
-                            <span className="font-bold">{name}</span>
-                            {' '}
-                            <span className="text-[#E0E0E0]">{comment.text}</span>
-                          </p>
-                          <div className="mt-1 flex items-center gap-4">
-                            <span className="text-[11px] text-[#8E8E8E]">{timeAgo(comment.createdAt)}</span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setActiveReplyId(isReplying ? null : comment.messageId);
-                                setReplyText('');
-                              }}
-                              className="text-[11px] font-bold text-[#8E8E8E] hover:text-white"
-                            >
-                              {lang.reply}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDelete(comment)}
-                              className="flex items-center gap-1 text-[11px] font-bold text-red-500/60 hover:text-red-500"
-                            >
-                              <Trash2 size={10} />
-                              {lang.delete}
-                            </button>
+                      <div className={cn('flex gap-3', isAr ? 'flex-row' : 'flex-row')}>
+                        {/* Avatar on right for Arabic */}
+                        <div className={cn('flex gap-3 w-full', isAr ? 'flex-row-reverse' : 'flex-row')}>
+                          <div className={cn('min-w-0 flex-1', isAr && 'text-right')}>
+                            <p className="text-sm leading-relaxed text-white">
+                              <span className="font-bold">{name}</span>
+                              {' '}
+                              <span className="text-[#E0E0E0]">{comment.text}</span>
+                            </p>
+                            <div className={cn('mt-1 flex items-center gap-4', isAr && 'flex-row-reverse')}>
+                              <span className="text-[11px] text-[#8E8E8E]">{timeAgo(comment.createdAt)}</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveReplyId(isReplying ? null : comment.messageId);
+                                  setReplyText('');
+                                }}
+                                className="text-[11px] font-bold text-[#8E8E8E] hover:text-white"
+                              >
+                                {lang.reply}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDelete(comment)}
+                                className="flex items-center gap-1 text-[11px] font-bold text-red-500/60 hover:text-red-500"
+                              >
+                                <Trash2 size={10} />
+                                {lang.delete}
+                              </button>
+                            </div>
                           </div>
+                          <IgAvatar name={name} size={32} />
                         </div>
                         <button
                           type="button"
@@ -430,20 +433,7 @@ export const CommentsClient = ({
 
                       {/* Bot Reply (shown as threaded reply — Instagram-style) */}
                       {comment.lastReply && (
-                        <div className={cn('mt-2 flex gap-3', isAr ? 'mr-10' : 'ml-10')}>
-                          <div className="relative flex shrink-0 items-center justify-center">
-                            <div className={cn(
-                              'absolute -top-4 h-4 w-px',
-                              isAr ? '-right-[13px]' : '-left-[13px]',
-                              'bg-[#363636]',
-                            )}
-                            />
-                            <div className="flex size-6 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 ring-1 ring-black">
-                              {comment.lastReply.senderType === 'bot'
-                                ? <Zap size={10} className="text-white" />
-                                : <span className="text-[8px] font-black text-white">A</span>}
-                            </div>
-                          </div>
+                        <div className={cn('mt-2 flex gap-3', isAr ? 'mr-10 flex-row-reverse' : 'ml-10 flex-row')}>
                           <div className={cn('min-w-0 flex-1', isAr && 'text-right')}>
                             <p className="text-sm leading-relaxed text-white">
                               <span className="font-bold text-indigo-400">
@@ -465,6 +455,19 @@ export const CommentsClient = ({
                               </span>
                             </div>
                           </div>
+                          <div className="relative flex shrink-0 items-center justify-center">
+                            <div className={cn(
+                              'absolute -top-4 h-4 w-px',
+                              isAr ? '-right-[13px]' : '-left-[13px]',
+                              'bg-[#363636]',
+                            )}
+                            />
+                            <div className="flex size-6 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 ring-1 ring-black">
+                              {comment.lastReply.senderType === 'bot'
+                                ? <Zap size={10} className="text-white" />
+                                : <span className="text-[8px] font-black text-white">A</span>}
+                            </div>
+                          </div>
                         </div>
                       )}
 
@@ -472,14 +475,17 @@ export const CommentsClient = ({
                       {isReplying && (
                         <form
                           onSubmit={e => handleReply(comment, e)}
-                          className={cn('mt-3 flex items-center gap-2', isAr ? 'mr-10' : 'ml-10')}
+                          className={cn('mt-3 flex items-center gap-2', isAr ? 'mr-10 flex-row-reverse' : 'ml-10 flex-row')}
                         >
                           <IgAvatar name={botName} size={24} />
                           <input
                             value={replyText}
                             onChange={e => setReplyText(e.target.value)}
                             placeholder={lang.replyPlaceholder}
-                            className="h-9 flex-1 rounded-full border border-[#363636] bg-transparent px-3 text-sm text-white outline-none placeholder:text-[#8E8E8E] focus:border-white/30"
+                            className={cn(
+                              'h-9 flex-1 rounded-full border border-[#363636] bg-transparent px-3 text-sm text-white outline-none placeholder:text-[#8E8E8E] focus:border-white/30',
+                              isAr && 'text-right',
+                            )}
                           />
                           <button
                             type="submit"
