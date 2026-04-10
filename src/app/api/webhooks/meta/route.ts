@@ -274,11 +274,8 @@ export const POST = async (request: Request) => {
 
       const messageText = event.message?.text || '';
       const hasAttachments = !!(event.message?.attachments && event.message.attachments.length > 0);
-      // Determine platform: prefer integration type if available, fallback to MID detection
-      let platform = integration.type === 'instagram' ? 'instagram' : detectMessagingPlatform(mid);
-      if (integration.type === 'messenger') {
-        platform = 'messenger';
-      }
+      // Detect platform based on MID format
+      const platform = detectMessagingPlatform(mid);
 
       processingPromises.push((async () => {
         try {
@@ -368,18 +365,15 @@ export const POST = async (request: Request) => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              is_hood_platform: true,
-              organizationId: orgId,
+              rawBody: body,
               platform,
               type: msgType,
               senderId,
               username: finalUsername,
               name: finalName,
               message: messageText,
-              text: messageText,
               hasAttachments,
               context,
-              rawBody: body,
             }),
           });
           logger.info({ status: n8nRes.status, platform }, '[WEBHOOK DEBUG] n8n delivery status');
@@ -481,11 +475,9 @@ export const POST = async (request: Request) => {
                   rawBody: body,
                   platform: 'whatsapp',
                   type: msgType,
-                  organizationId: orgId, // Added
                   senderId,
                   name: senderName,
                   message: text,
-                  text, // Added
                   location: isLocation ? msg.location : undefined,
                   context,
                 }),
@@ -632,11 +624,9 @@ export const POST = async (request: Request) => {
                 rawBody: body,
                 platform: 'instagram',
                 eventType: field, // 'comments' or 'mentions'
-                organizationId: orgId, // Added
                 commentId,
                 senderId,
                 username: senderName,
-                message: text, // Added
                 text,
                 context,
               }),
