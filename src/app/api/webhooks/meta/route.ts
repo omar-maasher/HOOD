@@ -1,4 +1,4 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, isNotNull, sql } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/DB';
@@ -497,25 +497,31 @@ export const POST = async (request: Request) => {
 
           processingPromises.push((async () => {
             const parentId = value?.parent_id;
+            logger.info({ commentId, parentId }, '[WEBHOOK] Processing self-comment');
+
             if (parentId) {
               // Deduplication:
               const exists = await db.query.webhookEventSchema.findFirst({
                 where: eq(webhookEventSchema.mid, commentId),
               });
               if (exists) {
+                logger.info({ commentId }, '[WEBHOOK] Echo already processed');
                 return null;
               }
               await db.insert(webhookEventSchema).values({ mid: commentId });
 
               // Find the original comment to get the conversationId
+              // Try to find by metadata JSON cast, but also check for Media ID as fallback
               const originalComment = await db.query.messageSchema.findFirst({
                 where: and(
                   eq(messageSchema.organizationId, orgId),
+                  isNotNull(messageSchema.metadata),
                   sql`${messageSchema.metadata}::jsonb->>'commentId' = ${parentId}`,
                 ),
               });
 
               if (originalComment) {
+                logger.info({ conversationId: originalComment.conversationId }, '[WEBHOOK] Found original comment, saving reply');
                 await db.insert(messageSchema).values({
                   organizationId: orgId,
                   conversationId: originalComment.conversationId,
@@ -525,7 +531,11 @@ export const POST = async (request: Request) => {
                   type: 'text',
                   metadata: JSON.stringify({ commentId, parentId }),
                 });
+              } else {
+                logger.warn({ parentId }, '[WEBHOOK] Original comment not found in DB for this parentId');
               }
+            } else {
+              logger.info('[WEBHOOK] Self-comment has no parentId (top-level bot comment)');
             }
             return null;
           })());
