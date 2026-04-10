@@ -385,7 +385,7 @@ export const CommentsClient = ({
                       {/* Main Comment */}
                       <div className="flex gap-3">
                         <IgAvatar name={name} size={32} />
-                        <div className="min-w-0 flex-1">
+                        <div className={cn('min-w-0 flex-1', isAr && 'text-right')}>
                           <p className="text-sm leading-relaxed text-white">
                             <span className="font-bold">{name}</span>
                             {' '}
@@ -444,7 +444,7 @@ export const CommentsClient = ({
                                 : <span className="text-[8px] font-black text-white">A</span>}
                             </div>
                           </div>
-                          <div className="min-w-0 flex-1">
+                          <div className={cn('min-w-0 flex-1', isAr && 'text-right')}>
                             <p className="text-sm leading-relaxed text-white">
                               <span className="font-bold text-indigo-400">
                                 {comment.lastReply.senderType === 'bot' ? botName : l('المتجر', 'Store')}
