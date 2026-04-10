@@ -47,6 +47,8 @@ type AllCommentItem = {
     text: string;
     createdAt: string | Date;
     senderType: string;
+    displayName?: string;
+    direction?: string;
   }[];
 };
 
@@ -454,8 +456,14 @@ export const CommentsClient = ({
                               </div>
                               <div className={cn('min-w-0 flex-1', isAr && 'text-right')}>
                                 <div className={cn('flex flex-wrap gap-1.5 text-sm leading-relaxed text-white', isAr ? 'flex-row-reverse' : 'flex-row')}>
-                                  <span className="shrink-0 font-bold text-indigo-400">
-                                    {reply.senderType === 'bot' ? botName : l('المتجر', 'Store')}
+                                  <span className={cn(
+                                    'shrink-0 font-bold',
+                                    reply.senderType === 'bot' ? 'text-indigo-400' : (reply.senderType === 'customer' ? 'text-white' : 'text-indigo-400'),
+                                  )}
+                                  >
+                                    {reply.senderType === 'bot'
+                                      ? botName
+                                      : (reply.senderType === 'customer' ? (reply.displayName || 'Customer') : l('المتجر', 'Store'))}
                                   </span>
                                   <span className="break-words text-[#E0E0E0]">{reply.text}</span>
                                 </div>

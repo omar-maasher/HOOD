@@ -67,43 +67,68 @@ export const GET = async (_request: Request) => {
     });
 
     // Filter incoming to only those that are actually comments
-    const filtered = incomingRows.filter((r) => {
+    // 3. Combine and group messages into threads
+    const allMessages = [
+      ...incomingRows.map(r => ({ ...r, direction: 'incoming' })),
+      ...outgoingRows.map(o => ({ ...o, direction: 'outgoing' })),
+    ];
+
+    const childrenByParent: Record<string, any[]> = {};
+    const roots: any[] = [];
+
+    allMessages.forEach((m: any) => {
       try {
-        const meta = JSON.parse(r.metadata || '{}');
-        return !!(meta.commentId || meta.mediaId);
-      } catch {
-        return false;
-      }
+        const meta = JSON.parse(m.metadata || '{}') as { parentId?: string; commentId?: string; mediaId?: string };
+        if (meta.parentId) {
+          if (!childrenByParent[meta.parentId]) {
+            childrenByParent[meta.parentId] = [];
+          }
+          childrenByParent[meta.parentId]?.push(m);
+        } else if (m.direction === 'incoming' && (meta.commentId || meta.mediaId)) {
+          roots.push(m);
+        }
+      } catch {}
     });
 
-    const enriched = filtered.map((r, index) => {
-      const meta = JSON.parse(r.metadata || '{}');
-      const convReplies = outgoingByConv[r.conversationId] || [];
+    roots.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-      // Find the next incoming comment in the same conversation if it exists
-      const nextIncomingInConv = filtered.slice(0, index).reverse().find(next => next.conversationId === r.conversationId);
+    const enriched = roots.map((root) => {
+      const meta = JSON.parse(root.metadata || '{}');
+      const rootId = meta.commentId;
+      const thread: any[] = [];
+      const stack = [rootId];
+      const visited = new Set();
 
-      // Filter outgoing messages that belong to this comment thread
-      // For now, any outgoing message in the same conversation that is AFTER this comment
-      // and BEFORE the next incoming comment is considered a reply.
-      const replies = convReplies.filter((rep) => {
-        const repTime = new Date(rep.createdAt).getTime();
-        const rTime = new Date(r.createdAt).getTime();
-        const nextTime = nextIncomingInConv ? new Date(nextIncomingInConv.createdAt).getTime() : Infinity;
-        return repTime >= rTime && repTime < nextTime;
-      }).reverse(); // Reverse back to CHRONOLOGICAL within the thread
+      while (stack.length > 0) {
+        const pid = stack.pop();
+        if (!pid || visited.has(pid)) {
+          continue;
+        }
+        visited.add(pid);
+        const children = (childrenByParent[pid] || []).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        children.forEach((child) => {
+          thread.push({
+            text: child.text,
+            createdAt: child.createdAt,
+            senderType: child.senderType || (child.direction === 'incoming' ? 'customer' : 'agent'),
+            displayName: (child as any).username || (child as any).customerName || (child as any).externalId,
+          });
+          const childMeta = JSON.parse(child.metadata || '{}') as { commentId?: string };
+          if (childMeta.commentId) {
+            stack.push(childMeta.commentId);
+          }
+        });
+      }
+
+      thread.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
       return {
-        ...r,
-        displayName: r.username || r.customerName || r.externalId,
+        ...root,
+        displayName: root.username || root.customerName || root.externalId,
         metaMediaId: meta.mediaId,
         metaCommentId: meta.commentId,
-        replies: replies.map(rep => ({
-          text: rep.text,
-          createdAt: rep.createdAt,
-          senderType: rep.senderType,
-        })),
-        lastReply: replies[replies.length - 1] || null, // For backward compatibility
+        replies: thread,
+        lastReply: thread[thread.length - 1] || null,
       };
     });
 

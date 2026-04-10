@@ -481,6 +481,7 @@ export const POST = async (request: Request) => {
       // 2. Instagram Comments / Mentions
       if (field === 'comments' || field === 'mentions') {
         const commentId = value?.id || `CMT_${Date.now()}`;
+        const parentId = value?.parent_id;
         const senderId = value?.from?.id as string;
         const senderName = value?.from?.username || value?.from?.name;
         const text = value?.text || value?.message || '';
@@ -589,7 +590,7 @@ export const POST = async (request: Request) => {
                 senderType: 'customer',
                 text,
                 type: 'text', // Comments are text
-                metadata: JSON.stringify({ commentId, mediaId }),
+                metadata: JSON.stringify({ commentId, mediaId, parentId }),
               });
             }
 
