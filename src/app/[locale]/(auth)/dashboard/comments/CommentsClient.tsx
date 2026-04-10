@@ -11,6 +11,7 @@ import {
   RefreshCw,
   Send,
   Trash2,
+  User,
   Zap,
 } from 'lucide-react';
 import Image from 'next/image';
@@ -448,10 +449,16 @@ export const CommentsClient = ({
                                   ridx === (comment.replies?.length ?? 0) - 1 ? 'h-[20px]' : 'h-[calc(100%+8px)]',
                                 )}
                                 />
-                                <div className="z-10 flex size-6 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 ring-1 ring-black">
+                                <div className={cn(
+                                  'z-10 flex size-6 items-center justify-center rounded-full ring-1 ring-black',
+                                  reply.senderType === 'bot'
+                                    ? 'bg-gradient-to-br from-indigo-500 to-purple-600'
+                                    : (reply.senderType === 'customer' ? 'bg-[#363636]' : 'bg-gradient-to-br from-indigo-500 to-purple-600'),
+                                )}
+                                >
                                   {reply.senderType === 'bot'
                                     ? <Zap size={10} className="text-white" />
-                                    : <span className="text-[8px] font-black text-white">A</span>}
+                                    : (reply.senderType === 'customer' ? <User size={10} className="text-white/60" /> : <span className="text-[8px] font-black text-white">A</span>)}
                                 </div>
                               </div>
                               <div className={cn('min-w-0 flex-1', isAr && 'text-right')}>
@@ -473,10 +480,12 @@ export const CommentsClient = ({
                                     'rounded px-1.5 py-0.5 text-[9px] font-bold uppercase',
                                     reply.senderType === 'bot'
                                       ? 'bg-indigo-500/20 text-indigo-400'
-                                      : 'bg-[#363636] text-[#8E8E8E]',
+                                      : (reply.senderType === 'customer' ? 'bg-white/10 text-white/60' : 'bg-[#363636] text-[#8E8E8E]'),
                                   )}
                                   >
-                                    {reply.senderType === 'bot' ? 'AI' : l('يدوي', 'Manual')}
+                                    {reply.senderType === 'bot'
+                                      ? 'AI'
+                                      : (reply.senderType === 'customer' ? l('عميل', 'User') : l('يدوي', 'Manual'))}
                                   </span>
                                 </div>
                               </div>
