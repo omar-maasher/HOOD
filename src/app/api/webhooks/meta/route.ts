@@ -274,8 +274,11 @@ export const POST = async (request: Request) => {
 
       const messageText = event.message?.text || '';
       const hasAttachments = !!(event.message?.attachments && event.message.attachments.length > 0);
-      // Detect platform based on MID format
-      const platform = detectMessagingPlatform(mid);
+      // Determine platform: prefer integration type if available, fallback to MID detection
+      let platform = integration.type === 'instagram' ? 'instagram' : detectMessagingPlatform(mid);
+      if (integration.type === 'messenger') {
+        platform = 'messenger';
+      }
 
       processingPromises.push((async () => {
         try {
@@ -365,17 +368,18 @@ export const POST = async (request: Request) => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              rawBody: body,
+              is_hood_platform: true,
+              organizationId: orgId,
               platform,
               type: msgType,
-              organizationId: orgId, // Added for easier access
               senderId,
               username: finalUsername,
               name: finalName,
               message: messageText,
-              text: messageText, // Providing both for consistency
+              text: messageText,
               hasAttachments,
               context,
+              rawBody: body,
             }),
           });
           logger.info({ status: n8nRes.status, platform }, '[WEBHOOK DEBUG] n8n delivery status');
