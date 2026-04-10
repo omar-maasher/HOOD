@@ -12,6 +12,7 @@ import {
   leadSchema,
   messageSchema,
   organizationSchema,
+  productSchema,
   webhookEventSchema,
 } from '@/models/Schema';
 
@@ -226,6 +227,10 @@ export const POST = async (request: Request) => {
       where: eq(businessProfileSchema.organizationId, orgId),
     });
 
+    const products = await db.query.productSchema.findMany({
+      where: eq(productSchema.organizationId, orgId),
+    });
+
     const context = {
       organizationId: orgId,
       integrationType: integration.type,
@@ -240,6 +245,20 @@ export const POST = async (request: Request) => {
         deliveryPricePerKm: businessProfile?.deliveryPricePerKm || '',
         isDeliveryEnabled: businessProfile?.isDeliveryEnabled || 'false',
       },
+      products: products.map(p => ({
+        name: p.name,
+        price: p.price,
+        currency: p.currency,
+        description: p.description,
+        category: p.category,
+      })),
+      systemInstructions: `
+        - You are ${aiSettingsResults[0]?.botName || 'Store Assistant'}.
+        - The user is interacting via Instagram Comments.
+        - Public comments should be helpful, concise, and professional.
+        - If the user asks about prices, use the provided product list.
+        - Use a ${aiSettingsResults[0]?.tone || 'friendly'} tone.
+      `,
     };
 
     // معالجة Messenger / Instagram

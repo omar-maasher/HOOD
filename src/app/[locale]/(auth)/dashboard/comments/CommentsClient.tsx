@@ -376,7 +376,7 @@ export const CommentsClient = ({
               {/* ─── Comments List (Instagram-style) ─── */}
               <div className="flex flex-col gap-0 px-4 pb-3">
                 {comments.map((comment) => {
-                  const name = comment.customerName || comment.externalId;
+                  const name = comment.displayName || comment.externalId;
                   const isLiked = likedComments.has(comment.messageId);
                   const isReplying = activeReplyId === comment.messageId;
 
