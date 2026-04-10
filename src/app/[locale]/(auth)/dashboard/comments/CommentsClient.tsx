@@ -470,7 +470,7 @@ export const CommentsClient = ({
                                   >
                                     {reply.senderType === 'bot'
                                       ? botName
-                                      : (reply.senderType === 'customer' ? (reply.displayName || 'Customer') : l('المتجر', 'Store'))}
+                                      : (reply.senderType === 'customer' ? (reply.displayName || 'Customer') : l('أنت', 'You'))}
                                   </span>
                                   <span className="break-words text-[#E0E0E0]">{reply.text}</span>
                                 </div>
