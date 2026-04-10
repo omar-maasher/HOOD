@@ -67,68 +67,106 @@ export const GET = async (_request: Request) => {
     });
 
     // Filter incoming to only those that are actually comments
-    // 3. Combine and group messages into threads
-    const allMessages = [
+    // 3. Separate Roots from Replies
+    const roots: any[] = [];
+    const allMessages: any[] = [
       ...incomingRows.map(r => ({ ...r, direction: 'incoming' })),
       ...outgoingRows.map(o => ({ ...o, direction: 'outgoing' })),
     ];
 
+    // Create a lookup for children by parentId
     const childrenByParent: Record<string, any[]> = {};
-    const roots: any[] = [];
+    const unlinkedOutgoing: Record<number, any[]> = {}; // by conversationId
 
-    allMessages.forEach((m: any) => {
+    allMessages.forEach((m) => {
       try {
-        const meta = JSON.parse(m.metadata || '{}') as { parentId?: string; commentId?: string; mediaId?: string };
+        const meta = JSON.parse(m.metadata || '{}');
         if (meta.parentId) {
           if (!childrenByParent[meta.parentId]) {
             childrenByParent[meta.parentId] = [];
           }
           childrenByParent[meta.parentId]?.push(m);
         } else if (m.direction === 'incoming' && (meta.commentId || meta.mediaId)) {
-          roots.push(m);
+          // If it HAS a parentId, it's a reply (incoming), so don't show as root
+          if (!meta.parentId) {
+            roots.push(m);
+          }
+        } else if (m.direction === 'outgoing' && !meta.parentId) {
+          // Fallback for bot replies that didn't get a parentId linked
+          if (!unlinkedOutgoing[m.conversationId]) {
+            unlinkedOutgoing[m.conversationId] = [];
+          }
+          unlinkedOutgoing[m.conversationId]?.push(m);
         }
       } catch {}
     });
 
+    // Sort roots newest first
     roots.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-    const enriched = roots.map((root) => {
-      const meta = JSON.parse(root.metadata || '{}');
-      const rootId = meta.commentId;
+    const enriched = roots.map((root, index) => {
+      const rootMeta = JSON.parse(root.metadata || '{}');
+      const rootId = rootMeta.commentId;
       const thread: any[] = [];
-      const stack = [rootId];
       const visited = new Set();
 
+      // Recursive/Stack-based collection of linked replies
+      const stack = [rootId];
       while (stack.length > 0) {
         const pid = stack.pop();
         if (!pid || visited.has(pid)) {
           continue;
         }
         visited.add(pid);
-        const children = (childrenByParent[pid] || []).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+        const children = childrenByParent[pid] || [];
         children.forEach((child) => {
+          const childMeta = JSON.parse(child.metadata || '{}');
           thread.push({
             text: child.text,
             createdAt: child.createdAt,
             senderType: child.senderType || (child.direction === 'incoming' ? 'customer' : 'agent'),
-            displayName: (child as any).username || (child as any).customerName || (child as any).externalId,
+            displayName: child.username || child.customerName || child.externalId,
           });
-          const childMeta = JSON.parse(child.metadata || '{}') as { commentId?: string };
           if (childMeta.commentId) {
             stack.push(childMeta.commentId);
           }
         });
       }
 
+      // FALLBACK: Add unlinked outgoing messages that happened shortly after this comment
+      // but before the next root in the same conversation
+      const nextRootInConv = roots.slice(0, index).reverse().find(next => next.conversationId === root.conversationId);
+      const startTime = new Date(root.createdAt).getTime();
+      const endTime = nextRootInConv ? new Date(nextRootInConv.createdAt).getTime() : Infinity;
+
+      const extra = (unlinkedOutgoing[root.conversationId] || []).filter((m) => {
+        const t = new Date(m.createdAt).getTime();
+        return t >= startTime && t < endTime;
+      });
+
+      extra.forEach((m) => {
+        thread.push({
+          text: m.text,
+          createdAt: m.createdAt,
+          senderType: m.senderType || 'agent',
+          displayName: m.username || m.customerName || m.externalId,
+        });
+      });
+
+      // Final chronological sort
       thread.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+      // Deduplicate thread (in case of double matching)
+      const uniqueThread = thread.filter((v, i, a) => a.findIndex(t => (t.text === v.text && t.createdAt === v.createdAt)) === i);
 
       return {
         ...root,
         displayName: root.username || root.customerName || root.externalId,
-        metaMediaId: meta.mediaId,
-        metaCommentId: meta.commentId,
-        replies: thread,
-        lastReply: thread[thread.length - 1] || null,
+        metaMediaId: rootMeta.mediaId,
+        metaCommentId: rootId,
+        replies: uniqueThread,
+        lastReply: uniqueThread[uniqueThread.length - 1] || null,
       };
     });
 
