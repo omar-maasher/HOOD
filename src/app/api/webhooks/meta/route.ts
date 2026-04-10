@@ -368,10 +368,12 @@ export const POST = async (request: Request) => {
               rawBody: body,
               platform,
               type: msgType,
+              organizationId: orgId, // Added for easier access
               senderId,
               username: finalUsername,
               name: finalName,
               message: messageText,
+              text: messageText, // Providing both for consistency
               hasAttachments,
               context,
             }),
@@ -475,9 +477,11 @@ export const POST = async (request: Request) => {
                   rawBody: body,
                   platform: 'whatsapp',
                   type: msgType,
+                  organizationId: orgId, // Added
                   senderId,
                   name: senderName,
                   message: text,
+                  text, // Added
                   location: isLocation ? msg.location : undefined,
                   context,
                 }),
@@ -624,9 +628,11 @@ export const POST = async (request: Request) => {
                 rawBody: body,
                 platform: 'instagram',
                 eventType: field, // 'comments' or 'mentions'
+                organizationId: orgId, // Added
                 commentId,
                 senderId,
                 username: senderName,
+                message: text, // Added
                 text,
                 context,
               }),
