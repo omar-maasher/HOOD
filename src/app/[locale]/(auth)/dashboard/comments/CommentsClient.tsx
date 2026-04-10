@@ -462,7 +462,7 @@ export const CommentsClient = ({
                                 </div>
                               </div>
                               <div className={cn('min-w-0 flex-1', isAr && 'text-right')}>
-                                <div className={cn('flex flex-wrap gap-1.5 text-sm leading-relaxed text-white', isAr ? 'flex-row-reverse' : 'flex-row')}>
+                                <div className="flex flex-wrap gap-1.5 text-sm leading-relaxed text-white">
                                   <span className={cn(
                                     'shrink-0 font-bold',
                                     reply.senderType === 'bot' ? 'text-indigo-400' : (reply.senderType === 'customer' ? 'text-white' : 'text-indigo-400'),
