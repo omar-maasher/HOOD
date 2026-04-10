@@ -166,6 +166,9 @@ export const POST = async (request: Request) => {
             customerSenderId = entry.messaging[0].sender?.id;
           } else if (entry.standby && entry.standby.length > 0) {
             customerSenderId = entry.standby[0].sender?.id;
+          } else if (changes && changes.length > 0) {
+            // For Comments/Mentions
+            customerSenderId = changes[0].value?.from?.id;
           }
 
           if (!customerSenderId) {
