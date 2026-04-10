@@ -346,6 +346,12 @@ export const POST = async (request: Request) => {
             return null; // Do not send bot's own replies back to n8n to prevent loops
           }
 
+          const isActive = (context.aiConfig as any).isActive !== 'false';
+          if (!isActive) {
+            logger.info({ orgId, platform }, '[WEBHOOK] Bot messages are disabled, skipping n8n forward');
+            return null;
+          }
+
           const targetUrl = n8nUrls[platform] || process.env.N8N_WEBHOOK_URL;
           if (!targetUrl) {
             logger.warn({ platform, mid }, '[WEBHOOK DEBUG] No N8N URL found for this platform or globally');
@@ -449,6 +455,12 @@ export const POST = async (request: Request) => {
                   type: msgType,
                   metadata: mid,
                 });
+              }
+
+              const isActive = (context.aiConfig as any).isActive !== 'false';
+              if (!isActive) {
+                logger.info({ orgId }, '[WEBHOOK] Bot WhatsApp messages are disabled, skipping n8n forward');
+                return null;
               }
 
               const targetUrl = n8nUrls.whatsapp;
@@ -592,6 +604,12 @@ export const POST = async (request: Request) => {
                 type: 'text', // Comments are text
                 metadata: JSON.stringify({ commentId, mediaId, parentId }),
               });
+            }
+
+            const isCommentsActive = (context.aiConfig as any).isCommentsActive !== 'false';
+            if (!isCommentsActive) {
+              logger.info({ orgId }, '[WEBHOOK] Bot comments are disabled, skipping n8n forward');
+              return null;
             }
 
             const targetUrl = n8nUrls.instagram;
