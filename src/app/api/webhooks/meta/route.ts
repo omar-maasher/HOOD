@@ -349,13 +349,16 @@ export const POST = async (request: Request) => {
             return null; // Do not send bot's own replies back to n8n to prevent loops
           }
 
-          const isActive = (context.aiConfig as any).isActive !== 'false';
+          // Ensure platform is set correctly for routing if it's an Instagram integration
+          const finalPlatform = integration.type === 'instagram' ? 'instagram' : platform;
+
+          const isActive = String((context.aiConfig as any).isActive) !== 'false';
           if (!isActive) {
-            logger.info({ orgId, platform }, '[WEBHOOK] Bot messages are disabled, skipping n8n forward');
+            logger.info({ orgId, finalPlatform }, '[WEBHOOK FB] Bot is INACTIVE, skipping n8n');
             return null;
           }
 
-          const targetUrl = n8nUrls[platform] || process.env.N8N_WEBHOOK_URL;
+          const targetUrl = n8nUrls[finalPlatform] || process.env.N8N_WEBHOOK_URL;
           if (!targetUrl) {
             logger.warn({ platform, mid }, '[WEBHOOK DEBUG] No N8N URL found for this platform or globally');
             return null;
@@ -363,13 +366,13 @@ export const POST = async (request: Request) => {
 
           const msgType = hasAttachments && event.message?.attachments?.[0]?.type === 'audio' ? 'audio' : 'text';
 
-          logger.info({ targetUrl, platform, senderId }, '[WEBHOOK DEBUG] Forwarding to n8n...');
+          logger.info({ targetUrl, finalPlatform, senderId }, '[WEBHOOK DEBUG] Forwarding to n8n...');
           const n8nRes = await fetch(targetUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               rawBody: body,
-              platform,
+              platform: finalPlatform,
               type: msgType,
               senderId,
               username: finalUsername,
@@ -379,7 +382,7 @@ export const POST = async (request: Request) => {
               context,
             }),
           });
-          logger.info({ status: n8nRes.status, platform }, '[WEBHOOK DEBUG] n8n delivery status');
+          logger.info({ status: n8nRes.status, finalPlatform }, '[WEBHOOK DEBUG] n8n delivery status');
           return n8nRes;
         } catch (e) {
           logger.error('Messenger/IG forward error', e);
