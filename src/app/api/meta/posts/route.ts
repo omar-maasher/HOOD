@@ -31,10 +31,12 @@ export const GET = async (request: Request) => {
       }
 
       let igAccountId: string | undefined;
+      let isDirectLogin = false;
       if (integration.config) {
         try {
           const cfg = JSON.parse(integration.config);
           igAccountId = cfg?.igAccountId?.toString?.();
+          isDirectLogin = cfg?.method === 'instagram_direct';
         } catch {
           // ignore
         }
@@ -49,7 +51,7 @@ export const GET = async (request: Request) => {
         return NextResponse.json({ items: [], error: 'INSTAGRAM_ACCOUNT_MISSING' }, { status: 400 });
       }
 
-      const items = await getInstagramMediaList(igAccountId, integration.accessToken, limit);
+      const items = await getInstagramMediaList(igAccountId, integration.accessToken, limit, isDirectLogin);
       return NextResponse.json({ items });
     }
 

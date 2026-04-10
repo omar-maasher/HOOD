@@ -742,10 +742,12 @@ export async function getInstagramMediaList(
   igAccountId: string,
   accessToken: string,
   limit = 24,
+  isDirectLogin: boolean = false,
 ): Promise<MetaPostListItem[]> {
   try {
     const fields = 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp';
-    const url = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${igAccountId}/media?fields=${fields}&limit=${limit}&access_token=${accessToken}`;
+    const baseUrl = isDirectLogin ? 'https://graph.instagram.com' : 'https://graph.facebook.com';
+    const url = `${baseUrl}/${META_CONFIG.graphVersion}/${igAccountId}/media?fields=${fields}&limit=${limit}&access_token=${accessToken}`;
     const response = await fetch(url);
     const data = await response.json();
 
