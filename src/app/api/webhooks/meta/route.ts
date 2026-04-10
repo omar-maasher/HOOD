@@ -498,11 +498,20 @@ export const POST = async (request: Request) => {
           processingPromises.push((async () => {
             const parentId = value?.parent_id;
             if (parentId) {
+              // Deduplication:
+              const exists = await db.query.webhookEventSchema.findFirst({
+                where: eq(webhookEventSchema.mid, commentId),
+              });
+              if (exists) {
+                return null;
+              }
+              await db.insert(webhookEventSchema).values({ mid: commentId });
+
               // Find the original comment to get the conversationId
               const originalComment = await db.query.messageSchema.findFirst({
                 where: and(
                   eq(messageSchema.organizationId, orgId),
-                  sql`${messageSchema.metadata}->>'commentId' = ${parentId}`,
+                  sql`${messageSchema.metadata}::jsonb->>'commentId' = ${parentId}`,
                 ),
               });
 
