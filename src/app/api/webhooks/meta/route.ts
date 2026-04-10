@@ -371,15 +371,17 @@ export const POST = async (request: Request) => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              rawBody: body,
+              organizationId: orgId,
               platform: finalPlatform,
+              message: messageText,
+              text: messageText,
               type: msgType,
               senderId,
               username: finalUsername,
               name: finalName,
-              message: messageText,
               hasAttachments,
               context,
+              rawBody: body,
             }),
           });
           logger.info({ status: n8nRes.status, finalPlatform }, '[WEBHOOK DEBUG] n8n delivery status');
@@ -478,14 +480,16 @@ export const POST = async (request: Request) => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                  rawBody: body,
+                  organizationId: orgId,
                   platform: 'whatsapp',
+                  message: text,
+                  text,
                   type: msgType,
                   senderId,
                   name: senderName,
-                  message: text,
                   location: isLocation ? msg.location : undefined,
                   context,
+                  rawBody: body,
                 }),
               });
             } catch (e) {
@@ -627,14 +631,16 @@ export const POST = async (request: Request) => {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                rawBody: body,
+                organizationId: orgId,
                 platform: 'instagram',
                 eventType: field, // 'comments' or 'mentions'
+                message: text,
+                text,
                 commentId,
                 senderId,
                 username: senderName,
-                text,
                 context,
+                rawBody: body,
               }),
             });
           } catch (e) {
