@@ -594,199 +594,203 @@ export default function BookingsClient({ initialBookings, products }: { initialB
             </Card>
           )}
 
-      {filteredBookings.length === 0
-        ? (
-            <div className="rounded-[2.5rem] border bg-card p-12 text-center shadow-sm">
-              <div className="mx-auto mb-6 flex size-20 items-center justify-center rounded-[2rem] bg-muted/30 text-muted-foreground">
-                <Calendar className="size-10" />
-              </div>
-              <h3 className="text-2xl font-black">{isAr ? 'لا توجد حجوزات' : 'No bookings'}</h3>
-              <p className="mt-2 text-sm font-medium text-muted-foreground">
-                {isAr ? 'ابدأ بإنشاء حجز جديد أو انتظر الحجوزات القادمة من التكاملات.' : 'Create a new booking or wait for bookings from integrations.'}
-              </p>
-            </div>
-          )
-        : (
-            <>
-              <div className="grid grid-cols-1 gap-4 md:hidden">
-                {filteredBookings.map((b) => {
-                  const cart = (b.cart || []) as CartItem[];
-                  const cartPreview = cart.slice(0, 2).map((item) => {
-                    const prod = products.find(p => p.id?.toString() === item.productId?.toString());
-                    return prod ? `${item.quantity}x ${prod.name}` : null;
-                  }).filter(Boolean) as string[];
+      {view !== 'calendar' && (
+        <>
+          {filteredBookings.length === 0
+            ? (
+                <div className="rounded-[2.5rem] border bg-card p-12 text-center shadow-sm">
+                  <div className="mx-auto mb-6 flex size-20 items-center justify-center rounded-[2rem] bg-muted/30 text-muted-foreground">
+                    <Calendar className="size-10" />
+                  </div>
+                  <h3 className="text-2xl font-black">{isAr ? 'لا توجد حجوزات' : 'No bookings'}</h3>
+                  <p className="mt-2 text-sm font-medium text-muted-foreground">
+                    {isAr ? 'ابدأ بإنشاء حجز جديد أو انتظر الحجوزات القادمة من التكاملات.' : 'Create a new booking or wait for bookings from integrations.'}
+                  </p>
+                </div>
+              )
+            : (
+                <>
+                  <div className="grid grid-cols-1 gap-4 md:hidden">
+                    {filteredBookings.map((b) => {
+                      const cart = (b.cart || []) as CartItem[];
+                      const cartPreview = cart.slice(0, 2).map((item) => {
+                        const prod = products.find(p => p.id?.toString() === item.productId?.toString());
+                        return prod ? `${item.quantity}x ${prod.name}` : null;
+                      }).filter(Boolean) as string[];
 
-                  return (
-                    <Card key={b.id} className="rounded-[2rem] border-white/20 bg-card/80 shadow-lg shadow-gray-200/20 backdrop-blur-md">
-                      <CardContent className="p-6">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-center gap-3">
-                            <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                              <User className="size-6" />
-                            </div>
-                            <div>
-                              <div className="text-base font-black">{b.customerName}</div>
-                              <div className="mt-0.5 text-xs font-semibold text-muted-foreground" dir="ltr">
-                                {b.contactInfo || '-'}
-                                {b.socialUsername ? ` • @${b.socialUsername}` : ''}
-                              </div>
-                            </div>
-                          </div>
-                          <input
-                            type="checkbox"
-                            className="mt-1 size-5 cursor-pointer rounded-md border-gray-300 accent-primary"
-                            checked={selectedBookingIds.includes(b.id)}
-                            onChange={e => toggleSelectOne(b.id, e.target.checked)}
-                          />
-                        </div>
-
-                        <div className="mt-4 flex flex-wrap items-center gap-2">
-                          {statusPill(b.status, isAr)}
-                          <span className="inline-flex items-center gap-2 rounded-full bg-muted/30 px-3 py-1 text-[11px] font-black text-foreground/80">
-                            <Calendar className="size-3.5 text-primary/70" />
-                            <span dir="ltr">{format(new Date(b.bookingDate), 'PPp', { locale: isAr ? arSA : undefined })}</span>
-                          </span>
-                        </div>
-
-                        {(b.serviceDetails || cartPreview.length > 0) && (
-                          <div className="mt-4 rounded-2xl bg-muted/20 p-4">
-                            <div className="text-xs font-black uppercase tracking-wider text-muted-foreground">{isAr ? 'التفاصيل' : 'Details'}</div>
-                            <div className="mt-1 text-sm font-semibold text-foreground/90">
-                              {b.serviceDetails ? b.serviceDetails : cartPreview.join(' • ')}
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="mt-5 flex items-center justify-between gap-2">
-                          <span className="text-xs font-bold text-muted-foreground">{relativeDate(b.bookingDate)}</span>
-                          <div className="flex items-center gap-2">
-                            <Button variant="outline" className="h-10 rounded-xl px-4 font-black" onClick={() => openEdit(b)}>
-                              <Edit className={`size-4 ${isAr ? 'ml-2' : 'mr-2'}`} />
-                              {isAr ? 'تعديل' : 'Edit'}
-                            </Button>
-                            <Button variant="destructive" className="h-10 rounded-xl px-4 font-black" onClick={() => handleDeleteOne(b.id)}>
-                              <Trash2 className={`size-4 ${isAr ? 'ml-2' : 'mr-2'}`} />
-                              {isAr ? 'حذف' : 'Delete'}
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-
-              <div className="hidden overflow-hidden rounded-[2.5rem] border bg-card shadow-[0_20px_50px_rgba(0,0,0,0.06)] md:block">
-                <div className="min-w-[980px]">
-                  <Table>
-                    <TableHeader className="border-b bg-muted/10">
-                      <TableRow className="border-none hover:bg-transparent">
-                        <TableHead className="w-12 px-6 py-5">
-                          <input
-                            type="checkbox"
-                            className="size-5 cursor-pointer rounded-md border-gray-300 accent-primary"
-                            checked={filteredBookings.length > 0 && selectedBookingIds.length === filteredBookings.length}
-                            onChange={e => toggleSelectAll(e.target.checked)}
-                          />
-                        </TableHead>
-                        <TableHead className="px-4 py-5 text-sm font-black uppercase tracking-widest">{isAr ? 'العميل' : 'Customer'}</TableHead>
-                        <TableHead className="px-6 py-5 text-sm font-black uppercase tracking-widest">{isAr ? 'المنتجات' : 'Products'}</TableHead>
-                        <TableHead className="px-6 py-5 text-sm font-black uppercase tracking-widest">{isAr ? 'التفاصيل' : 'Details'}</TableHead>
-                        <TableHead className="px-6 py-5 text-sm font-black uppercase tracking-widest">{isAr ? 'الموعد' : 'Date'}</TableHead>
-                        <TableHead className="px-6 py-5 text-sm font-black uppercase tracking-widest">{isAr ? 'الحالة' : 'Status'}</TableHead>
-                        <TableHead className="px-8 py-5 text-end text-sm font-black uppercase tracking-widest">{isAr ? 'إجراءات' : 'Actions'}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredBookings.map(b => (
-                        <TableRow
-                          key={b.id}
-                          className={`group cursor-pointer border-b transition-colors last:border-0 hover:bg-muted/5 ${selectedBookingIds.includes(b.id) ? 'bg-primary/5' : ''}`}
-                          onClick={() => openEdit(b)}
-                        >
-                          <TableCell className="px-6 py-5" onClick={e => e.stopPropagation()}>
-                            <input
-                              type="checkbox"
-                              className="size-5 cursor-pointer rounded-md border-gray-300 accent-primary"
-                              checked={selectedBookingIds.includes(b.id)}
-                              onChange={e => toggleSelectOne(b.id, e.target.checked)}
-                            />
-                          </TableCell>
-                          <TableCell className="px-4 py-5">
-                            <div className="flex items-center gap-4">
-                              <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-transform group-hover:scale-105">
-                                <User className="size-6" />
-                              </div>
-                              <div className="min-w-0">
-                                <div className="truncate text-base font-black">{b.customerName}</div>
-                                <div className="mt-0.5 truncate text-xs font-semibold text-muted-foreground" dir="ltr">
-                                  {b.contactInfo || '-'}
-                                  {b.socialUsername ? ` • @${b.socialUsername}` : ''}
+                      return (
+                        <Card key={b.id} className="rounded-[2rem] border-white/20 bg-card/80 shadow-lg shadow-gray-200/20 backdrop-blur-md">
+                          <CardContent className="p-6">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex items-center gap-3">
+                                <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                                  <User className="size-6" />
+                                </div>
+                                <div>
+                                  <div className="text-base font-black">{b.customerName}</div>
+                                  <div className="mt-0.5 text-xs font-semibold text-muted-foreground" dir="ltr">
+                                    {b.contactInfo || '-'}
+                                    {b.socialUsername ? ` • @${b.socialUsername}` : ''}
+                                  </div>
                                 </div>
                               </div>
+                              <input
+                                type="checkbox"
+                                className="mt-1 size-5 cursor-pointer rounded-md border-gray-300 accent-primary"
+                                checked={selectedBookingIds.includes(b.id)}
+                                onChange={e => toggleSelectOne(b.id, e.target.checked)}
+                              />
                             </div>
-                          </TableCell>
-                          <TableCell className="px-6 py-5">
-                            <div className="flex max-w-[280px] flex-wrap gap-1.5">
-                              {(b.cart || []).length > 0
-                                ? (b.cart || []).map((item: any) => {
-                                    const prod = products.find(p => p.id?.toString() === item.productId?.toString());
-                                    if (!prod) {
-                                      return null;
-                                    }
-                                    return (
-                                      <span key={`${b.id}-${item.productId}`} className="rounded-full border border-primary/10 bg-primary/5 px-3 py-1 text-xs font-black text-primary">
-                                        {item.quantity}
-                                        x
-                                        {prod.name}
-                                      </span>
-                                    );
-                                  })
-                                : <span className="text-sm font-semibold italic text-muted-foreground">{isAr ? 'عام' : 'General'}</span>}
+
+                            <div className="mt-4 flex flex-wrap items-center gap-2">
+                              {statusPill(b.status, isAr)}
+                              <span className="inline-flex items-center gap-2 rounded-full bg-muted/30 px-3 py-1 text-[11px] font-black text-foreground/80">
+                                <Calendar className="size-3.5 text-primary/70" />
+                                <span dir="ltr">{format(new Date(b.bookingDate), 'PPp', { locale: isAr ? arSA : undefined })}</span>
+                              </span>
                             </div>
-                          </TableCell>
-                          <TableCell className="px-6 py-5">
-                            <div className="max-w-[240px] truncate text-sm font-semibold text-foreground/80" title={b.serviceDetails || ''}>
-                              {b.serviceDetails || '-'}
-                            </div>
-                          </TableCell>
-                          <TableCell className="px-6 py-5">
-                            <div className="flex flex-col">
-                              <div className="flex items-center gap-2 text-sm font-black text-foreground/90">
-                                <Calendar className="size-4 text-primary/70" />
-                                <span dir="ltr">{format(new Date(b.bookingDate), isAr ? 'dd/MM/yyyy • hh:mm a' : 'PPp', { locale: isAr ? arSA : undefined })}</span>
+
+                            {(b.serviceDetails || cartPreview.length > 0) && (
+                              <div className="mt-4 rounded-2xl bg-muted/20 p-4">
+                                <div className="text-xs font-black uppercase tracking-wider text-muted-foreground">{isAr ? 'التفاصيل' : 'Details'}</div>
+                                <div className="mt-1 text-sm font-semibold text-foreground/90">
+                                  {b.serviceDetails ? b.serviceDetails : cartPreview.join(' • ')}
+                                </div>
                               </div>
-                              <span className="mt-1 text-xs font-bold text-muted-foreground">{relativeDate(b.bookingDate)}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="px-6 py-5">{statusPill(b.status, isAr)}</TableCell>
-                          <TableCell className="px-8 py-5 text-end" onClick={e => e.stopPropagation()}>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="size-10 rounded-2xl transition-colors hover:bg-muted">
-                                  <MoreHorizontal className="size-5" />
+                            )}
+
+                            <div className="mt-5 flex items-center justify-between gap-2">
+                              <span className="text-xs font-bold text-muted-foreground">{relativeDate(b.bookingDate)}</span>
+                              <div className="flex items-center gap-2">
+                                <Button variant="outline" className="h-10 rounded-xl px-4 font-black" onClick={() => openEdit(b)}>
+                                  <Edit className={`size-4 ${isAr ? 'ml-2' : 'mr-2'}`} />
+                                  {isAr ? 'تعديل' : 'Edit'}
                                 </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="min-w-[210px] rounded-2xl p-2">
-                                <DropdownMenuItem className="cursor-pointer gap-3 rounded-xl py-3 text-base font-black" onClick={() => openEdit(b)}>
-                                  <Edit className="size-5" />
-                                  {isAr ? 'تعديل الحجز' : 'Edit booking'}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="cursor-pointer gap-3 rounded-xl py-3 text-base font-black text-rose-600 focus:text-rose-600" onClick={() => handleDeleteOne(b.id)}>
-                                  <Trash2 className="size-5" />
+                                <Button variant="destructive" className="h-10 rounded-xl px-4 font-black" onClick={() => handleDeleteOne(b.id)}>
+                                  <Trash2 className={`size-4 ${isAr ? 'ml-2' : 'mr-2'}`} />
                                   {isAr ? 'حذف' : 'Delete'}
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-            </>
-          )}
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+
+                  <div className="hidden overflow-hidden rounded-[2.5rem] border bg-card shadow-[0_20px_50px_rgba(0,0,0,0.06)] md:block">
+                    <div className="min-w-[980px]">
+                      <Table>
+                        <TableHeader className="border-b bg-muted/10">
+                          <TableRow className="border-none hover:bg-transparent">
+                            <TableHead className="w-12 px-6 py-5">
+                              <input
+                                type="checkbox"
+                                className="size-5 cursor-pointer rounded-md border-gray-300 accent-primary"
+                                checked={filteredBookings.length > 0 && selectedBookingIds.length === filteredBookings.length}
+                                onChange={e => toggleSelectAll(e.target.checked)}
+                              />
+                            </TableHead>
+                            <TableHead className="px-4 py-5 text-sm font-black uppercase tracking-widest">{isAr ? 'العميل' : 'Customer'}</TableHead>
+                            <TableHead className="px-6 py-5 text-sm font-black uppercase tracking-widest">{isAr ? 'المنتجات' : 'Products'}</TableHead>
+                            <TableHead className="px-6 py-5 text-sm font-black uppercase tracking-widest">{isAr ? 'التفاصيل' : 'Details'}</TableHead>
+                            <TableHead className="px-6 py-5 text-sm font-black uppercase tracking-widest">{isAr ? 'الموعد' : 'Date'}</TableHead>
+                            <TableHead className="px-6 py-5 text-sm font-black uppercase tracking-widest">{isAr ? 'الحالة' : 'Status'}</TableHead>
+                            <TableHead className="px-8 py-5 text-end text-sm font-black uppercase tracking-widest">{isAr ? 'إجراءات' : 'Actions'}</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredBookings.map(b => (
+                            <TableRow
+                              key={b.id}
+                              className={`group cursor-pointer border-b transition-colors last:border-0 hover:bg-muted/5 ${selectedBookingIds.includes(b.id) ? 'bg-primary/5' : ''}`}
+                              onClick={() => openEdit(b)}
+                            >
+                              <TableCell className="px-6 py-5" onClick={e => e.stopPropagation()}>
+                                <input
+                                  type="checkbox"
+                                  className="size-5 cursor-pointer rounded-md border-gray-300 accent-primary"
+                                  checked={selectedBookingIds.includes(b.id)}
+                                  onChange={e => toggleSelectOne(b.id, e.target.checked)}
+                                />
+                              </TableCell>
+                              <TableCell className="px-4 py-5">
+                                <div className="flex items-center gap-4">
+                                  <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-transform group-hover:scale-105">
+                                    <User className="size-6" />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="truncate text-base font-black">{b.customerName}</div>
+                                    <div className="mt-0.5 truncate text-xs font-semibold text-muted-foreground" dir="ltr">
+                                      {b.contactInfo || '-'}
+                                      {b.socialUsername ? ` • @${b.socialUsername}` : ''}
+                                    </div>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell className="px-6 py-5">
+                                <div className="flex max-w-[280px] flex-wrap gap-1.5">
+                                  {(b.cart || []).length > 0
+                                    ? (b.cart || []).map((item: any) => {
+                                        const prod = products.find(p => p.id?.toString() === item.productId?.toString());
+                                        if (!prod) {
+                                          return null;
+                                        }
+                                        return (
+                                          <span key={`${b.id}-${item.productId}`} className="rounded-full border border-primary/10 bg-primary/5 px-3 py-1 text-xs font-black text-primary">
+                                            {item.quantity}
+                                            x
+                                            {prod.name}
+                                          </span>
+                                        );
+                                      })
+                                    : <span className="text-sm font-semibold italic text-muted-foreground">{isAr ? 'عام' : 'General'}</span>}
+                                </div>
+                              </TableCell>
+                              <TableCell className="px-6 py-5">
+                                <div className="max-w-[240px] truncate text-sm font-semibold text-foreground/80" title={b.serviceDetails || ''}>
+                                  {b.serviceDetails || '-'}
+                                </div>
+                              </TableCell>
+                              <TableCell className="px-6 py-5">
+                                <div className="flex flex-col">
+                                  <div className="flex items-center gap-2 text-sm font-black text-foreground/90">
+                                    <Calendar className="size-4 text-primary/70" />
+                                    <span dir="ltr">{format(new Date(b.bookingDate), isAr ? 'dd/MM/yyyy • hh:mm a' : 'PPp', { locale: isAr ? arSA : undefined })}</span>
+                                  </div>
+                                  <span className="mt-1 text-xs font-bold text-muted-foreground">{relativeDate(b.bookingDate)}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="px-6 py-5">{statusPill(b.status, isAr)}</TableCell>
+                              <TableCell className="px-8 py-5 text-end" onClick={e => e.stopPropagation()}>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="size-10 rounded-2xl transition-colors hover:bg-muted">
+                                      <MoreHorizontal className="size-5" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="min-w-[210px] rounded-2xl p-2">
+                                    <DropdownMenuItem className="cursor-pointer gap-3 rounded-xl py-3 text-base font-black" onClick={() => openEdit(b)}>
+                                      <Edit className="size-5" />
+                                      {isAr ? 'تعديل الحجز' : 'Edit booking'}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem className="cursor-pointer gap-3 rounded-xl py-3 text-base font-black text-rose-600 focus:text-rose-600" onClick={() => handleDeleteOne(b.id)}>
+                                      <Trash2 className="size-5" />
+                                      {isAr ? 'حذف' : 'Delete'}
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                </>
+              )}
+        </>
+      )}
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-2 backdrop-blur-md sm:p-4">
