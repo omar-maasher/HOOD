@@ -192,12 +192,12 @@ export default function BookingsClient({ initialBookings, products }: { initialB
     });
   }, [bookings, products, searchQuery, statusFilter]);
 
-  const openCreate = () => {
+  const openCreate = (defaultDate?: string) => {
     setEditingBookingId(null);
     setFormData({
       customerName: '',
       contactInfo: '',
-      bookingDate: format(new Date(), 'yyyy-MM-dd\'T\'HH:mm'),
+      bookingDate: defaultDate ? `${defaultDate}T09:00` : format(new Date(), 'yyyy-MM-dd\'T\'HH:mm'),
       status: 'upcoming',
       notes: '',
       source: 'whatsapp',
@@ -387,7 +387,7 @@ export default function BookingsClient({ initialBookings, products }: { initialB
                 <span className="hidden sm:inline">{isAr ? 'تقويم' : 'Calendar'}</span>
               </Button>
             </div>
-            <Button onClick={openCreate} className="h-14 w-full rounded-2xl px-7 text-base font-black shadow-xl shadow-primary/25 transition-transform active:scale-[0.98] sm:w-auto">
+            <Button onClick={() => openCreate()} className="h-14 w-full rounded-2xl px-7 text-base font-black shadow-xl shadow-primary/25 transition-transform active:scale-[0.98] sm:w-auto">
               <Plus className={`size-5 ${isAr ? 'ml-2' : 'mr-2'}`} />
               {isAr ? 'حجز جديد' : 'New booking'}
             </Button>
@@ -1029,13 +1029,26 @@ export default function BookingsClient({ initialBookings, products }: { initialB
                   <CalendarDays className="size-6" />
                 </div>
                 <div>
-                  <CardTitle className="text-xl font-black">{isAr ? `أجندة يوم ${selectedDay}` : `Agenda for ${selectedDay}`}</CardTitle>
+                  <CardTitle className="text-xl font-black">{isAr ? `مواعيد يوم ${selectedDay}` : `Bookings for ${selectedDay}`}</CardTitle>
                   <p className="text-xs font-bold text-muted-foreground">{isAr ? 'عرض كافة الحجوزات لهذا اليوم' : 'All bookings for this day'}</p>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" className="rounded-2xl" onClick={() => setSelectedDay(null)}>
-                <X className="size-6" />
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  className="h-11 rounded-2xl font-black"
+                  onClick={() => {
+                    const date = selectedDay;
+                    setSelectedDay(null);
+                    openCreate(date);
+                  }}
+                >
+                  <Plus className={`size-4 ${isAr ? 'ml-2' : 'mr-2'}`} />
+                  {isAr ? 'حجز جديد' : 'New booking'}
+                </Button>
+                <Button variant="ghost" size="icon" className="size-11 rounded-2xl" onClick={() => setSelectedDay(null)}>
+                  <X className="size-6" />
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="overflow-y-auto p-0">
               <div className="divide-y">
