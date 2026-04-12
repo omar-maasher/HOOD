@@ -4,6 +4,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { arSA } from 'date-fns/locale';
 import {
   Calendar,
+  CalendarDays,
   CheckCircle2,
   Clock,
   Edit,
@@ -61,6 +62,8 @@ type Booking = {
   source?: string | null;
   socialUsername?: string | null;
   serviceDetails?: string | null;
+  doctorName?: string | null;
+  serviceType?: string | null;
   cart?: CartItem[] | null;
 };
 
@@ -145,8 +148,12 @@ export default function BookingsClient({ initialBookings, products }: { initialB
     source: 'whatsapp',
     socialUsername: '',
     serviceDetails: '',
+    doctorName: '',
+    serviceType: '',
     cart: [] as Array<{ productId: string; quantity: string }>,
   });
+
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
   const [currentProduct, setCurrentProduct] = useState({ id: '', quantity: '1' });
 
@@ -191,6 +198,8 @@ export default function BookingsClient({ initialBookings, products }: { initialB
       source: 'whatsapp',
       socialUsername: '',
       serviceDetails: '',
+      doctorName: '',
+      serviceType: '',
       cart: [],
     });
     setCurrentProduct({ id: '', quantity: '1' });
@@ -208,6 +217,8 @@ export default function BookingsClient({ initialBookings, products }: { initialB
       source: booking.source || 'whatsapp',
       socialUsername: booking.socialUsername || '',
       serviceDetails: booking.serviceDetails || '',
+      doctorName: booking.doctorName || '',
+      serviceType: booking.serviceType || '',
       cart: ((booking.cart || []) as CartItem[]).map(i => ({ productId: i.productId?.toString?.() ?? `${i.productId}`, quantity: `${i.quantity}` })),
     });
     setCurrentProduct({ id: '', quantity: '1' });
@@ -609,7 +620,7 @@ export default function BookingsClient({ initialBookings, products }: { initialB
                             <div className="flex flex-col">
                               <div className="flex items-center gap-2 text-sm font-black text-foreground/90">
                                 <Calendar className="size-4 text-primary/70" />
-                                <span dir="ltr">{format(new Date(b.bookingDate), 'PPp', { locale: isAr ? arSA : undefined })}</span>
+                                <span dir="ltr">{format(new Date(b.bookingDate), isAr ? 'dd/MM/yyyy • hh:mm a' : 'PPp', { locale: isAr ? arSA : undefined })}</span>
                               </div>
                               <span className="mt-1 text-xs font-bold text-muted-foreground">{relativeDate(b.bookingDate)}</span>
                             </div>
@@ -817,6 +828,27 @@ export default function BookingsClient({ initialBookings, products }: { initialB
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label className="text-sm font-black">{isAr ? 'المسؤول / مقدم الخدمة' : 'Provider / Specialist'}</Label>
+                  <Input
+                    value={formData.doctorName}
+                    onChange={e => setFormData({ ...formData, doctorName: e.target.value })}
+                    className="h-12 rounded-2xl"
+                    placeholder={isAr ? 'مثال: فلان، أو اسم الموظف' : 'e.g. Employee name'}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label className="text-sm font-black">{isAr ? 'نوع الخدمة / الطلب' : 'Service Type / Inquiry'}</Label>
+                  <Input
+                    value={formData.serviceType}
+                    onChange={e => setFormData({ ...formData, serviceType: e.target.value })}
+                    className="h-12 rounded-2xl"
+                    placeholder={isAr ? 'مثال: صيانة، حجز موعد، إلخ' : 'e.g. Repair, Appointment, etc.'}
+                  />
+                </div>
+              </div>
+
               <div className="grid gap-2">
                 <Label className="text-sm font-black">{isAr ? 'تفاصيل الخدمة' : 'Service details'}</Label>
                 <Textarea
@@ -847,6 +879,78 @@ export default function BookingsClient({ initialBookings, products }: { initialB
               </div>
             </form>
           </div>
+        </div>
+      )}
+      {/* Day Agenda Modal */}
+      {selectedDay && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <Card className="max-h-[85vh] w-full max-w-3xl overflow-hidden rounded-[2.5rem] shadow-2xl">
+            <CardHeader className="flex flex-row items-center justify-between border-b px-8 py-6">
+              <div className="flex items-center gap-3">
+                <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <CalendarDays className="size-6" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl font-black">{isAr ? `أجندة يوم ${selectedDay}` : `Agenda for ${selectedDay}`}</CardTitle>
+                  <p className="text-xs font-bold text-muted-foreground">{isAr ? 'عرض كافة الحجوزات لهذا اليوم' : 'All bookings for this day'}</p>
+                </div>
+              </div>
+              <Button variant="ghost" size="icon" className="rounded-2xl" onClick={() => setSelectedDay(null)}>
+                <X className="size-6" />
+              </Button>
+            </CardHeader>
+            <CardContent className="overflow-y-auto p-0">
+              <div className="divide-y">
+                {bookings
+                  .filter(b => format(new Date(b.bookingDate), 'yyyy-MM-dd') === selectedDay)
+                  .sort((a, b) => new Date(a.bookingDate).getTime() - new Date(b.bookingDate).getTime())
+                  .map(b => (
+                    <div key={b.id} className="group relative flex items-center justify-between p-6 transition-colors hover:bg-muted/30">
+                      <div className="flex items-start gap-4">
+                        <div className="mt-1 flex flex-col items-center">
+                          <div className="text-sm font-black text-primary" dir="ltr">{format(new Date(b.bookingDate), 'hh:mm a')}</div>
+                          <div className="h-full w-0.5 bg-primary/20 group-last:hidden"></div>
+                        </div>
+                        <div>
+                          <p className="text-base font-black">{b.customerName}</p>
+                          <div className="mt-1 flex flex-wrap gap-2">
+                            {statusPill(b.status, isAr)}
+                            {b.doctorName && (
+                              <Badge variant="outline" className="rounded-full border-primary/20 bg-primary/5 font-bold text-primary">
+                                {isAr ? 'المسؤول:' : 'Staff:'}
+                                {' '}
+                                {b.doctorName}
+                              </Badge>
+                            )}
+                          </div>
+                          {b.serviceDetails && (
+                            <p className="mt-2 line-clamp-2 text-sm font-medium text-muted-foreground">{b.serviceDetails}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="size-10 rounded-xl"
+                          onClick={() => {
+                            setSelectedDay(null);
+                            openEdit(b);
+                          }}
+                        >
+                          <Edit className="size-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                {bookings.filter(b => format(new Date(b.bookingDate), 'yyyy-MM-dd') === selectedDay).length === 0 && (
+                  <div className="py-20 text-center">
+                    <p className="font-bold text-muted-foreground">{isAr ? 'لا توجد حجوزات في هذا اليوم' : 'No bookings on this day'}</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

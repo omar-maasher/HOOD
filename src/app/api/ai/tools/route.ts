@@ -64,7 +64,7 @@ export const POST = async (request: Request) => {
 
       // --- BOOKING TOOLS ---
       case 'create_booking': {
-        const { customerName, contactInfo, bookingDate, source, socialUsername, notes } = params;
+        const { customerName, contactInfo, bookingDate, source, socialUsername, notes, doctorName, serviceType } = params;
         const serviceDetails = params.serviceDetails || params.details || ''; // قبول المسميين لضمان وصول البيانات
 
         const [newBooking] = await db.insert(bookingSchema).values({
@@ -72,6 +72,8 @@ export const POST = async (request: Request) => {
           customerName,
           contactInfo,
           serviceDetails,
+          doctorName,
+          serviceType,
           bookingDate: new Date(bookingDate || Date.now()),
           source: source || 'ai_bot',
           socialUsername,

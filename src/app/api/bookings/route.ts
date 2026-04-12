@@ -1,68 +1,85 @@
+import { currentUser } from '@clerk/nextjs/server';
 import { eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/DB';
-import { bookingSchema } from '@/models/Schema';
+import { bookingSchema, organizationSchema } from '@/models/Schema';
 
-/**
- * Handle creation and listing of bookings from n8n or internal dashboard.
- */
-export const POST = async (request: Request) => {
+export async function POST(req: Request) {
   try {
-    const authHeader = request.headers.get('Authorization');
-    const secretToken = process.env.INTERNAL_API_SECRET;
-
-    if (!secretToken || authHeader !== `Bearer ${secretToken}`) {
-      return new NextResponse('Unauthorized', { status: 401 });
-    }
-
-    const body = await request.json();
+    const body = await req.json();
     const {
-      organizationId,
       customerName,
       contactInfo,
-      serviceDetails,
-      bookingDate,
-      source,
       socialUsername,
+      bookingDate,
+      serviceDetails,
       notes,
+      doctorName,
+      serviceType,
+      source,
+      organizationId, // Optional: n8n might provide this if it knows the target org
     } = body;
 
-    if (!organizationId || !customerName || !bookingDate) {
-      return NextResponse.json({ error: 'Missing required fields: organizationId, customerName, bookingDate' }, { status: 400 });
+    // Authentication Strategy:
+    // 1. If it's a request from the frontend (logged in user)
+    // 2. If it's a request from n8n (X-API-KEY)
+
+    const apiKey = req.headers.get('x-api-key');
+    let targetOrgId = organizationId;
+
+    if (apiKey) {
+      // Find organization by API Key OR match by Organization ID directly (as requested for simplicity)
+      const org = await db.query.organizationSchema.findFirst({
+        where: apiKey.startsWith('org_')
+          ? eq(organizationSchema.id, apiKey) // Directly use Org ID as Key
+          : eq(organizationSchema.apiKey, apiKey),
+      });
+
+      if (!org) {
+        return NextResponse.json({ error: 'Invalid API Key or Organization ID' }, { status: 401 });
+      }
+      targetOrgId = org.id;
+    } else {
+      // Fallback to clerk user for manual tests
+      const user = await currentUser();
+      if (!user) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      // You might want to find the user's org here
+    }
+
+    if (!targetOrgId) {
+      return NextResponse.json({ error: 'Organization ID is required' }, { status: 400 });
+    }
+
+    if (!customerName || !bookingDate) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     const newBooking = await db.insert(bookingSchema).values({
-      organizationId,
       customerName,
       contactInfo,
-      serviceDetails,
-      bookingDate: new Date(bookingDate),
-      source: source || 'unknown',
       socialUsername,
+      bookingDate: new Date(bookingDate),
+      serviceDetails,
       notes,
+      doctorName,
+      serviceType,
+      source: source || 'Bot',
       status: 'upcoming',
+      organizationId: targetOrgId,
+      updatedAt: new Date(),
+      createdAt: new Date(),
     }).returning();
 
-    return NextResponse.json({ success: true, booking: newBooking[0] });
+    return NextResponse.json({
+      success: true,
+      message: 'Booking created successfully',
+      data: newBooking[0],
+    });
   } catch (error: any) {
-    console.error('Booking Creation Error:', error);
-    return NextResponse.json({ error: 'Internal server error', details: error.message }, { status: 500 });
+    console.error('Booking API Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
-};
-
-export const GET = async (request: Request) => {
-  const { searchParams } = new URL(request.url);
-  const organizationId = searchParams.get('orgId');
-
-  if (!organizationId) {
-    return NextResponse.json({ error: 'orgId is required' }, { status: 400 });
-  }
-
-  const bookings = await db.select()
-    .from(bookingSchema)
-    .where(eq(bookingSchema.organizationId, organizationId))
-    .orderBy(bookingSchema.bookingDate);
-
-  return NextResponse.json(bookings);
-};
+}

@@ -36,6 +36,7 @@ export const organizationSchema = pgTable(
       'stripe_subscription_current_period_end',
       { mode: 'number' },
     ),
+    apiKey: text('api_key').unique(),
     updatedAt: timestamp('updated_at', { mode: 'date' })
       .defaultNow()
       .$onUpdate(() => new Date())
@@ -159,6 +160,8 @@ export const bookingSchema = pgTable('booking', {
   status: text('status').default('upcoming').notNull(), // 'upcoming' | 'completed' | 'cancelled'
   source: text('source').default('whatsapp'), // 'whatsapp' | 'instagram' | 'facebook' | 'manual' | etc
   socialUsername: text('social_username'),
+  doctorName: text('doctor_name'), // For clinics/consultants
+  serviceType: text('service_type'), // e.g., Consultation, Surgery, Follow-up
   notes: text('notes'),
   updatedAt: timestamp('updated_at', { mode: 'date' })
     .defaultNow()

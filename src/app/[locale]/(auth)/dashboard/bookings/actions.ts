@@ -45,6 +45,8 @@ export async function createBooking(data: any) {
     status: data.status,
     source: data.source,
     socialUsername: data.socialUsername,
+    doctorName: data.doctorName,
+    serviceType: data.serviceType,
     notes: data.notes,
   }).returning();
 
@@ -72,6 +74,8 @@ export async function updateBooking(id: number, data: any) {
       status: data.status,
       source: data.source,
       socialUsername: data.socialUsername,
+      doctorName: data.doctorName,
+      serviceType: data.serviceType,
       notes: data.notes,
     })
     .where(and(eq(bookingSchema.id, id), eq(bookingSchema.organizationId, orgId)))
