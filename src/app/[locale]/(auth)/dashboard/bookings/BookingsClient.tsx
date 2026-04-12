@@ -6,8 +6,11 @@ import {
   Calendar,
   CalendarDays,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Edit,
+  List,
   MoreHorizontal,
   Plus,
   Search,
@@ -153,6 +156,8 @@ export default function BookingsClient({ initialBookings, products }: { initialB
     cart: [] as Array<{ productId: string; quantity: string }>,
   });
 
+  const [view, setView] = useState<'table' | 'calendar'>('table');
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
   const [currentProduct, setCurrentProduct] = useState({ id: '', quantity: '1' });
@@ -324,6 +329,28 @@ export default function BookingsClient({ initialBookings, products }: { initialB
     }
   };
 
+  const daysInMonth = useMemo(() => {
+    const start = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+    const end = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+    const days = [];
+
+    // Add padding for start of month
+    const startPadding = start.getDay();
+    for (let i = 0; i < startPadding; i++) {
+      days.push(null);
+    }
+
+    // Add actual days
+    for (let i = 1; i <= end.getDate(); i++) {
+      days.push(new Date(currentMonth.getFullYear(), currentMonth.getMonth(), i));
+    }
+    return days;
+  }, [currentMonth]);
+
+  const changeMonth = (offset: number) => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + offset, 1));
+  };
+
   return (
     <div className={`mx-auto flex w-full max-w-7xl flex-col gap-8 pb-20 ${isAr ? 'text-right' : 'text-left'}`}>
       <div className="relative overflow-hidden rounded-[2.5rem] border border-white/10 bg-gradient-to-br from-card/80 to-muted/30 p-10 shadow-2xl shadow-primary/5 backdrop-blur-xl">
@@ -342,6 +369,24 @@ export default function BookingsClient({ initialBookings, products }: { initialB
             </p>
           </div>
           <div className="flex w-full flex-col gap-3 sm:flex-row md:w-auto">
+            <div className="flex rounded-2xl bg-background/50 p-1 shadow-inner">
+              <Button
+                variant="ghost"
+                className={`h-12 rounded-xl px-4 font-black ${view === 'table' ? 'bg-background shadow-sm' : ''}`}
+                onClick={() => setView('table')}
+              >
+                <List className="size-4 sm:mr-2" />
+                <span className="hidden sm:inline">{isAr ? 'قائمة' : 'List'}</span>
+              </Button>
+              <Button
+                variant="ghost"
+                className={`h-12 rounded-xl px-4 font-black ${view === 'calendar' ? 'bg-background shadow-sm' : ''}`}
+                onClick={() => setView('calendar')}
+              >
+                <CalendarDays className="size-4 sm:mr-2" />
+                <span className="hidden sm:inline">{isAr ? 'تقويم' : 'Calendar'}</span>
+              </Button>
+            </div>
             <Button onClick={openCreate} className="h-14 w-full rounded-2xl px-7 text-base font-black shadow-xl shadow-primary/25 transition-transform active:scale-[0.98] sm:w-auto">
               <Plus className={`size-5 ${isAr ? 'ml-2' : 'mr-2'}`} />
               {isAr ? 'حجز جديد' : 'New booking'}
@@ -397,68 +442,157 @@ export default function BookingsClient({ initialBookings, products }: { initialB
         </Card>
       </div>
 
-      <Card className="rounded-[2rem] border-white/20 bg-card/70 shadow-lg shadow-gray-200/20 backdrop-blur-md">
-        <CardContent className="p-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="relative flex-1">
-              <div className={`pointer-events-none absolute inset-y-0 ${isAr ? 'left-4' : 'right-4'} flex items-center text-muted-foreground`}>
-                <Search className="size-5" />
-              </div>
-              <Input
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                placeholder={isAr ? 'ابحث بالاسم، التواصل، المنتج، أو التفاصيل...' : 'Search by name, contact, product, or details...'}
-                className={`h-14 rounded-2xl border-none bg-background/60 px-5 text-base font-semibold shadow-inner ${isAr ? 'pl-12' : 'pr-12'}`}
-              />
-            </div>
-            <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
-              <select
-                className="h-14 w-full cursor-pointer rounded-2xl border border-input bg-background/60 px-5 text-sm font-black shadow-inner outline-none focus:ring-2 focus:ring-primary sm:w-[220px]"
-                value={statusFilter}
-                onChange={e => setStatusFilter(e.target.value)}
-              >
-                <option value="">{isAr ? 'كل الحالات' : 'All status'}</option>
-                <option value="upcoming">{isAr ? 'قادمة' : 'Upcoming'}</option>
-                <option value="completed">{isAr ? 'مكتملة' : 'Completed'}</option>
-                <option value="cancelled">{isAr ? 'ملغاة' : 'Cancelled'}</option>
-              </select>
-              <Button
-                variant="outline"
-                className="h-14 w-full rounded-2xl border-primary/15 bg-primary/5 font-black text-primary hover:bg-primary/10 sm:w-auto"
-                onClick={() => {
-                  setSearchQuery('');
-                  setStatusFilter('');
-                  setSelectedBookingIds([]);
-                }}
-              >
-                {isAr ? 'مسح الفلاتر' : 'Clear'}
-              </Button>
-            </div>
-          </div>
+      {view === 'calendar'
+        ? (
+            <Card className="overflow-hidden rounded-[2.5rem] border-white/20 bg-card/70 shadow-2xl shadow-gray-200/20 backdrop-blur-md">
+              <CardHeader className="flex flex-row items-center justify-between border-b bg-muted/5 px-8 py-6">
+                <div className="flex items-center gap-4">
+                  <div className="flex size-14 items-center justify-center rounded-3xl bg-primary/10 text-primary">
+                    <Calendar className="size-7" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl font-black tracking-tight">
+                      <span className="capitalize">{format(currentMonth, 'MMMM yyyy', { locale: isAr ? arSA : undefined })}</span>
+                    </CardTitle>
+                    <p className="text-xs font-bold text-muted-foreground">{isAr ? 'عرض الحجوزات موزعة على الشهر' : 'Monthly overview of all bookings'}</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="icon" className="size-12 rounded-2xl" onClick={() => changeMonth(-1)}>
+                    <ChevronLeft className="size-6" />
+                  </Button>
+                  <Button variant="outline" className="h-12 rounded-2xl px-5 font-black" onClick={() => setCurrentMonth(new Date())}>
+                    {isAr ? 'اليوم' : 'Today'}
+                  </Button>
+                  <Button variant="outline" size="icon" className="size-12 rounded-2xl" onClick={() => changeMonth(1)}>
+                    <ChevronRight className="size-6" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="grid grid-cols-7 border-b bg-muted/5">
+                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
+                    <div key={d} className="py-4 text-center text-xs font-black uppercase tracking-widest text-muted-foreground">
+                      {isAr ? (d === 'Sun' ? 'أحد' : d === 'Mon' ? 'اثنين' : d === 'Tue' ? 'ثلاثاء' : d === 'Wed' ? 'أربعاء' : d === 'Thu' ? 'خميس' : d === 'Fri' ? 'جمعة' : 'سبت') : d}
+                    </div>
+                  ))}
+                </div>
+                <div className="grid border-collapse grid-cols-7">
+                  {daysInMonth.map((day, idx) => {
+                    if (!day) {
+                      return <div key={`empty-${idx}`} className="h-32 border-b border-e bg-muted/5" />;
+                    }
+                    const dayStr = format(day, 'yyyy-MM-dd');
+                    const todayStr = format(new Date(), 'yyyy-MM-dd');
+                    const isToday = dayStr === todayStr;
+                    const dayBookings = bookings.filter(b => format(new Date(b.bookingDate), 'yyyy-MM-dd') === dayStr);
 
-          {selectedBookingIds.length > 0 && (
-            <div className="mt-5 flex flex-wrap items-center gap-2">
-              <span className="text-sm font-bold text-muted-foreground">
-                {isAr ? 'المحدد:' : 'Selected:'}
-                {' '}
-                <span className="font-black text-foreground">{selectedBookingIds.length}</span>
-              </span>
-              <Button variant="destructive" className="h-10 rounded-xl px-5 font-black" onClick={handleBulkDelete}>
-                <Trash2 className={`size-4 ${isAr ? 'ml-2' : 'mr-2'}`} />
-                {isAr ? 'حذف' : 'Delete'}
-              </Button>
-              <Button className="h-10 rounded-xl bg-emerald-600 px-5 font-black text-white hover:bg-emerald-700" onClick={() => handleBulkStatusUpdate('completed')}>
-                <CheckCircle2 className={`size-4 ${isAr ? 'ml-2' : 'mr-2'}`} />
-                {isAr ? 'تحديد كمكتمل' : 'Mark completed'}
-              </Button>
-              <Button variant="outline" className="h-10 rounded-xl border-rose-200 bg-white px-5 font-black text-rose-600 hover:bg-rose-50" onClick={() => handleBulkStatusUpdate('cancelled')}>
-                <X className={`size-4 ${isAr ? 'ml-2' : 'mr-2'}`} />
-                {isAr ? 'إلغاء' : 'Cancel'}
-              </Button>
-            </div>
+                    return (
+                      <div
+                        key={dayStr}
+                        role="button"
+                        tabIndex={0}
+                        className={`group relative h-32 cursor-pointer border-b border-e p-4 transition-colors hover:bg-primary/5 ${isToday ? 'bg-primary/5' : ''}`}
+                        onClick={() => setSelectedDay(dayStr)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            setSelectedDay(dayStr);
+                          }
+                        }}
+                      >
+                        <div className={`text-sm font-black ${isToday ? 'flex size-7 items-center justify-center rounded-full bg-primary text-white' : 'text-foreground/70'}`}>
+                          {day.getDate()}
+                        </div>
+                        {dayBookings.length > 0 && (
+                          <div className="mt-2 flex flex-col gap-1">
+                            <div className="flex flex-wrap gap-1">
+                              {dayBookings.slice(0, 3).map(b => (
+                                <div key={b.id} className="h-1.5 min-w-[20%] flex-1 rounded-full bg-primary/40" />
+                              ))}
+                            </div>
+                            <div className="text-[10px] font-black text-primary/80">
+                              {dayBookings.length}
+                              {' '}
+                              {isAr ? 'حجوزات' : 'bookings'}
+                            </div>
+                          </div>
+                        )}
+                        <div className="absolute bottom-2 right-2 opacity-0 transition-opacity group-hover:opacity-100">
+                          <div className="flex size-7 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                            <Plus className="size-4" />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )
+        : (
+            <Card className="rounded-[2rem] border-white/20 bg-card/70 shadow-lg shadow-gray-200/20 backdrop-blur-md">
+              <CardContent className="p-6">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="relative flex-1">
+                    <div className={`pointer-events-none absolute inset-y-0 ${isAr ? 'left-4' : 'right-4'} flex items-center text-muted-foreground`}>
+                      <Search className="size-5" />
+                    </div>
+                    <Input
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      placeholder={isAr ? 'ابحث بالاسم، التواصل، المنتج، أو التفاصيل...' : 'Search by name, contact, product, or details...'}
+                      className={`h-14 rounded-2xl border-none bg-background/60 px-5 text-base font-semibold shadow-inner ${isAr ? 'pl-12' : 'pr-12'}`}
+                    />
+                  </div>
+                  <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
+                    <select
+                      className="h-14 w-full cursor-pointer rounded-2xl border border-input bg-background/60 px-5 text-sm font-black shadow-inner outline-none focus:ring-2 focus:ring-primary sm:w-[220px]"
+                      value={statusFilter}
+                      onChange={e => setStatusFilter(e.target.value)}
+                    >
+                      <option value="">{isAr ? 'كل الحالات' : 'All status'}</option>
+                      <option value="upcoming">{isAr ? 'قادمة' : 'Upcoming'}</option>
+                      <option value="completed">{isAr ? 'مكتملة' : 'Completed'}</option>
+                      <option value="cancelled">{isAr ? 'ملغاة' : 'Cancelled'}</option>
+                    </select>
+                    <Button
+                      variant="outline"
+                      className="h-14 w-full rounded-2xl border-primary/15 bg-primary/5 font-black text-primary hover:bg-primary/10 sm:w-auto"
+                      onClick={() => {
+                        setSearchQuery('');
+                        setStatusFilter('');
+                        setSelectedBookingIds([]);
+                      }}
+                    >
+                      {isAr ? 'مسح الفلاتر' : 'Clear'}
+                    </Button>
+                  </div>
+                </div>
+
+                {selectedBookingIds.length > 0 && (
+                  <div className="mt-5 flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-bold text-muted-foreground">
+                      {isAr ? 'المحدد:' : 'Selected:'}
+                      {' '}
+                      <span className="font-black text-foreground">{selectedBookingIds.length}</span>
+                    </span>
+                    <Button variant="destructive" className="h-10 rounded-xl px-5 font-black" onClick={handleBulkDelete}>
+                      <Trash2 className={`size-4 ${isAr ? 'ml-2' : 'mr-2'}`} />
+                      {isAr ? 'حذف' : 'Delete'}
+                    </Button>
+                    <Button className="h-10 rounded-xl bg-emerald-600 px-5 font-black text-white hover:bg-emerald-700" onClick={() => handleBulkStatusUpdate('completed')}>
+                      <CheckCircle2 className={`size-4 ${isAr ? 'ml-2' : 'mr-2'}`} />
+                      {isAr ? 'تحديد كمكتمل' : 'Mark completed'}
+                    </Button>
+                    <Button variant="outline" className="h-10 rounded-xl border-rose-200 bg-white px-5 font-black text-rose-600 hover:bg-rose-50" onClick={() => handleBulkStatusUpdate('cancelled')}>
+                      <X className={`size-4 ${isAr ? 'ml-2' : 'mr-2'}`} />
+                      {isAr ? 'إلغاء' : 'Cancel'}
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           )}
-        </CardContent>
-      </Card>
 
       {filteredBookings.length === 0
         ? (
