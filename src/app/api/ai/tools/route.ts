@@ -67,6 +67,14 @@ export const POST = async (request: Request) => {
         const { customerName, contactInfo, bookingDate, source, socialUsername, notes, doctorName, serviceType } = params;
         const serviceDetails = params.serviceDetails || params.details || ''; // قبول المسميين لضمان وصول البيانات
 
+        let validBookingDate = new Date();
+        if (bookingDate) {
+          const parsedDate = new Date(bookingDate);
+          if (!Number.isNaN(parsedDate.getTime())) {
+            validBookingDate = parsedDate;
+          }
+        }
+
         const [newBooking] = await db.insert(bookingSchema).values({
           organizationId,
           customerName,
@@ -74,7 +82,7 @@ export const POST = async (request: Request) => {
           serviceDetails,
           doctorName,
           serviceType,
-          bookingDate: new Date(bookingDate || Date.now()),
+          bookingDate: validBookingDate,
           source: source || 'ai_bot',
           socialUsername,
           notes,
