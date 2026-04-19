@@ -2,7 +2,7 @@ import { and, eq, ilike, or } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/DB';
-import { aiSettingsSchema, bookingSchema, businessProfileSchema, productSchema } from '@/models/Schema';
+import { aiSettingsSchema, bookingSchema, businessProfileSchema, organizationSchema, productSchema } from '@/models/Schema';
 
 /**
  * AI Tools API - The bridge between n8n and the platform data.
@@ -65,7 +65,16 @@ export const POST = async (request: Request) => {
       // --- BOOKING TOOLS ---
       case 'create_booking': {
         const { customerName, contactInfo, bookingDate, source, socialUsername, notes, doctorName, serviceType } = params;
-        const serviceDetails = params.serviceDetails || params.details || ''; // قبول المسميين لضمان وصول البيانات
+        const serviceDetails = params.serviceDetails || params.details || '';
+
+        if (!customerName) {
+          return NextResponse.json({ error: 'Missing customerName' }, { status: 400 });
+        }
+
+        // Ensure organization exists to avoid foreign key violation
+        await db.insert(organizationSchema)
+          .values({ id: organizationId })
+          .onConflictDoNothing();
 
         let validBookingDate = new Date();
         if (bookingDate) {
@@ -89,7 +98,11 @@ export const POST = async (request: Request) => {
           status: 'upcoming',
         }).returning();
 
-        return NextResponse.json({ success: true, bookingId: newBooking?.id });
+        return NextResponse.json({
+          success: true,
+          bookingId: newBooking?.id,
+          message: 'تم الحجز بنجاح',
+        });
       }
 
       // --- TRACKING TOOLS ---

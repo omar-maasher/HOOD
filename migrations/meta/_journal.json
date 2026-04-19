@@ -71,6 +71,13 @@
       "when": 1775814507308,
       "tag": "0009_bright_kylun",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1776631102023,
+      "tag": "0010_famous_thaddeus_ross",
+      "breakpoints": true
     }
   ]
 }
