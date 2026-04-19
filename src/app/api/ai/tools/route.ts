@@ -10,7 +10,14 @@ import { aiSettingsSchema, bookingSchema, businessProfileSchema, organizationSch
  */
 export const POST = async (request: Request) => {
   try {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      console.error('[AI_TOOLS] Failed to parse JSON body or empty body received');
+      return NextResponse.json({ error: 'Invalid or empty JSON body' }, { status: 400 });
+    }
+
     const { action, organizationId, params, secret } = body;
 
     // 1. Security Check
