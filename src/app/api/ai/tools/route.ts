@@ -64,45 +64,60 @@ export const POST = async (request: Request) => {
 
       // --- BOOKING TOOLS ---
       case 'create_booking': {
+        if (!params) {
+          return NextResponse.json({ error: 'Missing params object' }, { status: 400 });
+        }
+
         const { customerName, contactInfo, bookingDate, source, socialUsername, notes, doctorName, serviceType } = params;
         const serviceDetails = params.serviceDetails || params.details || '';
 
+        // eslint-disable-next-line no-console
+        console.log('[AI_TOOLS] Attempting to create booking:', { organizationId, customerName, bookingDate });
+
         if (!customerName) {
-          return NextResponse.json({ error: 'Missing customerName' }, { status: 400 });
+          return NextResponse.json({ error: 'Missing customerName in params' }, { status: 400 });
         }
 
-        // Ensure organization exists to avoid foreign key violation
-        await db.insert(organizationSchema)
-          .values({ id: organizationId })
-          .onConflictDoNothing();
+        try {
+          // Ensure organization exists to avoid foreign key violation
+          await db.insert(organizationSchema)
+            .values({ id: organizationId })
+            .onConflictDoNothing();
 
-        let validBookingDate = new Date();
-        if (bookingDate) {
-          const parsedDate = new Date(bookingDate);
-          if (!Number.isNaN(parsedDate.getTime())) {
-            validBookingDate = parsedDate;
+          let validBookingDate = new Date();
+          if (bookingDate) {
+            const parsedDate = new Date(bookingDate);
+            if (!Number.isNaN(parsedDate.getTime())) {
+              validBookingDate = parsedDate;
+            }
           }
+
+          const [newBooking] = await db.insert(bookingSchema).values({
+            organizationId,
+            customerName,
+            contactInfo: contactInfo || '',
+            serviceDetails: serviceDetails || '',
+            doctorName: doctorName || '',
+            serviceType: serviceType || '',
+            bookingDate: validBookingDate,
+            source: source || 'ai_bot',
+            socialUsername: socialUsername || '',
+            notes: notes || '',
+            status: 'upcoming',
+          }).returning();
+
+          // eslint-disable-next-line no-console
+          console.log('[AI_TOOLS] Booking created successfully:', newBooking?.id);
+
+          return NextResponse.json({
+            success: true,
+            bookingId: newBooking?.id,
+            message: 'تم الحجز بنجاح',
+          });
+        } catch (dbError: any) {
+          console.error('[AI_TOOLS_DB_ERROR]', dbError);
+          return NextResponse.json({ error: `Database Error: ${dbError.message}` }, { status: 500 });
         }
-
-        const [newBooking] = await db.insert(bookingSchema).values({
-          organizationId,
-          customerName,
-          contactInfo,
-          serviceDetails,
-          doctorName,
-          serviceType,
-          bookingDate: validBookingDate,
-          source: source || 'ai_bot',
-          socialUsername,
-          notes,
-          status: 'upcoming',
-        }).returning();
-
-        return NextResponse.json({
-          success: true,
-          bookingId: newBooking?.id,
-          message: 'تم الحجز بنجاح',
-        });
       }
 
       // --- TRACKING TOOLS ---
