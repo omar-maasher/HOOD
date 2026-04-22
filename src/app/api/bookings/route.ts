@@ -69,9 +69,31 @@ export async function POST(req: Request) {
       source: source || 'Bot',
       status: 'upcoming',
       organizationId: targetOrgId,
-      updatedAt: new Date(),
-      createdAt: new Date(),
     }).returning();
+
+    // Trigger Expo Push Notification to all managers' devices
+    try {
+      const org = await db.query.organizationSchema.findFirst({
+        where: eq(organizationSchema.id, targetOrgId),
+      });
+      if (org && org.expoPushTokens && org.expoPushTokens.length > 0) {
+        await fetch('https://exp.host/--/api/v2/push/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(
+            org.expoPushTokens.map((token: string) => ({
+              to: token,
+              sound: 'default',
+              title: 'حجز جديد وارد 📅',
+              body: `العميل: ${customerName} | تم تسجيل الحجز بنجاح.`,
+              data: { bookingId: newBooking[0].id },
+            }))
+          ),
+        });
+      }
+    } catch (pushErr) {
+      console.error('Push Notification Error:', pushErr);
+    }
 
     return NextResponse.json({
       success: true,

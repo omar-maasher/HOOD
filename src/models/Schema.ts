@@ -37,6 +37,7 @@ export const organizationSchema = pgTable(
       { mode: 'number' },
     ),
     apiKey: text('api_key').unique(),
+    expoPushTokens: jsonb('expo_push_tokens').$type<string[]>(),
     updatedAt: timestamp('updated_at', { mode: 'date' })
       .defaultNow()
       .$onUpdate(() => new Date())
@@ -254,7 +255,7 @@ export const messageSchema = pgTable('message', {
   organizationId: text('organization_id')
     .notNull()
     .references(() => organizationSchema.id),
-  conversationId: integer('conversation_id')
+  conversationId: serial('conversation_id')
     .notNull()
     .references(() => conversationSchema.id, { onDelete: 'cascade' }),
   direction: text('direction').notNull(), // 'incoming' | 'outgoing'
