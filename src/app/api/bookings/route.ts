@@ -83,3 +83,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export async function GET() {
+  try {
+    // Fetch all bookings for now, sorted by newest
+    const bookings = await db.query.bookingSchema.findMany({
+      orderBy: (bookings, { desc }) => [desc(bookings.createdAt)],
+    });
+
+    return NextResponse.json(bookings);
+  } catch (error: any) {
+    console.error('Fetch Bookings Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
