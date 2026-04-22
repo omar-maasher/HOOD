@@ -1,4 +1,4 @@
-import { currentUser } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
 import { eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
@@ -86,8 +86,21 @@ export async function POST(req: Request) {
 
 export async function GET() {
   try {
-    // Fetch all bookings for now, sorted by newest
+    const { userId, orgId } = await auth();
+
+    if (!userId) {
+      console.log('Unauthorized fetch attempt (no userId).');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!orgId) {
+      // Return empty array if the user hasn't selected or created an organization yet
+      return NextResponse.json([]);
+    }
+
+    // Fetch bookings specifically for the user's active organization
     const bookings = await db.query.bookingSchema.findMany({
+      where: eq(bookingSchema.organizationId, orgId),
       orderBy: (bookings, { desc }) => [desc(bookings.createdAt)],
     });
 
