@@ -243,6 +243,7 @@ export const POST = async (request: Request) => {
         name: businessProfile?.businessName || '',
         description: businessProfile?.businessDescription || '',
         policy: businessProfile?.policies || '',
+        workingHours: businessProfile?.workingHours || '',
         storeLatitude: businessProfile?.storeLatitude || '',
         storeLongitude: businessProfile?.storeLongitude || '',
         deliveryPricePerKm: businessProfile?.deliveryPricePerKm || '',
