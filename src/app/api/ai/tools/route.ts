@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/DB';
 import { aiSettingsSchema, bookingSchema, businessProfileSchema, organizationSchema, productSchema } from '@/models/Schema';
+import { notifyOrg } from '@/libs/Notifications';
 
 /**
  * AI Tools API - The bridge between n8n and the platform data.
@@ -115,6 +116,12 @@ export const POST = async (request: Request) => {
 
           // eslint-disable-next-line no-console
           console.log('[AI_TOOLS] Booking created successfully:', newBooking?.id);
+
+          // --- PUSH NOTIFICATION ---
+          await notifyOrg(organizationId, 'حجز جديد تلقائي 🤖', `العميل: ${customerName} | تم الحجز عبر الذكاء الاصطناعي.`, {
+            bookingId: newBooking?.id,
+            customerName,
+          });
 
           return NextResponse.json({
             success: true,

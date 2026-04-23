@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/DB';
 import { bookingSchema, organizationSchema } from '@/models/Schema';
+import { notifyOrg } from '@/libs/Notifications';
 
 export async function POST(req: Request) {
   try {
@@ -72,28 +73,10 @@ export async function POST(req: Request) {
     }).returning();
 
     // Trigger Expo Push Notification to all managers' devices
-    try {
-      const org = await db.query.organizationSchema.findFirst({
-        where: eq(organizationSchema.id, targetOrgId),
-      });
-      if (org && org.expoPushTokens && org.expoPushTokens.length > 0) {
-        await fetch('https://exp.host/--/api/v2/push/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(
-            org.expoPushTokens.map((token: string) => ({
-              to: token,
-              sound: 'default',
-              title: 'حجز جديد وارد 📅',
-              body: `العميل: ${customerName} | تم تسجيل الحجز بنجاح.`,
-              data: { bookingId: newBooking[0].id },
-            }))
-          ),
-        });
-      }
-    } catch (pushErr) {
-      console.error('Push Notification Error:', pushErr);
-    }
+    await notifyOrg(targetOrgId, 'حجز جديد وارد 📅', `العميل: ${customerName} | تم تسجيل الحجز بنجاح.`, {
+      bookingId: newBooking[0].id,
+      customerName,
+    });
 
     return NextResponse.json({
       success: true,
@@ -129,6 +112,35 @@ export async function GET() {
     return NextResponse.json(bookings);
   } catch (error: any) {
     console.error('Fetch Bookings Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+export async function PUT(req: Request) {
+  try {
+    const { orgId } = await auth();
+    if (!orgId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const body = await req.json();
+    const { id, status, bookingDate, customerName, contactInfo, notes } = body;
+
+    if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+
+    const updated = await db.update(bookingSchema)
+      .set({
+        status,
+        bookingDate: bookingDate ? new Date(bookingDate) : undefined,
+        customerName,
+        contactInfo,
+        notes,
+        updatedAt: new Date(),
+      })
+      .where(eq(bookingSchema.id, id))
+      .returning();
+
+    return NextResponse.json({ success: true, data: updated[0] });
+  } catch (error: any) {
+    console.error('Update Booking Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

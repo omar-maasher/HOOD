@@ -237,3 +237,77 @@ export async function saveStoreIntegrationAndSync(
     return { success: false, error: error.message || 'فشل الاتصال بالمتجر، يرجى التأكد من صحة البيانات.' };
   }
 }
+export async function syncAllIntegrationsAction() {
+  const { orgId } = await auth();
+  if (!orgId) {
+    throw new Error('Unauthorized');
+  }
+
+  try {
+    // 1. Get all active integrations
+    const integrations = await db.query.integrationSchema.findMany({
+      where: eq(integrationSchema.organizationId, orgId),
+    });
+
+    const results = [];
+
+    for (const integration of integrations) {
+      // Sync stores
+      if (['salla', 'shopify', 'woocommerce', 'custom'].includes(integration.type)) {
+        const res = await saveStoreIntegrationAndSync(
+          integration.type,
+          integration.providerId || '',
+          integration.accessToken || '',
+          integration.refreshToken || '',
+        );
+        results.push({ type: integration.type, ...res });
+      }
+
+      // Meta Channels Sync (Reset Webhook Subscriptions)
+      if (['instagram', 'messenger'].includes(integration.type)) {
+        try {
+          const config = integration.config ? JSON.parse(integration.config as string) : {};
+          const pageId = integration.providerId; // Messenger pageId or IG-connected pageId
+          const accessToken = integration.accessToken;
+
+          if (pageId && accessToken) {
+             const fields = integration.type === 'instagram' 
+                ? 'messages,messaging_postbacks,comments,mentions'
+                : 'messages,messaging_postbacks';
+
+             await fetch(`https://graph.facebook.com/v21.0/${pageId}/subscribed_apps?access_token=${accessToken}`, {
+               method: 'POST',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ subscribed_fields: fields.split(',') }),
+             });
+             results.push({ type: integration.type, success: true });
+          }
+        } catch (error) {
+          console.error(`${integration.type} sync error:`, error);
+          results.push({ type: integration.type, success: false });
+        }
+      }
+
+      // WhatsApp Sync (Reset Subscriptions)
+      if (integration.type === 'whatsapp') {
+        try {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/integrations/whatsapp/resubscribe`, {
+            method: 'POST',
+            headers: {
+              'Cookie': (await import('next/headers')).cookies().toString(),
+            },
+          });
+          results.push({ type: 'whatsapp', success: res.ok });
+        } catch (error) {
+          console.error('WhatsApp sync error:', error);
+        }
+      }
+    }
+
+    revalidatePath('/dashboard/integrations');
+    return { success: true, results };
+  } catch (error: any) {
+    logger.error('Sync process failed', error);
+    return { success: false, error: error.message };
+  }
+}

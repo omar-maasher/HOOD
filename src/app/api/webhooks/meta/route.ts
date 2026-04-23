@@ -15,6 +15,7 @@ import {
   productSchema,
   webhookEventSchema,
 } from '@/models/Schema';
+import { notifyOrg } from '@/libs/Notifications';
 
 export const GET = async (request: Request) => {
   const { searchParams } = new URL(request.url);
@@ -241,7 +242,10 @@ export const POST = async (request: Request) => {
       aiConfig: aiSettingsResults[0] || { isActive: 'false', isCommentsActive: 'true' },
       businessSummary: {
         name: businessProfile?.businessName || '',
+        type: businessProfile?.businessType || '',
         description: businessProfile?.businessDescription || '',
+        phoneNumber: businessProfile?.phoneNumber || '',
+        address: businessProfile?.address || '',
         policy: businessProfile?.policies || '',
         workingHours: businessProfile?.workingHours || '',
         storeLatitude: businessProfile?.storeLatitude || '',
@@ -349,6 +353,13 @@ export const POST = async (request: Request) => {
           if (isEcho) {
             return null; // Do not send bot's own replies back to n8n to prevent loops
           }
+
+          // --- PUSH NOTIFICATION ---
+          await notifyOrg(orgId, `New ${platform} message`, `${finalName}: ${messageText}`, {
+            conversationId: conversation[0]?.id,
+            platform,
+            externalId: senderId,
+          });
 
           // Ensure platform is set correctly for routing if it's an Instagram integration
           const finalPlatform = integration.type === 'instagram' ? 'instagram' : platform;
@@ -465,6 +476,13 @@ export const POST = async (request: Request) => {
                   metadata: mid,
                 });
               }
+
+              // --- PUSH NOTIFICATION ---
+              await notifyOrg(orgId, 'New WhatsApp message', `${senderName}: ${text}`, {
+                conversationId: conversation[0]?.id,
+                platform: 'whatsapp',
+                externalId: senderId,
+              });
 
               const isActive = (context.aiConfig as any).isActive !== 'false';
               if (!isActive) {
@@ -616,6 +634,13 @@ export const POST = async (request: Request) => {
                 metadata: JSON.stringify({ commentId, mediaId, parentId }),
               });
             }
+
+            // --- PUSH NOTIFICATION ---
+            await notifyOrg(orgId, 'New Instagram Comment', `${senderName}: ${text}`, {
+              conversationId: conversation[0]?.id,
+              platform: 'instagram',
+              externalId: senderId,
+            });
 
             const isCommentsActive = (context.aiConfig as any).isCommentsActive !== 'false';
             if (!isCommentsActive) {

@@ -5,6 +5,7 @@ import { and, desc, eq, inArray } from 'drizzle-orm';
 
 import { db } from '@/libs/DB';
 import { bookingSchema, organizationSchema } from '@/models/Schema';
+import { notifyOrg } from '@/libs/Notifications';
 
 export async function getBookings() {
   const { orgId } = await auth();
@@ -49,6 +50,11 @@ export async function createBooking(data: any) {
     serviceType: data.serviceType,
     notes: data.notes,
   }).returning();
+
+  // Trigger Notification
+  await notifyOrg(orgId, 'حجز جديد 📅', `تم إضافة حجز يدوي للعميل: ${data.customerName}`, {
+    bookingId: newBooking[0]?.id,
+  });
 
   return {
     ...newBooking,
