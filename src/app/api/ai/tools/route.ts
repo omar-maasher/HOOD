@@ -71,6 +71,19 @@ export const POST = async (request: Request) => {
       }
 
       // --- BOOKING TOOLS ---
+      case 'list_bookings': {
+        const date = params?.date; // Optional: filter by date
+        const results = await db.query.bookingSchema.findMany({
+          where: and(
+            eq(bookingSchema.organizationId, organizationId),
+            date ? sql`DATE(${bookingSchema.bookingDate}) = DATE(${date})` : sql`${bookingSchema.bookingDate} >= NOW()`,
+          ),
+          orderBy: (bookings, { asc }) => [asc(bookings.bookingDate)],
+          limit: 20,
+        });
+        return NextResponse.json({ bookings: results });
+      }
+
       case 'create_booking': {
         if (!params) {
           return NextResponse.json({ error: 'Missing params object' }, { status: 400 });
