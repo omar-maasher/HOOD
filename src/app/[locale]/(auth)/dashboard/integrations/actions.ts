@@ -311,3 +311,60 @@ export async function syncAllIntegrationsAction() {
     return { success: false, error: error.message };
   }
 }
+
+export async function refreshInstagramIntegration(integrationId: number) {
+  const { orgId } = await auth();
+  if (!orgId) {
+    throw new Error('Unauthorized');
+  }
+
+  const integration = await db.query.integrationSchema.findFirst({
+    where: (i, { and, eq }) => and(eq(i.id, integrationId), eq(i.organizationId, orgId)),
+  });
+
+  if (!integration || integration.type !== 'instagram') {
+    throw new Error('Integration not found or not Instagram');
+  }
+
+  const accessToken = integration.accessToken;
+  const config = JSON.parse(integration.config || '{}');
+  const igAccountId = config.igAccountId; // Instagram Business Account ID
+  const pageId = integration.providerId; // Page ID linked
+
+  if (!accessToken) {
+    throw new Error('No access token found for this integration');
+  }
+
+  try {
+    const results = [];
+    const fields = 'messages,messaging_postbacks,comments,mentions';
+
+    // 1. Try subscribing the App to the Page Webhooks
+    if (pageId) {
+      const res = await fetch(`https://graph.facebook.com/v21.0/${pageId}/subscribed_apps?access_token=${accessToken}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscribed_fields: fields.split(',') }),
+      });
+      const data = await res.json();
+      results.push({ target: 'page_subscription', success: res.ok, data });
+    }
+
+    // 2. Try subscribing for the Instagram Business Account specifically
+    if (igAccountId) {
+      const res = await fetch(`https://graph.facebook.com/v21.0/${igAccountId}/subscribed_apps?access_token=${accessToken}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscribed_fields: fields.split(',') }),
+      });
+      const data = await res.json();
+      results.push({ target: 'ig_account_subscription', success: res.ok, data });
+    }
+
+    revalidatePath('/dashboard/integrations');
+    return { success: true, results };
+  } catch (error: any) {
+    logger.error('Full Refresh Error', error);
+    return { success: false, error: error.message };
+  }
+}
