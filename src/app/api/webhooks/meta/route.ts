@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/libs/DB';
 import { logger } from '@/libs/Logger';
 import { detectMessagingPlatform, getSenderProfile } from '@/libs/Meta';
+import { notifyOrg } from '@/libs/Notifications';
 import {
   aiSettingsSchema,
   businessProfileSchema,
@@ -15,7 +16,6 @@ import {
   productSchema,
   webhookEventSchema,
 } from '@/models/Schema';
-import { notifyOrg } from '@/libs/Notifications';
 
 export const GET = async (request: Request) => {
   const { searchParams } = new URL(request.url);
@@ -164,9 +164,11 @@ export const POST = async (request: Request) => {
           // The messaging payload contains sender.id. We extract it.
           let customerSenderId = '';
           if (entry.messaging && entry.messaging.length > 0) {
-            customerSenderId = entry.messaging[0].sender?.id;
+            const isEcho = entry.messaging[0].message?.is_echo === true;
+            customerSenderId = isEcho ? entry.messaging[0].recipient?.id : entry.messaging[0].sender?.id;
           } else if (entry.standby && entry.standby.length > 0) {
-            customerSenderId = entry.standby[0].sender?.id;
+            const isEcho = entry.standby[0].message?.is_echo === true;
+            customerSenderId = isEcho ? entry.standby[0].recipient?.id : entry.standby[0].sender?.id;
           } else if (changes && changes.length > 0) {
             // For Comments/Mentions
             customerSenderId = changes[0].value?.from?.id;
@@ -177,7 +179,7 @@ export const POST = async (request: Request) => {
           }
 
           // Try to send typing_on
-          const testUrl = `https://graph.facebook.com/v21.0/me/messages`;
+          const testUrl = `https://graph.instagram.com/v21.0/me/messages`;
           const testRes = await fetch(`${testUrl}?access_token=${candidate.accessToken}`, {
             method: 'POST',
             headers: {
@@ -238,7 +240,7 @@ export const POST = async (request: Request) => {
       organizationId: orgId,
       integrationType: integration.type,
       metaAccessToken: integration.accessToken || '',
-      aiConfig: aiSettingsResults[0] || { isActive: 'false', isCommentsActive: 'true' },
+      aiConfig: aiSettingsResults[0] || { isActive: 'true', isCommentsActive: 'true' },
       businessSummary: {
         name: businessProfile?.businessName || '',
         type: businessProfile?.businessType || '',

@@ -158,8 +158,8 @@ export const GET = async (request: Request) => {
           const igMeRes = await fetch(`https://graph.instagram.com/v21.0/me?fields=id,username,name,profile_picture_url&access_token=${accessToken}`);
           if (igMeRes.ok) {
             const igMeData = await igMeRes.json();
-            if (!igAccountId) {
-              igAccountId = igMeData.id;
+            if (igMeData.id) {
+              igAccountId = igMeData.id; // Always use App-Scoped ID!
             }
             igUsername = igMeData.username || '';
             igProfilePic = igMeData.profile_picture_url || '';
