@@ -9,6 +9,7 @@ import { db } from '@/libs/DB';
 import { integrationSchema } from '@/models/Schema';
 
 import { DisconnectButton } from './DisconnectButton';
+import { RefreshIGButton } from './RefreshIGButton';
 
 const META_APP_ID = process.env.META_APP_ID || '';
 
