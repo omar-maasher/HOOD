@@ -13,14 +13,13 @@ export const POST = async (request: Request) => {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const { platform } = await request.json();
+    const { platform, integrationId } = await request.json();
 
     // 1. Fetch integration to get token before deleting
     const integration = await db.query.integrationSchema.findFirst({
-      where: and(
-        eq(integrationSchema.organizationId, orgId),
-        eq(integrationSchema.type, platform),
-      ),
+      where: integrationId 
+        ? and(eq(integrationSchema.organizationId, orgId), eq(integrationSchema.id, integrationId))
+        : and(eq(integrationSchema.organizationId, orgId), eq(integrationSchema.type, platform)),
     });
 
     if (integration && (platform === 'instagram' || platform === 'messenger')) {
@@ -44,10 +43,9 @@ export const POST = async (request: Request) => {
     if (platform === 'instagram' || platform === 'messenger') {
       // Delete the specific selected integration
       await db.delete(integrationSchema).where(
-        and(
-          eq(integrationSchema.organizationId, orgId),
-          eq(integrationSchema.type, platform),
-        ),
+        integrationId
+          ? and(eq(integrationSchema.organizationId, orgId), eq(integrationSchema.id, integrationId))
+          : and(eq(integrationSchema.organizationId, orgId), eq(integrationSchema.type, platform))
       );
 
       // If neither instagram nor messenger exist, delete facebook_root

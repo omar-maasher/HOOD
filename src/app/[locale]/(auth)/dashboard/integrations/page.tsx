@@ -200,68 +200,80 @@ export default async function IntegrationsPage(props: { searchParams: Promise<an
                 <h3 className="mb-2 flex items-center gap-2 text-xl font-bold">
                   {channel.name}
                 </h3>
-                {channel.profile && channel.profile.username
-                  ? (
-                      <div className="mt-2 flex items-center gap-2">
-                        {channel.profile.profilePic && (
-                          <img src={channel.profile.profilePic} alt={channel.profile.username} className="size-8 rounded-full border shadow-sm" />
-                        )}
-                        <span className="text-sm font-semibold text-foreground">
-                          @
-                          {channel.profile.username}
-                        </span>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  {channel.description}
+                </p>
+
+                {/* List all active integrations for this channel */}
+                <div className="mt-4 flex flex-col gap-4">
+                  {integrations.filter(i => i.type === channel.key && i.status === 'active').map((integration) => {
+                    let profile = null;
+                    try {
+                      profile = JSON.parse(integration.config || '{}');
+                    } catch { }
+
+                    return (
+                      <div key={integration.id} className="rounded-2xl border bg-muted/30 p-4">
+                        <div className="flex items-center gap-3">
+                          {profile?.profilePic && (
+                            <img src={profile.profilePic} alt={profile.username} className="size-10 rounded-full border shadow-sm" />
+                          )}
+                          <div className="flex flex-col">
+                            <span className="text-sm font-bold text-foreground">
+                              {profile?.username ? `@${profile.username}` : (isAr ? 'حساب متصل' : 'Connected Account')}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 flex flex-wrap items-center gap-2">
+                          <DisconnectButton channelKey={channel.key} integrationId={integration.id} />
+                          {channel.key === 'instagram' && (
+                            <RefreshIGButton integrationId={integration.id} isAr={isAr} />
+                          )}
+                        </div>
                       </div>
-                    )
-                  : (
-                      <p className="text-sm leading-relaxed text-muted-foreground">
-                        {channel.description}
-                      </p>
-                    )}
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="mt-8 border-t border-dashed pt-6">
-                {isConnected
-                  ? (
-                      <div className="flex items-center justify-start">
-                        <DisconnectButton channelKey={channel.key} />
-                      </div>
-                    )
-                  : (
-                      <>
-                        {channel.key === 'whatsapp'
-                          ? (
-                              <WhatsAppConnect appId={META_APP_ID} isAr={isAr} />
-                            )
-                          : channel.key === 'instagram'
-                            ? (
-                                <div className="flex flex-col gap-3">
-                                  <a
-                                    href={`/api/auth/meta?platform=instagram&locale=${locale}&mode=instagram_direct`}
-                                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-tr from-pink-600 to-purple-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-pink-500/20 transition-all hover:opacity-90 active:scale-[0.98]"
-                                  >
-                                    <Instagram className="size-4" />
-                                    {isAr ? 'ربط عبر إنستجرام' : 'Connect via Instagram'}
-                                  </a>
-                                  <a
-                                    href={`/api/auth/meta?platform=instagram&locale=${locale}`}
-                                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#1877F2] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-500/20 transition-all hover:opacity-90 active:scale-[0.98]"
-                                  >
-                                    <Facebook className="size-4" />
-                                    {isAr ? 'ربط عبر فيسبوك' : 'Connect via Facebook'}
-                                  </a>
-                                </div>
-                              )
-                            : (
-                                <a
-                                  href={`/api/auth/meta?platform=${channel.key}&locale=${locale}`}
-                                  className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-4 font-bold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 active:scale-[0.98]"
-                                >
-                                  <LinkIcon className="size-4" />
-                                  {isAr ? 'ربط الحساب' : 'Connect Account'}
-                                </a>
-                              )}
-                      </>
-                    )}
+                {!isConnected && (
+                  <>
+                    {channel.key === 'whatsapp'
+                      ? (
+                          <WhatsAppConnect appId={META_APP_ID} isAr={isAr} />
+                        )
+                      : channel.key === 'instagram'
+                        ? (
+                            <div className="flex flex-col gap-3">
+                              <a
+                                href={`/api/auth/meta?platform=instagram&locale=${locale}&mode=instagram_direct`}
+                                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-tr from-pink-600 to-purple-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-pink-500/20 transition-all hover:opacity-90 active:scale-[0.98]"
+                              >
+                                <Instagram className="size-4" />
+                                {isAr ? 'ربط إنستجرام (Direct)' : 'Connect Instagram (Direct)'}
+                              </a>
+                              <a
+                                href={`/api/auth/meta?platform=instagram&locale=${locale}`}
+                                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#1877F2] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-500/20 transition-all hover:opacity-90 active:scale-[0.98]"
+                              >
+                                <Facebook className="size-4" />
+                                {isAr ? 'ربط إنستجرام (عبر فيسبوك)' : 'Connect Instagram (via Facebook)'}
+                              </a>
+                            </div>
+                          )
+                        : (
+                            <a
+                              href={`/api/auth/meta?platform=${channel.key}&locale=${locale}`}
+                              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-4 font-bold text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 active:scale-[0.98]"
+                            >
+                              <LinkIcon className="size-4" />
+                              {isAr ? 'ربط الحساب' : 'Connect Account'}
+                            </a>
+                          )}
+                  </>
+                )}
               </div>
             </div>
           );
