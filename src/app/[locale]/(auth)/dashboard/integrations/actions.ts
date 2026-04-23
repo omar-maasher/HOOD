@@ -266,7 +266,7 @@ export async function syncAllIntegrationsAction() {
       // Meta Channels Sync (Reset Webhook Subscriptions)
       if (['instagram', 'messenger'].includes(integration.type)) {
         try {
-          const config = integration.config ? JSON.parse(integration.config as string) : {};
+          // const config = integration.config ? JSON.parse(integration.config as string) : {};
           const pageId = integration.providerId; // Messenger pageId or IG-connected pageId
           const accessToken = integration.accessToken;
 

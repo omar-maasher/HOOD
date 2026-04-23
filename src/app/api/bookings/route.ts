@@ -74,7 +74,7 @@ export async function POST(req: Request) {
 
     // Trigger Expo Push Notification to all managers' devices
     await notifyOrg(targetOrgId, 'حجز جديد وارد 📅', `العميل: ${customerName} | تم تسجيل الحجز بنجاح.`, {
-      bookingId: newBooking[0].id,
+      bookingId: newBooking[0]?.id,
       customerName,
     });
 

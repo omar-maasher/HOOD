@@ -1,6 +1,6 @@
 import {
   bigint,
-  integer,
+  // integer,
   jsonb,
   numeric,
   pgTable,

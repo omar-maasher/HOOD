@@ -53,14 +53,14 @@ export async function createBooking(data: any) {
 
   // Trigger Notification
   await notifyOrg(orgId, 'حجز جديد 📅', `تم إضافة حجز يدوي للعميل: ${data.customerName}`, {
-    bookingId: newBooking[0]?.id,
+    bookingId: newBooking?.id,
   });
 
   return {
     ...newBooking,
-    bookingDate: newBooking?.bookingDate.toISOString(),
-    createdAt: newBooking?.createdAt.toISOString(),
-    updatedAt: newBooking?.updatedAt.toISOString(),
+    bookingDate: newBooking?.bookingDate?.toISOString(),
+    createdAt: newBooking?.createdAt?.toISOString(),
+    updatedAt: newBooking?.updatedAt?.toISOString(),
   };
 }
 
@@ -89,9 +89,9 @@ export async function updateBooking(id: number, data: any) {
 
   return {
     ...updated,
-    bookingDate: updated?.bookingDate.toISOString(),
-    createdAt: updated?.createdAt.toISOString(),
-    updatedAt: updated?.updatedAt.toISOString(),
+    bookingDate: updated?.bookingDate?.toISOString(),
+    createdAt: updated?.createdAt?.toISOString(),
+    updatedAt: updated?.updatedAt?.toISOString(),
   };
 }
 
