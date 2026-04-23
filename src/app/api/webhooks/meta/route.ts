@@ -177,12 +177,11 @@ export const POST = async (request: Request) => {
           }
 
           // Try to send typing_on
-          const testUrl = `https://graph.instagram.com/v21.0/me/messages`;
-          const testRes = await fetch(testUrl, {
+          const testUrl = `https://graph.facebook.com/v21.0/me/messages`;
+          const testRes = await fetch(`${testUrl}?access_token=${candidate.accessToken}`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${candidate.accessToken}`,
             },
             body: JSON.stringify({
               recipient: { id: customerSenderId },
