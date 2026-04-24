@@ -75,6 +75,17 @@ export const getMetaAuthUrl = (state: string, platform?: MetaPlatform, mode?: st
     return `https://www.instagram.com/oauth/authorize?${params.toString()}`;
   }
 
+  if (platform === 'messenger') {
+    const params = new URLSearchParams({
+      client_id: META_CONFIG.appId || '',
+      redirect_uri: META_CONFIG.redirectUri || '',
+      state,
+      response_type: 'code',
+      config_id: '2403946966716018',
+    });
+    return `https://www.facebook.com/${META_CONFIG.graphVersion}/dialog/oauth?${params.toString()}`;
+  }
+
   const scopes = platform
     ? PLATFORM_SCOPES[platform]
     : [...new Set(Object.values(PLATFORM_SCOPES).flat())];
