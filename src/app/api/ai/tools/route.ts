@@ -199,11 +199,15 @@ export const POST = async (request: Request) => {
 
       case 'request_human': {
         const { customerName: aiCustomerName, reason, platform, senderId } = params || {};
+
+        // eslint-disable-next-line no-console
+        console.log('Request Human Tool called with:', { aiCustomerName, senderId, platform, organizationId });
+
         let conversationLink = '/ar/dashboard/inbox';
         let finalCustomerName = aiCustomerName;
 
         // Try to find the conversation to get the real name and link
-        if (senderId || aiCustomerName) {
+        if (senderId || (aiCustomerName && aiCustomerName !== '{name}')) {
           const conv = await db.query.conversationSchema.findFirst({
             where: and(
               eq(conversationSchema.organizationId, organizationId),
@@ -215,7 +219,7 @@ export const POST = async (request: Request) => {
 
           if (conv) {
             conversationLink = `/ar/dashboard/inbox?id=${conv.id}`;
-            // If AI didn't provide a name, use the one from DB (Insta name or phone)
+            // Always prefer DB name over placeholder or "Unknown"
             if (!finalCustomerName || finalCustomerName === '{name}' || finalCustomerName === 'غير معروف') {
               finalCustomerName = conv.customerName || conv.externalId;
             }
