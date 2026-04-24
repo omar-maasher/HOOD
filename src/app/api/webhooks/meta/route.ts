@@ -365,7 +365,7 @@ export const POST = async (request: Request) => {
               platform,
               externalId: senderId,
               type: 'human_request_detected',
-              link: `/ar/dashboard/inbox/${conversation[0]?.id}`,
+              link: `/ar/dashboard/inbox?id=${conversation[0]?.id}`,
             }, 'warning');
           }
 
@@ -374,7 +374,7 @@ export const POST = async (request: Request) => {
             conversationId: conversation[0]?.id,
             platform,
             externalId: senderId,
-            link: `/ar/dashboard/inbox/${conversation[0]?.id}`,
+            link: `/ar/dashboard/inbox?id=${conversation[0]?.id}`,
           });
 
           // Ensure platform is set correctly for routing if it's an Instagram integration

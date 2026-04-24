@@ -209,7 +209,7 @@ export const POST = async (request: Request) => {
             ),
           });
           if (conv) {
-            conversationLink = `/ar/dashboard/inbox/${conv.id}`;
+            conversationLink = `/ar/dashboard/inbox?id=${conv.id}`;
           }
         }
 

@@ -26,7 +26,7 @@ import {
   X,
   Zap,
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
@@ -73,6 +73,15 @@ export const InboxClient = ({ initialConversations, isAr, hasIntegrations }: { i
   const [showLifecycle, setShowLifecycle] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Handle direct link to conversation via ?id=xxx
+  useEffect(() => {
+    const idParam = searchParams.get('id');
+    if (idParam) {
+      setSelectedConvId(Number(idParam));
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     setConversations(initialConversations);
