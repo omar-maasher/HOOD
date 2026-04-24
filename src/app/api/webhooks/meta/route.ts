@@ -355,20 +355,6 @@ export const POST = async (request: Request) => {
             return null; // Do not send bot's own replies back to n8n to prevent loops
           }
 
-          // --- HUMAN REQUEST DETECTION ---
-          const humanKeywords = ['موظف', 'انسان', 'بشر', 'agent', 'human', 'help', 'مساعدة', 'تكلمني', 'كلمني'];
-          const wantsHuman = humanKeywords.some(k => messageText.toLowerCase().includes(k));
-
-          if (wantsHuman && !isEcho) {
-            await notifyOrg(orgId, 'طلب تدخل بشري 🙋‍♂️', `العميل: ${finalName} قد يحتاج لمساعدة بشرية. رسالته: "${messageText}"`, {
-              conversationId: conversation[0]?.id,
-              platform,
-              externalId: senderId,
-              type: 'human_request_detected',
-              link: `/ar/dashboard/inbox?id=${conversation[0]?.id}`,
-            }, 'warning');
-          }
-
           // --- PUSH NOTIFICATION ---
           await notifyOrg(orgId, `رسالة ${platform} جديدة`, `${finalName}: ${messageText}`, {
             conversationId: conversation[0]?.id,
