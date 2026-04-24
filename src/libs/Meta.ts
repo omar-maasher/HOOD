@@ -17,6 +17,7 @@ const PLATFORM_SCOPES: Record<MetaPlatform, string[]> = {
   instagram: [
     'pages_show_list',
     'pages_manage_metadata',
+    'business_management',
     'instagram_basic',
     'instagram_manage_messages',
     'public_profile',
@@ -24,6 +25,7 @@ const PLATFORM_SCOPES: Record<MetaPlatform, string[]> = {
   messenger: [
     'pages_show_list',
     'pages_manage_metadata',
+    'business_management',
     'pages_messaging',
     'public_profile',
   ],
