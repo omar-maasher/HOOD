@@ -197,10 +197,11 @@ export const POST = async (request: Request) => {
       }
 
       case 'request_human': {
-        const { customerName, reason, platform, senderId } = params || {};
+        const { customerName: aiCustomerName, reason, platform, senderId } = params || {};
         let conversationLink = '/ar/dashboard/inbox';
+        let finalCustomerName = aiCustomerName;
 
-        // Try to find the conversation ID to make the link direct
+        // Try to find the conversation to get the real name and link
         if (senderId) {
           const conv = await db.query.conversationSchema.findFirst({
             where: and(
@@ -208,19 +209,24 @@ export const POST = async (request: Request) => {
               eq(conversationSchema.externalId, String(senderId)),
             ),
           });
+
           if (conv) {
             conversationLink = `/ar/dashboard/inbox?id=${conv.id}`;
+            // If AI didn't provide a name, use the one from DB (Insta name or phone)
+            if (!finalCustomerName || finalCustomerName === '{name}') {
+              finalCustomerName = conv.customerName || conv.externalId;
+            }
           }
         }
 
         await notifyOrg(
           organizationId,
           'طلب تدخل بشري 🙋‍♂️',
-          `العميل: ${customerName || 'غير معروف'} يطلب التحدث مع موظف. ${reason ? `السبب: ${reason}` : ''}`,
+          `العميل: ${finalCustomerName || 'غير معروف'} يطلب التحدث مع موظف. ${reason && reason !== '{reason}' ? `السبب: ${reason}` : ''}`,
           {
             type: 'human_request',
             platform: platform || 'Unknown',
-            customerName,
+            customerName: finalCustomerName,
             link: conversationLink,
           },
           'warning',
