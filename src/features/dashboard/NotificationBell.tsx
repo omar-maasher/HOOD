@@ -3,6 +3,7 @@
 import { formatDistanceToNow } from 'date-fns';
 import { ar, enUS } from 'date-fns/locale';
 import { Bell } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { useEffect, useState } from 'react';
 
@@ -20,6 +21,7 @@ export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission>('default');
   const locale = useLocale();
+  const router = useRouter();
   const dateLocale = locale === 'ar' ? ar : enUS;
 
   const fetchNotifications = async () => {
@@ -121,7 +123,7 @@ export function NotificationBell() {
                         markAsRead(n.id);
                       }
                       if (n.link) {
-                        window.location.href = n.link;
+                        router.push(n.link);
                       }
                     }}
                   >
