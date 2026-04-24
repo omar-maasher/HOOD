@@ -203,18 +203,20 @@ export const POST = async (request: Request) => {
         let finalCustomerName = aiCustomerName;
 
         // Try to find the conversation to get the real name and link
-        if (senderId) {
+        if (senderId || aiCustomerName) {
           const conv = await db.query.conversationSchema.findFirst({
             where: and(
               eq(conversationSchema.organizationId, organizationId),
-              eq(conversationSchema.externalId, String(senderId)),
+              senderId
+                ? eq(conversationSchema.externalId, String(senderId))
+                : eq(conversationSchema.customerName, String(aiCustomerName)),
             ),
           });
 
           if (conv) {
             conversationLink = `/ar/dashboard/inbox?id=${conv.id}`;
             // If AI didn't provide a name, use the one from DB (Insta name or phone)
-            if (!finalCustomerName || finalCustomerName === '{name}') {
+            if (!finalCustomerName || finalCustomerName === '{name}' || finalCustomerName === 'غير معروف') {
               finalCustomerName = conv.customerName || conv.externalId;
             }
           }
