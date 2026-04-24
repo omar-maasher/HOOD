@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/DB';
 import { notifyOrg } from '@/libs/Notifications';
-import { aiSettingsSchema, bookingSchema, businessProfileSchema, organizationSchema, productSchema } from '@/models/Schema';
+import { aiSettingsSchema, bookingSchema, businessProfileSchema, conversationSchema, organizationSchema, productSchema } from '@/models/Schema';
 
 /**
  * AI Tools API - The bridge between n8n and the platform data.
@@ -197,7 +197,21 @@ export const POST = async (request: Request) => {
       }
 
       case 'request_human': {
-        const { customerName, reason, platform } = params || {};
+        const { customerName, reason, platform, senderId } = params || {};
+        let conversationLink = '/dashboard/inbox';
+
+        // Try to find the conversation ID to make the link direct
+        if (senderId) {
+          const conv = await db.query.conversationSchema.findFirst({
+            where: and(
+              eq(conversationSchema.organizationId, organizationId),
+              eq(conversationSchema.externalId, String(senderId)),
+            ),
+          });
+          if (conv) {
+            conversationLink = `/dashboard/inbox/${conv.id}`;
+          }
+        }
 
         await notifyOrg(
           organizationId,
@@ -207,6 +221,7 @@ export const POST = async (request: Request) => {
             type: 'human_request',
             platform: platform || 'Unknown',
             customerName,
+            link: conversationLink,
           },
           'warning',
         );
