@@ -2,8 +2,8 @@ import { and, eq, ilike, or, sql } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/DB';
-import { aiSettingsSchema, bookingSchema, businessProfileSchema, organizationSchema, productSchema } from '@/models/Schema';
 import { notifyOrg } from '@/libs/Notifications';
+import { aiSettingsSchema, bookingSchema, businessProfileSchema, organizationSchema, productSchema } from '@/models/Schema';
 
 /**
  * AI Tools API - The bridge between n8n and the platform data.
@@ -11,12 +11,35 @@ import { notifyOrg } from '@/libs/Notifications';
  */
 export const POST = async (request: Request) => {
   try {
-    let body;
-    try {
+    let body: any;
+    const contentType = request.headers.get('content-type') || '';
+
+    if (contentType.includes('application/json')) {
       body = await request.json();
-    } catch {
-      console.error('[AI_TOOLS] Failed to parse JSON body or empty body received');
-      return NextResponse.json({ error: 'Invalid or empty JSON body' }, { status: 400 });
+    } else {
+      // Support Form Data for n8n compatibility
+      const formData = await request.formData();
+      body = {};
+      formData.forEach((value, key) => {
+        if (key === 'params' && typeof value === 'string') {
+          try {
+            body[key] = JSON.parse(value);
+          } catch {
+            body[key] = value;
+          }
+        } else {
+          body[key] = value;
+        }
+      });
+
+      // If params is still just a string (n8n might send flat fields)
+      if (typeof body.params !== 'object') {
+        body.params = {
+          customerName: formData.get('customerName'),
+          reason: formData.get('reason'),
+          platform: formData.get('platform'),
+        };
+      }
     }
 
     const { action, organizationId, params, secret } = body;
@@ -171,6 +194,24 @@ export const POST = async (request: Request) => {
           bookingDate: booking.bookingDate,
           notes: booking.notes,
         });
+      }
+
+      case 'request_human': {
+        const { customerName, reason, platform } = params || {};
+
+        await notifyOrg(
+          organizationId,
+          'طلب تدخل بشري 🙋‍♂️',
+          `العميل: ${customerName || 'غير معروف'} يطلب التحدث مع موظف. ${reason ? `السبب: ${reason}` : ''}`,
+          {
+            type: 'human_request',
+            platform: platform || 'Unknown',
+            customerName,
+          },
+          'warning',
+        );
+
+        return NextResponse.json({ success: true, message: 'تم إخطار الموظفين بطلبك.' });
       }
 
       default:

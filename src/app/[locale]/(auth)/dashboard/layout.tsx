@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/sidebar';
 import { DashboardHeader } from '@/features/dashboard/DashboardHeader';
 import { DashboardSidebar } from '@/features/dashboard/DashboardSidebar';
+import { WebPushManager } from '@/features/dashboard/WebPushManager';
 
 export async function generateMetadata(props: { params: { locale: string } }) {
   const t = await getTranslations({
@@ -117,6 +118,7 @@ export default async function DashboardLayout(props: { children: React.ReactNode
 
   return (
     <SidebarProvider>
+      <WebPushManager />
       <DashboardSidebar menu={menu} />
       <SidebarInset>
         <header className="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between gap-2 border-b border-border/50 bg-background/80 px-4 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 sm:px-6">

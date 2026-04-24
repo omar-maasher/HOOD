@@ -6,6 +6,8 @@ import { LocaleSwitcher } from '@/components/LocaleSwitcher';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 
+import { NotificationBell } from './NotificationBell';
+
 export const DashboardHeader = () => {
   return (
     <>
@@ -15,6 +17,9 @@ export const DashboardHeader = () => {
 
       <div className="flex items-center gap-2">
         <div className="hidden items-center gap-1 sm:flex">
+          <div className="rounded-full transition-colors hover:bg-muted">
+            <NotificationBell />
+          </div>
           <div className="rounded-full transition-colors hover:bg-muted">
             <ThemeToggle />
           </div>

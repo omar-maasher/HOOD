@@ -38,6 +38,7 @@ export const organizationSchema = pgTable(
     ),
     apiKey: text('api_key').unique(),
     expoPushTokens: jsonb('expo_push_tokens').$type<string[]>(),
+    webPushSubscriptions: jsonb('web_push_subscriptions').$type<any[]>(),
     updatedAt: timestamp('updated_at', { mode: 'date' })
       .defaultNow()
       .$onUpdate(() => new Date())
@@ -267,7 +268,25 @@ export const messageSchema = pgTable('message', {
   createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
 });
 
+export const notificationSchema = pgTable('notification', {
+  id: serial('id').primaryKey(),
+  organizationId: text('organization_id')
+    .notNull()
+    .references(() => organizationSchema.id),
+  title: text('title').notNull(),
+  message: text('message').notNull(),
+  type: text('type').default('info').notNull(), // 'info' | 'message' | 'alert' | 'success'
+  isRead: text('is_read').default('false').notNull(),
+  link: text('link'),
+  updatedAt: timestamp('updated_at', { mode: 'date' })
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
+  createdAt: timestamp('created_at', { mode: 'date' }).defaultNow().notNull(),
+});
+
 // Relationships and types for Drizzle
 export type Conversation = typeof conversationSchema.$inferSelect;
 export type Message = typeof messageSchema.$inferSelect;
 export type Booking = typeof bookingSchema.$inferSelect;
+export type Notification = typeof notificationSchema.$inferSelect;
