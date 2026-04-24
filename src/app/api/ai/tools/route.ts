@@ -33,11 +33,12 @@ export const POST = async (request: Request) => {
       });
 
       // If params is still just a string (n8n might send flat fields)
-      if (typeof body.params !== 'object') {
+      if (typeof body.params !== 'object' || body.params === null) {
         body.params = {
           customerName: formData.get('customerName'),
           reason: formData.get('reason'),
           platform: formData.get('platform'),
+          senderId: formData.get('senderId'),
         };
       }
     }
