@@ -198,7 +198,7 @@ export const POST = async (request: Request) => {
 
       case 'request_human': {
         const { customerName, reason, platform, senderId } = params || {};
-        let conversationLink = '/dashboard/inbox';
+        let conversationLink = '/ar/dashboard/inbox';
 
         // Try to find the conversation ID to make the link direct
         if (senderId) {
@@ -209,7 +209,7 @@ export const POST = async (request: Request) => {
             ),
           });
           if (conv) {
-            conversationLink = `/dashboard/inbox/${conv.id}`;
+            conversationLink = `/ar/dashboard/inbox/${conv.id}`;
           }
         }
 

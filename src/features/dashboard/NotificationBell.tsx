@@ -119,11 +119,14 @@ export function NotificationBell() {
                     key={n.id}
                     className={`flex flex-col items-start gap-1 p-4 ${n.isRead !== 'true' ? 'bg-primary/5' : ''}`}
                     onClick={() => {
+                      // eslint-disable-next-line no-console
+                      console.log('Notification clicked, link:', n.link);
                       if (n.isRead !== 'true') {
                         markAsRead(n.id);
                       }
                       if (n.link) {
                         router.push(n.link);
+                        setIsOpen(false);
                       }
                     }}
                   >
