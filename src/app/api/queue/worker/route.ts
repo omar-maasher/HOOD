@@ -2,6 +2,7 @@ import { verifySignatureAppRouter } from '@upstash/qstash/dist/nextjs';
 import { NextResponse } from 'next/server';
 
 import { processMetaWebhookPayload } from '@/app/api/webhooks/meta/route';
+import { processStripeWebhookPayload } from '@/app/api/webhooks/stripe/route';
 
 /**
  * Worker endpoint for Upstash QStash.
@@ -24,6 +25,11 @@ async function handler(req: Request) {
       case 'process_meta_webhook':
         console.log('[Queue] Processing Meta Webhook in background...');
         await processMetaWebhookPayload(data);
+        break;
+
+      case 'process_stripe_webhook':
+        console.log('[Queue] Processing Stripe Webhook in background...', data?.type);
+        await processStripeWebhookPayload(data);
         break;
 
       case 'sync_meta_comments':

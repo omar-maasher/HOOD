@@ -28,6 +28,20 @@ export const POST = async (request: Request) => {
 
   console.log(`✅ Received Stripe event: ${event.type}`);
 
+  if (process.env.QSTASH_TOKEN && process.env.NEXT_PUBLIC_APP_URL) {
+    const { enqueueTask } = await import('@/libs/Queue');
+    await enqueueTask(`${process.env.NEXT_PUBLIC_APP_URL}/api/queue/worker`, {
+      taskType: 'process_stripe_webhook',
+      data: event,
+    });
+    return new NextResponse('OK', { status: 200 });
+  }
+
+  await processStripeWebhookPayload(event);
+  return new NextResponse('OK', { status: 200 });
+};
+
+export async function processStripeWebhookPayload(event: Stripe.Event) {
   switch (event.type) {
     case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session;
@@ -100,5 +114,5 @@ export const POST = async (request: Request) => {
     }
   }
 
-  return new NextResponse('OK', { status: 200 });
-};
+  return true;
+}
