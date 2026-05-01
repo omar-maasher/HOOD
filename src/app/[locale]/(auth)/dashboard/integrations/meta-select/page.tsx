@@ -39,6 +39,17 @@ export default async function MetaSelectPage(props: { searchParams: Promise<any>
   }
 
   const pagesData = await pagesRes.json();
+  
+  // Fetch permissions for debugging
+  let debugInfo = '';
+  try {
+    const permsRes = await fetch(`https://graph.facebook.com/v21.0/me/permissions?access_token=${fbRoot.accessToken}`);
+    const permsData = await permsRes.json();
+    debugInfo = JSON.stringify({ permissions: permsData.data, pagesResponse: pagesData }, null, 2);
+  } catch (e) {
+    debugInfo = 'Failed to fetch debug info';
+  }
+
   const pages = pagesData.data || [];
 
   if (pages.length === 0) {
@@ -86,7 +97,13 @@ export default async function MetaSelectPage(props: { searchParams: Promise<any>
       {availablePages.length === 0
         ? (
             <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center text-red-900">
-              لم يتم العثور على أي صفحات صالحة لهذا الخيار. تأكد من إعطاء الصلاحيات لصفحاتك أو التأكد من ربط انستجرام بالصفحة.
+              <p>لم يتم العثور على أي صفحات صالحة لهذا الخيار. تأكد من إعطاء الصلاحيات لصفحاتك أو التأكد من ربط انستجرام بالصفحة.</p>
+              <details className="mt-4 text-left">
+                <summary className="cursor-pointer text-sm font-bold underline">إظهار تفاصيل الخطأ (للمطور)</summary>
+                <pre className="mt-2 text-xs bg-red-100 p-4 rounded overflow-auto text-red-800" dir="ltr">
+                  {debugInfo}
+                </pre>
+              </details>
             </div>
           )
         : (
