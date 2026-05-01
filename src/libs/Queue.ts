@@ -13,7 +13,11 @@ export const queueClient = new Client({
  * @param payload - The data you want to send to the worker
  * @param delay - Optional delay before execution (e.g., "10s", "5m", "2h", "1d")
  */
-export const enqueueTask = async (endpointUrl: string, payload: any, delay?: string) => {
+export const enqueueTask = async (
+  endpointUrl: string, 
+  payload: any, 
+  delay?: number | `${number}s` | `${number}m` | `${number}h` | `${number}d`
+) => {
   if (!process.env.QSTASH_TOKEN) {
     console.warn('[QStash] Missing QSTASH_TOKEN, task not enqueued.');
     return null;
