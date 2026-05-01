@@ -115,7 +115,7 @@ export default async function MetaSelectPage(props: { searchParams: Promise<any>
                   <div className="flex items-center gap-4">
                     {page.igProfilePic
                       ? (
-                          <img src={page.igProfilePic} alt={page.igUsername} className="size-12 rounded-full border shadow-sm" />
+                          <img src={page.igProfilePic} alt={page.igUsername} className="size-12 rounded-full border shadow-sm" referrerPolicy="no-referrer" />
                         )
                       : (
                           <div className="flex size-12 items-center justify-center rounded-full bg-blue-100 text-blue-600">

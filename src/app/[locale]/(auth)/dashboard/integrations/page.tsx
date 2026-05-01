@@ -217,7 +217,7 @@ export default async function IntegrationsPage(props: { searchParams: Promise<an
                       <div key={integration.id} className="rounded-2xl border bg-muted/30 p-4">
                         <div className="flex items-center gap-3">
                           {profile?.profilePic && (
-                            <img src={profile.profilePic} alt={profile.username} className="size-10 rounded-full border shadow-sm" />
+                            <img src={profile.profilePic} alt={profile.username} className="size-10 rounded-full border shadow-sm" referrerPolicy="no-referrer" />
                           )}
                           <div className="flex flex-col">
                             <span className="text-sm font-bold text-foreground">
