@@ -52,10 +52,6 @@ export default async function MetaSelectPage(props: { searchParams: Promise<any>
 
   const pages = pagesData.data || [];
 
-  if (pages.length === 0) {
-    redirect(`/${lang}/dashboard/integrations?error=no_facebook_pages`);
-  }
-
   // Filter for Instagram if needed
   let availablePages = [];
 
