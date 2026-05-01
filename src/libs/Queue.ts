@@ -16,7 +16,7 @@ export const queueClient = new Client({
 export const enqueueTask = async (
   endpointUrl: string, 
   payload: any, 
-  delay?: number | `${number}s` | `${number}m` | `${number}h` | `${number}d`
+  delay?: string | number
 ) => {
   if (!process.env.QSTASH_TOKEN) {
     console.warn('[QStash] Missing QSTASH_TOKEN, task not enqueued.');
@@ -27,7 +27,7 @@ export const enqueueTask = async (
     const res = await queueClient.publishJSON({
       url: endpointUrl,
       body: payload,
-      delay, 
+      delay: delay as any, 
     });
     console.log(`[QStash] Task enqueued successfully: ${res.messageId}`);
     return res;
