@@ -390,7 +390,7 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
                       </p>
                       <textarea
                         rows={4}
-                        className="flex w-full rounded-2xl border-none bg-muted/30 px-4 py-3 text-sm shadow-inner outline-none focus:ring-2 focus:ring-primary"
+                        className="flex w-full resize-y rounded-2xl border-none bg-muted/30 px-4 py-3 text-sm shadow-inner outline-none focus:ring-2 focus:ring-primary"
                         value={formData.welcomeMessage}
                         onChange={e => setFormData({ ...formData, welcomeMessage: e.target.value })}
                       />
@@ -451,7 +451,7 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
                         <p className="mb-2 text-xs text-muted-foreground">{t('hours_hint')}</p>
                         <textarea
                           rows={3}
-                          className="flex w-full rounded-2xl border-none bg-muted/30 px-4 py-3 text-sm shadow-inner outline-none focus:ring-2 focus:ring-primary"
+                          className="flex w-full resize-y rounded-2xl border-none bg-muted/30 px-4 py-3 text-sm shadow-inner outline-none focus:ring-2 focus:ring-primary"
                           value={formData.workingHours.outOfHoursMessage}
                           onChange={e => setFormData({ ...formData, workingHours: { ...formData.workingHours, outOfHoursMessage: e.target.value } })}
                         />
@@ -513,7 +513,7 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
                         <Label className="text-sm font-bold">{t('spam_warning')}</Label>
                         <textarea
                           rows={2}
-                          className="flex w-full rounded-2xl border-none bg-background px-4 py-3 text-sm shadow-inner outline-none focus:ring-2 focus:ring-primary"
+                          className="flex w-full resize-y rounded-2xl border-none bg-background px-4 py-3 text-sm shadow-inner outline-none focus:ring-2 focus:ring-primary"
                           value={formData.antiSpam.warningMessage}
                           onChange={e => setFormData({ ...formData, antiSpam: { ...formData.antiSpam, warningMessage: e.target.value } })}
                         />
