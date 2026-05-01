@@ -17,7 +17,6 @@ const PLATFORM_SCOPES: Record<MetaPlatform, string[]> = {
   instagram: [
     'pages_show_list',
     'pages_manage_metadata',
-    'business_management',
     'instagram_basic',
     'instagram_manage_messages',
     'public_profile',
@@ -25,7 +24,6 @@ const PLATFORM_SCOPES: Record<MetaPlatform, string[]> = {
   messenger: [
     'pages_show_list',
     'pages_manage_metadata',
-    'business_management',
     'pages_messaging',
     'public_profile',
   ],
@@ -75,16 +73,7 @@ export const getMetaAuthUrl = (state: string, platform?: MetaPlatform, mode?: st
     return `https://www.instagram.com/oauth/authorize?${params.toString()}`;
   }
 
-  if (platform === 'messenger') {
-    const params = new URLSearchParams({
-      client_id: META_CONFIG.appId || '',
-      redirect_uri: META_CONFIG.redirectUri || '',
-      state,
-      response_type: 'code',
-      config_id: '2403946966716018',
-    });
-    return `https://www.facebook.com/${META_CONFIG.graphVersion}/dialog/oauth?${params.toString()}`;
-  }
+  // Standard OAuth Flow uses scopes dynamically based on PLATFORM_SCOPES
 
   const scopes = platform
     ? PLATFORM_SCOPES[platform]
