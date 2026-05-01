@@ -90,20 +90,33 @@ export const GET = async (request: Request) => {
 
         const pagesData = await pagesRes.json();
         if (pagesData.data && pagesData.data.length > 0) {
-          const page = pagesData.data[0];
+          // Find the first valid page with a token
+          const page = pagesData.data.find((p: any) => p.access_token);
+          if (!page) {
+            return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=no_valid_page_token`, request.url));
+          }
+
           const pageToken = page.access_token;
           const pageId = page.id;
 
           // --- WEBHOOK SUBSCRIPTION ---
           try {
-            await fetch(`https://graph.facebook.com/v21.0/${pageId}/subscribed_apps?access_token=${pageToken}`, {
+            const subRes = await fetch(`https://graph.facebook.com/v21.0/${pageId}/subscribed_apps?access_token=${pageToken}`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ subscribed_fields: ['messages', 'messaging_postbacks'] }),
             });
+
+            if (!subRes.ok) {
+              const errData = await subRes.json();
+              logger.error({ errData }, 'Subscribe failed');
+              throw new Error('Subscribe failed');
+            }
+
             logger.info({ pageId }, '[WEBHOOK] Successfully subscribed Messenger Page to notifications');
           } catch (e) {
             logger.error(e, '[WEBHOOK] Failed to subscribe Messenger Page');
+            // We can choose to fail the whole integration or just log it. We'll proceed but log the error.
           }
 
           const existingMsg = await db.query.integrationSchema.findFirst({
@@ -196,11 +209,18 @@ export const GET = async (request: Request) => {
           // --- WEBHOOK SUBSCRIPTION ---
           if (igPageId && igPageToken) {
             try {
-              await fetch(`https://graph.facebook.com/v21.0/${igPageId}/subscribed_apps?access_token=${igPageToken}`, {
+              const subRes = await fetch(`https://graph.facebook.com/v21.0/${igPageId}/subscribed_apps?access_token=${igPageToken}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ subscribed_fields: ['messages', 'messaging_postbacks', 'comments', 'mentions'] }),
               });
+
+              if (!subRes.ok) {
+                const errData = await subRes.json();
+                logger.error({ errData }, 'IG Subscribe failed');
+                throw new Error('Subscribe failed');
+              }
+
               logger.info({ igPageId }, '[WEBHOOK] Successfully subscribed Instagram Page to notifications');
             } catch (e) {
               logger.error(e, '[WEBHOOK] Failed to subscribe Instagram Page');
