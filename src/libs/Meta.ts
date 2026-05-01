@@ -73,19 +73,21 @@ export const getMetaAuthUrl = (state: string, platform?: MetaPlatform, mode?: st
     return `https://www.instagram.com/oauth/authorize?${params.toString()}`;
   }
 
-  // Standard OAuth Flow uses scopes dynamically based on PLATFORM_SCOPES
-
-  const scopes = platform
-    ? PLATFORM_SCOPES[platform]
-    : [...new Set(Object.values(PLATFORM_SCOPES).flat())];
+  const configId = process.env.META_LOGIN_CONFIG_ID || '2403946966716018';
 
   const params: Record<string, string> = {
     client_id: META_CONFIG.appId || '',
     redirect_uri: META_CONFIG.redirectUri || '',
     state,
-    scope: scopes.join(','),
     response_type: 'code',
   };
+
+  if (platform === 'whatsapp') {
+    params.scope = PLATFORM_SCOPES.whatsapp.join(',');
+  } else {
+    // For Messenger and Instagram (via FB Login), use the Facebook Login for Business configuration
+    params.config_id = configId;
+  }
 
   if (mode === 'instagram_first') {
     params.extras = JSON.stringify({ setup: { channel: 'IG_API_ONBOARDING' } });
