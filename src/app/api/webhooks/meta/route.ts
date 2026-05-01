@@ -101,6 +101,24 @@ export const POST = async (request: Request) => {
   // Print raw webhook to Vercel logs to verify Meta is sending data
   logger.info({ webhookBody: body }, 'Incoming Meta Webhook');
 
+  if (process.env.QSTASH_TOKEN && process.env.NEXT_PUBLIC_APP_URL) {
+    // 1. Queue the task for background processing
+    const { enqueueTask } = await import('@/libs/Queue');
+    await enqueueTask(`${process.env.NEXT_PUBLIC_APP_URL}/api/queue/worker`, {
+      taskType: 'process_meta_webhook',
+      data: body,
+    });
+    // Return 200 OK immediately to Meta
+    return new NextResponse('OK', { status: 200 });
+  }
+
+  // Fallback: Synchronous processing
+  await processMetaWebhookPayload(body);
+  return new NextResponse('OK', { status: 200 });
+};
+
+export async function processMetaWebhookPayload(body: any) {
+
   // 1. تسجيل الطلب الخام فوراً للـ Debug
   const rawId = `RAW_${Date.now()}`;
   await db.insert(webhookEventSchema).values({ mid: rawId }).catch(() => null);
@@ -685,5 +703,5 @@ export const POST = async (request: Request) => {
     await Promise.all(processingPromises);
   }
 
-  return new NextResponse('OK', { status: 200 });
-};
+  return true;
+}
