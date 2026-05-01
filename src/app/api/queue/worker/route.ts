@@ -47,4 +47,8 @@ async function handler(req: Request) {
 }
 
 // Wrap the handler with Upstash's signature verification
-export const POST = verifySignatureAppRouter(handler);
+// We provide fallback strings so the Next.js build doesn't crash when env vars are missing
+export const POST = verifySignatureAppRouter(handler, {
+  currentSigningKey: process.env.QSTASH_CURRENT_SIGNING_KEY || 'dummy_current',
+  nextSigningKey: process.env.QSTASH_NEXT_SIGNING_KEY || 'dummy_next',
+});
