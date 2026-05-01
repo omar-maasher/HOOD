@@ -1,12 +1,8 @@
-import { eq } from 'drizzle-orm';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import type Stripe from 'stripe';
 
-import { db } from '@/libs/DB';
 import { stripe } from '@/libs/Stripe';
-import { organizationSchema } from '@/models/Schema';
-import { PLAN_ID, PricingPlanList } from '@/utils/AppConfig';
 
 import { processStripeWebhookPayload } from './processor';
 
