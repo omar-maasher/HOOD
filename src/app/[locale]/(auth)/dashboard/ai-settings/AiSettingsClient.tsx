@@ -247,7 +247,7 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
                         id="systemPrompt"
                         rows={6}
                         placeholder={t('system_prompt_placeholder')}
-                        className="flex min-h-[120px] w-full rounded-2xl border-none bg-muted/30 px-4 py-3 text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        className="flex min-h-[120px] w-full resize-y rounded-2xl border-none bg-muted/30 px-4 py-3 text-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                         value={formData.systemPrompt}
                         onChange={e => setFormData({ ...formData, systemPrompt: e.target.value })}
                       />
@@ -361,7 +361,7 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
                         id="escalationRules"
                         rows={5}
                         placeholder={t('escalation_placeholder')}
-                        className="flex min-h-[140px] w-full rounded-2xl border-none bg-muted/30 px-4 py-3 text-sm shadow-inner outline-none focus:ring-2 focus:ring-primary"
+                        className="flex min-h-[140px] w-full resize-y rounded-2xl border-none bg-muted/30 px-4 py-3 text-sm shadow-inner outline-none focus:ring-2 focus:ring-primary"
                         value={formData.escalationRules}
                         onChange={e => setFormData({ ...formData, escalationRules: e.target.value })}
                       />

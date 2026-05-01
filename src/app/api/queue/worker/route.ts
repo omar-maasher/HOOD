@@ -1,8 +1,8 @@
 import { verifySignatureAppRouter } from '@upstash/qstash/dist/nextjs';
 import { NextResponse } from 'next/server';
 
-import { processMetaWebhookPayload } from '@/app/api/webhooks/meta/route';
-import { processStripeWebhookPayload } from '@/app/api/webhooks/stripe/route';
+import { processMetaWebhookPayload } from '@/app/api/webhooks/meta/processor';
+import { processStripeWebhookPayload } from '@/app/api/webhooks/stripe/processor';
 
 /**
  * Worker endpoint for Upstash QStash.
