@@ -81,8 +81,89 @@ export const GET = async (request: Request) => {
     }
 
     // CREATE DISPLAY RECORD BASED ON PLATFORM CLICKED
-    if (platform === 'messenger' || (platform === 'instagram' && mode !== 'instagram_direct')) {
+    if (platform === 'messenger') {
       return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations/meta-select?platform=${platform}`, request.url));
+    } else if (platform === 'instagram' && mode !== 'instagram_direct') {
+      try {
+        const pagesRes = await fetch(`https://graph.facebook.com/v21.0/me/accounts?access_token=${accessToken}`);
+        if (!pagesRes.ok) {
+          return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=pages_fetch_failed`, request.url));
+        }
+
+        const pagesData = await pagesRes.json();
+        if (!pagesData.data || pagesData.data.length === 0) {
+          return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=no_facebook_pages`, request.url));
+        }
+
+        let igAccountId = '';
+        let igPageToken = '';
+        let igPageId = '';
+        let igUsername = '';
+        let igProfilePic = '';
+
+        for (const page of pagesData.data) {
+          if (!page.access_token) {
+            continue;
+          }
+          const igRes = await fetch(`https://graph.facebook.com/v21.0/${page.id}?fields=instagram_business_account{id,username,profile_picture_url}&access_token=${page.access_token}`);
+          if (igRes.ok) {
+            const igData = await igRes.json();
+            if (igData.instagram_business_account) {
+              igAccountId = igData.instagram_business_account.id;
+              igPageToken = page.access_token;
+              igPageId = page.id;
+              igUsername = igData.instagram_business_account.username || '';
+              igProfilePic = igData.instagram_business_account.profile_picture_url || '';
+              break;
+            }
+          }
+        }
+
+        if (igAccountId) {
+          try {
+            await fetch(`https://graph.facebook.com/v21.0/${igPageId}/subscribed_apps?access_token=${igPageToken}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ subscribed_fields: ['messages', 'messaging_postbacks', 'comments', 'mentions'] }),
+            });
+            logger.info({ igPageId }, '[WEBHOOK] Successfully subscribed Instagram Page to notifications');
+          } catch (e) {
+            logger.error(e, '[WEBHOOK] Failed to subscribe Instagram Page');
+          }
+
+          const existingIg = await db.query.integrationSchema.findFirst({
+            where: and(
+              eq(integrationSchema.organizationId, orgId),
+              eq(integrationSchema.type, 'instagram'),
+            ),
+          });
+
+          const integrationData = {
+            accessToken: igPageToken,
+            providerId: igPageId, // Facebook Page ID for webhook matching
+            config: JSON.stringify({ igAccountId, method: 'facebook_login', username: igUsername, profilePic: igProfilePic }),
+            status: 'active' as const,
+            updatedAt: new Date(),
+          };
+
+          if (existingIg) {
+            await db.update(integrationSchema)
+              .set(integrationData)
+              .where(eq(integrationSchema.id, existingIg.id));
+          } else {
+            await db.insert(integrationSchema).values({
+              organizationId: orgId,
+              type: 'instagram',
+              ...integrationData,
+            });
+          }
+        } else {
+          return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=no_instagram_account`, request.url));
+        }
+      } catch (e) {
+        logger.error(e, 'Connect Instagram via FB Error');
+        return NextResponse.redirect(new URL(`/${lang}/dashboard/integrations?error=instagram_connect_failed`, request.url));
+      }
     } else if (platform === 'instagram' && mode === 'instagram_direct') {
       try {
         let igAccountId = tokenResponse.user_id?.toString();
