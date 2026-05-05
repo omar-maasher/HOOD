@@ -199,6 +199,13 @@ export const aiSettingsSchema = pgTable('ai_settings', {
       rows: Array<{ id: string; title: string; description: string }>;
     }>;
   }>(),
+  whatsappButtons: jsonb('whatsapp_buttons').$type<{
+    enabled: boolean;
+    header: string;
+    body: string;
+    footer: string;
+    buttons: Array<{ id: string; text: string }>;
+  }>(),
   updatedAt: timestamp('updated_at', { mode: 'date' })
     .defaultNow()
     .$onUpdate(() => new Date())

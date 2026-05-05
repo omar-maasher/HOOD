@@ -2,7 +2,7 @@ import { and, eq, isNotNull, sql } from 'drizzle-orm';
 
 import { db } from '@/libs/DB';
 import { logger } from '@/libs/Logger';
-import { detectMessagingPlatform, getSenderProfile, sendWhatsAppListMessage } from '@/libs/Meta';
+import { detectMessagingPlatform, getSenderProfile, sendWhatsAppButtonsMessage, sendWhatsAppListMessage } from '@/libs/Meta';
 import { notifyOrg } from '@/libs/Notifications';
 import {
   aiSettingsSchema,
@@ -464,6 +464,32 @@ export async function processMetaWebhookPayload(body: any) {
                   logger.info({ orgId, senderId }, '[WEBHOOK] Auto-sent WhatsApp Interactive Menu');
                 } catch (e) {
                   logger.error(e, '[WEBHOOK] Failed to auto-send WhatsApp Menu');
+                }
+              }
+
+              // --- AUTO-SEND WHATSAPP QUICK BUTTONS ---
+              const buttonsConfig = aiSettings?.whatsappButtons;
+              const isButtonsTrigger = /^(?:أزرار|buttons|help|مساعدة|خيارات)$/i.test(text.trim());
+
+              if (buttonsConfig?.enabled && isButtonsTrigger && integration?.providerId && integration?.accessToken) {
+                try {
+                  const config = JSON.parse(integration.config || '{}');
+                  const whatsappId = config.phoneNumberId || integration.providerId;
+                  logger.info({ senderId, whatsappId }, '[WEBHOOK DEBUG] Sending WhatsApp Quick Buttons...');
+                  await sendWhatsAppButtonsMessage(
+                    whatsappId,
+                    senderId,
+                    integration.accessToken,
+                    {
+                      header: buttonsConfig.header,
+                      body: buttonsConfig.body,
+                      footer: buttonsConfig.footer,
+                      buttons: buttonsConfig.buttons,
+                    },
+                  );
+                  logger.info({ orgId, senderId }, '[WEBHOOK] Auto-sent WhatsApp Quick Buttons');
+                } catch (e) {
+                  logger.error(e, '[WEBHOOK] Failed to auto-send WhatsApp Buttons');
                 }
               }
 

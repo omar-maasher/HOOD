@@ -376,6 +376,7 @@ export const sendWhatsAppButtonsMessage = async (
   recipientId: string,
   accessToken: string,
   config: {
+    header?: string;
     body: string;
     footer?: string;
     buttons: Array<{
@@ -399,6 +400,7 @@ export const sendWhatsAppButtonsMessage = async (
       type: 'interactive',
       interactive: {
         type: 'button',
+        header: config.header ? { type: 'text', text: config.header } : undefined,
         body: { text: config.body },
         footer: config.footer ? { text: config.footer } : undefined,
         action: {

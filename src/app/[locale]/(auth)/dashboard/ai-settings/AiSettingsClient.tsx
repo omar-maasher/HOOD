@@ -7,6 +7,7 @@ import {
   Clock,
   List,
   MessageCircle,
+  MousePointer2,
   Plus,
   Save,
   Settings2,
@@ -48,6 +49,13 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
       footer: 'نحن هنا لخدمتك',
       buttonText: 'عرض القائمة',
       sections: [{ title: 'خدماتنا', rows: [] }],
+    },
+    whatsappButtons: settings?.whatsappButtons || {
+      enabled: false,
+      header: 'تواصل معنا',
+      body: 'كيف يمكننا مساعدتك اليوم؟ يمكنك الاختيار من الأزرار أدناه:',
+      footer: 'نحن هنا لخدمتك',
+      buttons: [],
     },
   });
 
@@ -169,6 +177,7 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
             { id: 'hours', label: t('tab_hours'), icon: <Clock className="size-5" /> },
             { id: 'spam', label: t('tab_spam'), icon: <ShieldAlert className="size-5" /> },
             { id: 'whatsapp_menu', label: 'قائمة واتساب', icon: <List className="size-5" /> },
+            { id: 'whatsapp_buttons', label: 'أزرار واتساب', icon: <MousePointer2 className="size-5" /> },
           ].map(tab => (
             <button
               key={tab.id}
@@ -657,6 +666,120 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
                           <Plus className="ml-2 size-4" />
                           إضافة خيار جديد
                         </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* WhatsApp Buttons */}
+              {activeTab === 'whatsapp_buttons' && (
+                <div className="flex flex-col gap-8 duration-500 animate-in fade-in slide-in-from-bottom-4">
+                  <div className="flex items-center gap-3 border-b pb-6">
+                    <div className="flex size-12 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-600">
+                      <MousePointer2 className="size-7" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold">تخصيص أزرار الرد السريع</h3>
+                      <p className="text-sm text-muted-foreground">أضف أزراراً سريعة (بحد أقصى 3) تظهر للعملاء للرد السريع.</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 rounded-2xl border bg-muted/10 p-4">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, whatsappButtons: { ...formData.whatsappButtons, enabled: !formData.whatsappButtons.enabled } })}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${formData.whatsappButtons.enabled ? 'bg-primary' : 'bg-gray-300'}`}
+                    >
+                      <span className={`inline-block size-4 rounded-full bg-white transition-transform${formData.whatsappButtons.enabled ? 'translate-x-1 rtl:-translate-x-6' : 'translate-x-6 rtl:-translate-x-1'}`} />
+                    </button>
+                    <div className="flex flex-col text-start">
+                      <span className="text-sm font-bold">تفعيل أزرار الرد السريع</span>
+                      <span className="text-xs text-muted-foreground">عند التفعيل، يمكنك طلب إرسال هذه الأزرار عبر أدوات الذكاء الاصطناعي.</span>
+                    </div>
+                  </div>
+
+                  {formData.whatsappButtons.enabled && (
+                    <div className="grid gap-6 text-start">
+                      <div className="grid gap-2">
+                        <Label className="text-sm font-bold">العنوان (اختياري)</Label>
+                        <Input
+                          value={formData.whatsappButtons.header}
+                          onChange={e => setFormData({ ...formData, whatsappButtons: { ...formData.whatsappButtons, header: e.target.value } })}
+                          className="h-11 rounded-xl border-none bg-muted/30"
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label className="text-sm font-bold">نص الرسالة</Label>
+                        <textarea
+                          rows={3}
+                          value={formData.whatsappButtons.body}
+                          onChange={e => setFormData({ ...formData, whatsappButtons: { ...formData.whatsappButtons, body: e.target.value } })}
+                          className="flex w-full rounded-xl border-none bg-muted/30 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label className="text-sm font-bold">نص التذييل (اختياري)</Label>
+                        <Input
+                          value={formData.whatsappButtons.footer}
+                          onChange={e => setFormData({ ...formData, whatsappButtons: { ...formData.whatsappButtons, footer: e.target.value } })}
+                          className="h-11 rounded-xl border-none bg-muted/30"
+                        />
+                      </div>
+
+                      <div className="mt-4 flex flex-col gap-4">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-lg font-bold">الأزرار (بحد أقصى 3)</Label>
+                          <span className="text-xs text-muted-foreground">
+                            {formData.whatsappButtons.buttons.length}
+                            {' '}
+                            / 3
+                          </span>
+                        </div>
+                        {formData.whatsappButtons.buttons.map((btn: any, idx: number) => (
+                          <div key={btn.id} className="group relative flex items-center gap-4 rounded-2xl border bg-muted/5 p-4">
+                            <div className="flex-1">
+                              <Label className="mb-1 block text-xs">نص الزر</Label>
+                              <Input
+                                value={btn.title}
+                                onChange={(e) => {
+                                  const newBtns = [...formData.whatsappButtons.buttons];
+                                  newBtns[idx].title = e.target.value;
+                                  setFormData({ ...formData, whatsappButtons: { ...formData.whatsappButtons, buttons: newBtns } });
+                                }}
+                                className="h-10 text-sm"
+                                maxLength={20}
+                              />
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                const newBtns = [...formData.whatsappButtons.buttons];
+                                newBtns.splice(idx, 1);
+                                setFormData({ ...formData, whatsappButtons: { ...formData.whatsappButtons, buttons: newBtns } });
+                              }}
+                              className="text-red-500 hover:bg-red-50"
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        {formData.whatsappButtons.buttons.length < 3 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                              const newBtns = [...formData.whatsappButtons.buttons, { id: `btn_${Date.now()}`, title: '' }];
+                              setFormData({ ...formData, whatsappButtons: { ...formData.whatsappButtons, buttons: newBtns } });
+                            }}
+                            className="rounded-xl border-2 border-dashed py-6"
+                          >
+                            <Plus className="ml-2 size-4" />
+                            إضافة زر جديد
+                          </Button>
+                        )}
                       </div>
                     </div>
                   )}

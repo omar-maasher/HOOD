@@ -39,6 +39,13 @@ export async function getAiSettings() {
       buttonText: 'عرض القائمة',
       sections: [{ title: 'خدماتنا', rows: [] }],
     },
+    whatsappButtons: settings.whatsappButtons || {
+      enabled: false,
+      header: 'تواصل معنا',
+      body: 'كيف يمكننا مساعدتك اليوم؟ يمكنك الاختيار من الأزرار أدناه:',
+      footer: 'نحن هنا لخدمتك',
+      buttons: [],
+    },
   };
 }
 
@@ -68,6 +75,7 @@ export async function saveAiSettings(data: any) {
     workingHours: data.workingHours,
     antiSpam: data.antiSpam,
     whatsappMenu: data.whatsappMenu,
+    whatsappButtons: data.whatsappButtons,
   };
 
   if (existingSettings) {
