@@ -442,10 +442,15 @@ export async function processMetaWebhookPayload(body: any) {
               const menu = aiSettings?.whatsappMenu;
               const isGreeting = /^(?:سلام|مرحبا|هلا|hi|hello|start|menu|القائمة)$/i.test(text.trim());
 
+              logger.info({ menuEnabled: menu?.enabled, isGreeting, text, hasIntegration: !!integration, providerId: integration?.providerId }, '[WEBHOOK DEBUG] Checking WhatsApp Menu Trigger');
+
               if (menu?.enabled && isGreeting && integration?.providerId && integration?.accessToken) {
                 try {
+                  const config = JSON.parse(integration.config || '{}');
+                  const whatsappId = config.phoneNumberId || integration.providerId;
+                  logger.info({ senderId, whatsappId }, '[WEBHOOK DEBUG] Sending WhatsApp Interactive Menu...');
                   await sendWhatsAppListMessage(
-                    integration.providerId,
+                    whatsappId,
                     senderId,
                     integration.accessToken,
                     {
