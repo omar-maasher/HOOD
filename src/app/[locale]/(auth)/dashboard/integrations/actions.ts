@@ -7,7 +7,7 @@ import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 
 import { db } from '@/libs/DB';
-import { createAndShareSheet } from '@/libs/GoogleSheets';
+import { extractSpreadsheetId } from '@/libs/GoogleSheets';
 import { logger } from '@/libs/Logger';
 import { integrationSchema, productSchema } from '@/models/Schema';
 
@@ -369,7 +369,7 @@ export async function refreshInstagramIntegration(integrationId: number) {
   }
 }
 
-export async function createGoogleSheetIntegration(email: string) {
+export async function createGoogleSheetIntegration(url: string) {
   const { orgId } = await auth();
   if (!orgId) {
     throw new Error('Unauthorized');
@@ -382,26 +382,28 @@ export async function createGoogleSheetIntegration(email: string) {
     });
 
     if (existing) {
-      return { success: false, error: 'Google Sheets integration already exists.' };
+      return { success: false, error: 'تم ربط جدول جوجل مسبقاً.' };
     }
 
-    // Create and share sheet
-    const { spreadsheetId, spreadsheetUrl } = await createAndShareSheet(email, 'جدول الحجوزات الذكي');
+    const spreadsheetId = extractSpreadsheetId(url);
+    if (!spreadsheetId) {
+      return { success: false, error: 'رابط الجدول غير صحيح. تأكد من نسخ الرابط بالكامل.' };
+    }
 
     // Save to database
     await db.insert(integrationSchema).values({
       organizationId: orgId,
       type: 'google_sheets',
       providerId: spreadsheetId, // Store the ID here
-      config: JSON.stringify({ email, url: spreadsheetUrl }),
+      config: JSON.stringify({ url }),
       status: 'active',
     });
 
     revalidatePath('/dashboard/integrations');
 
-    return { success: true, url: spreadsheetUrl };
+    return { success: true, url };
   } catch (error: any) {
     logger.error('Google Sheets Creation Error', error);
-    return { success: false, error: error.message || 'فشل إنشاء الجدول. تأكد من صحة الإيميل ومن تفعيل Google Drive API.' };
+    return { success: false, error: error.message || 'فشل إضافة الجدول.' };
   }
 }
