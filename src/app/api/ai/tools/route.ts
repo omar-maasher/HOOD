@@ -3,8 +3,9 @@ import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/DB';
 import { syncBookingToGoogleSheet } from '@/libs/GoogleSheets';
+import { sendWhatsAppButtonsMessage, sendWhatsAppListMessage } from '@/libs/Meta';
 import { notifyOrg } from '@/libs/Notifications';
-import { aiSettingsSchema, bookingSchema, businessProfileSchema, conversationSchema, organizationSchema, productSchema } from '@/models/Schema';
+import { aiSettingsSchema, bookingSchema, businessProfileSchema, conversationSchema, integrationSchema, organizationSchema, productSchema } from '@/models/Schema';
 
 /**
  * AI Tools API - The bridge between n8n and the platform data.
@@ -246,6 +247,61 @@ export const POST = async (request: Request) => {
         );
 
         return NextResponse.json({ success: true, message: 'تم إخطار الموظفين بطلبك.' });
+      }
+
+      // --- WHATSAPP INTERACTIVE TOOLS ---
+      case 'send_whatsapp_list': {
+        const { recipientId, header, body, footer, buttonText, sections } = params || {};
+        if (!recipientId || !body || !buttonText || !sections) {
+          return NextResponse.json({ error: 'Missing required params (recipientId, body, buttonText, sections)' }, { status: 400 });
+        }
+
+        const integration = await db.query.integrationSchema.findFirst({
+          where: and(eq(integrationSchema.organizationId, organizationId), eq(integrationSchema.type, 'whatsapp'), eq(integrationSchema.status, 'active')),
+        });
+
+        if (!integration || !integration.providerId || !integration.accessToken) {
+          return NextResponse.json({ error: 'Active WhatsApp integration not found for this organization.' }, { status: 404 });
+        }
+
+        try {
+          await sendWhatsAppListMessage(integration.providerId, recipientId, integration.accessToken, {
+            header,
+            body,
+            footer,
+            buttonText,
+            sections,
+          });
+          return NextResponse.json({ success: true, message: 'List message sent successfully' });
+        } catch (e: any) {
+          return NextResponse.json({ error: e.message }, { status: 500 });
+        }
+      }
+
+      case 'send_whatsapp_buttons': {
+        const { recipientId, body, footer, buttons } = params || {};
+        if (!recipientId || !body || !buttons) {
+          return NextResponse.json({ error: 'Missing required params (recipientId, body, buttons)' }, { status: 400 });
+        }
+
+        const integration = await db.query.integrationSchema.findFirst({
+          where: and(eq(integrationSchema.organizationId, organizationId), eq(integrationSchema.type, 'whatsapp'), eq(integrationSchema.status, 'active')),
+        });
+
+        if (!integration || !integration.providerId || !integration.accessToken) {
+          return NextResponse.json({ error: 'Active WhatsApp integration not found for this organization.' }, { status: 404 });
+        }
+
+        try {
+          await sendWhatsAppButtonsMessage(integration.providerId, recipientId, integration.accessToken, {
+            body,
+            footer,
+            buttons,
+          });
+          return NextResponse.json({ success: true, message: 'Buttons message sent successfully' });
+        } catch (e: any) {
+          return NextResponse.json({ error: e.message }, { status: 500 });
+        }
       }
 
       default:
