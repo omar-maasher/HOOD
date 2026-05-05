@@ -5,6 +5,7 @@ import { getLocale } from 'next-intl/server';
 
 import { GoogleSheetsConnect } from '@/features/integrations/GoogleSheetsConnect';
 import { StoreConnect } from '@/features/integrations/StoreConnect';
+import { SyncAllButton } from '@/features/integrations/SyncAllButton';
 import { WhatsAppConnect } from '@/features/integrations/WhatsAppConnect';
 import { db } from '@/libs/DB';
 import { integrationSchema } from '@/models/Schema';
@@ -402,7 +403,10 @@ export default async function IntegrationsPage(props: { searchParams: Promise<an
               <div className="mt-8 border-t border-dashed pt-6">
                 {isConnected
                   ? (
-                      <DisconnectButton channelKey={tool.key} integrationId={integration?.id} />
+                      <div className="flex flex-col gap-2">
+                        <SyncAllButton isAr={isAr} />
+                        <DisconnectButton channelKey={tool.key} integrationId={integration?.id} />
+                      </div>
                     )
                   : (
                       <GoogleSheetsConnect isAr={isAr} />

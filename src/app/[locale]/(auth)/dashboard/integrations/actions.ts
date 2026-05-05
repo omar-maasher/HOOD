@@ -7,7 +7,7 @@ import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 
 import { db } from '@/libs/DB';
-import { extractSpreadsheetId } from '@/libs/GoogleSheets';
+import { extractSpreadsheetId, syncAllBookingsToGoogleSheet } from '@/libs/GoogleSheets';
 import { logger } from '@/libs/Logger';
 import { integrationSchema, productSchema } from '@/models/Schema';
 
@@ -406,4 +406,15 @@ export async function createGoogleSheetIntegration(url: string) {
     logger.error('Google Sheets Creation Error', error);
     return { success: false, error: error.message || 'فشل إضافة الجدول.' };
   }
+}
+
+export async function triggerGoogleSheetsSync() {
+  const { orgId } = await auth();
+  if (!orgId) {
+    throw new Error('Unauthorized');
+  }
+
+  const result = await syncAllBookingsToGoogleSheet(orgId);
+  revalidatePath('/dashboard/integrations');
+  return result;
 }
