@@ -2,7 +2,7 @@ import { and, eq, isNotNull, sql } from 'drizzle-orm';
 
 import { db } from '@/libs/DB';
 import { logger } from '@/libs/Logger';
-import { detectMessagingPlatform, getSenderProfile } from '@/libs/Meta';
+import { detectMessagingPlatform, getSenderProfile, sendWhatsAppListMessage } from '@/libs/Meta';
 import { notifyOrg } from '@/libs/Notifications';
 import {
   aiSettingsSchema,
@@ -436,6 +436,31 @@ export async function processMetaWebhookPayload(body: any) {
                 platform: 'whatsapp',
                 externalId: senderId,
               });
+
+              // --- AUTO-SEND WHATSAPP INTERACTIVE MENU ---
+              const aiSettings = aiSettingsResults[0] as any;
+              const menu = aiSettings?.whatsappMenu;
+              const isGreeting = /^(?:سلام|مرحبا|هلا|hi|hello|start|menu|القائمة)$/i.test(text.trim());
+
+              if (menu?.enabled && isGreeting && integration?.providerId && integration?.accessToken) {
+                try {
+                  await sendWhatsAppListMessage(
+                    integration.providerId,
+                    senderId,
+                    integration.accessToken,
+                    {
+                      header: menu.header,
+                      body: menu.body,
+                      footer: menu.footer,
+                      buttonText: menu.buttonText,
+                      sections: menu.sections,
+                    },
+                  );
+                  logger.info({ orgId, senderId }, '[WEBHOOK] Auto-sent WhatsApp Interactive Menu');
+                } catch (e) {
+                  logger.error(e, '[WEBHOOK] Failed to auto-send WhatsApp Menu');
+                }
+              }
 
               const isActive = (context.aiConfig as any).isActive !== 'false';
               if (!isActive) {

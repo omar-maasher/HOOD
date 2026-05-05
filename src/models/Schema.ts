@@ -188,6 +188,17 @@ export const aiSettingsSchema = pgTable('ai_settings', {
   welcomeMessage: text('welcome_message').default('أهلاً بك {name}! كيف يمكنني مساعدتك؟ (طلب / سعر / دعم / حجز / تواصل بشري)'),
   workingHours: jsonb('working_hours').$type<{ enabled: boolean; start: string; end: string; outOfHoursMessage: string }>(),
   antiSpam: jsonb('anti_spam').$type<{ enabled: boolean; maxMessagesPerWindow: number; windowMinutes: number; warningMessage: string }>(),
+  whatsappMenu: jsonb('whatsapp_menu').$type<{
+    enabled: boolean;
+    header: string;
+    body: string;
+    footer: string;
+    buttonText: string;
+    sections: Array<{
+      title: string;
+      rows: Array<{ id: string; title: string; description: string }>;
+    }>;
+  }>(),
   updatedAt: timestamp('updated_at', { mode: 'date' })
     .defaultNow()
     .$onUpdate(() => new Date())

@@ -5,6 +5,7 @@ import {
   Bot,
   Check,
   Clock,
+  List,
   MessageCircle,
   Plus,
   Save,
@@ -40,6 +41,14 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
     welcomeMessage: settings?.welcomeMessage || 'أهلاً بك {name}! كيف يمكنني مساعدتك؟',
     workingHours: settings?.workingHours || { enabled: false, start: '09:00', end: '17:00', outOfHoursMessage: '' },
     antiSpam: settings?.antiSpam || { enabled: true, maxMessagesPerWindow: 3, windowMinutes: 5, warningMessage: '' },
+    whatsappMenu: settings?.whatsappMenu || {
+      enabled: false,
+      header: 'قائمة الخيارات الرئيسية',
+      body: 'يسعدنا خدمتك، يرجى اختيار ما تبحث عنه:',
+      footer: 'نحن هنا لخدمتك',
+      buttonText: 'عرض القائمة',
+      sections: [{ title: 'خدماتنا', rows: [] }],
+    },
   });
 
   const [currentFaq, setCurrentFaq] = useState({ question: '', answer: '' });
@@ -159,6 +168,7 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
             { id: 'welcome', label: t('tab_welcome'), icon: <MessageCircle className="size-5" /> },
             { id: 'hours', label: t('tab_hours'), icon: <Clock className="size-5" /> },
             { id: 'spam', label: t('tab_spam'), icon: <ShieldAlert className="size-5" /> },
+            { id: 'whatsapp_menu', label: 'قائمة واتساب', icon: <List className="size-5" /> },
           ].map(tab => (
             <button
               key={tab.id}
@@ -517,6 +527,136 @@ export default function AiSettingsClient({ settings }: { settings: any }) {
                           value={formData.antiSpam.warningMessage}
                           onChange={e => setFormData({ ...formData, antiSpam: { ...formData.antiSpam, warningMessage: e.target.value } })}
                         />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* WhatsApp Menu */}
+              {activeTab === 'whatsapp_menu' && (
+                <div className="flex flex-col gap-8 duration-500 animate-in fade-in slide-in-from-bottom-4">
+                  <div className="flex items-center gap-3 border-b pb-6">
+                    <div className="flex size-12 items-center justify-center rounded-2xl bg-green-500/10 text-green-600">
+                      <List className="size-7" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold">تخصيص قائمة واتساب التفاعلية</h3>
+                      <p className="text-sm text-muted-foreground">تعديل الخيارات التي تظهر للعملاء في واتساب عند بدء المحادثة.</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 rounded-2xl border bg-muted/10 p-4">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, whatsappMenu: { ...formData.whatsappMenu, enabled: !formData.whatsappMenu.enabled } })}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${formData.whatsappMenu.enabled ? 'bg-primary' : 'bg-gray-300'}`}
+                    >
+                      <span className={`inline-block size-4 rounded-full bg-white transition-transform${formData.whatsappMenu.enabled ? 'translate-x-1 rtl:-translate-x-6' : 'translate-x-6 rtl:-translate-x-1'}`} />
+                    </button>
+                    <div className="flex flex-col text-start">
+                      <span className="text-sm font-bold">تفعيل القائمة التفاعلية</span>
+                      <span className="text-xs text-muted-foreground">عند التفعيل، سيتم إرسال هذه القائمة للعملاء الجدد تلقائياً.</span>
+                    </div>
+                  </div>
+
+                  {formData.whatsappMenu.enabled && (
+                    <div className="grid gap-6 text-start">
+                      <div className="grid gap-2">
+                        <Label className="text-sm font-bold">العنوان (اختياري)</Label>
+                        <Input
+                          value={formData.whatsappMenu.header}
+                          onChange={e => setFormData({ ...formData, whatsappMenu: { ...formData.whatsappMenu, header: e.target.value } })}
+                          className="h-11 rounded-xl border-none bg-muted/30"
+                          placeholder="مثلاً: مرحباً بك في متجرنا"
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label className="text-sm font-bold">نص الرسالة</Label>
+                        <textarea
+                          rows={3}
+                          value={formData.whatsappMenu.body}
+                          onChange={e => setFormData({ ...formData, whatsappMenu: { ...formData.whatsappMenu, body: e.target.value } })}
+                          className="flex w-full rounded-xl border-none bg-muted/30 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-primary"
+                          placeholder="مثلاً: يرجى اختيار الخدمة المطلوبة:"
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label className="text-sm font-bold">نص التذييل (اختياري)</Label>
+                        <Input
+                          value={formData.whatsappMenu.footer}
+                          onChange={e => setFormData({ ...formData, whatsappMenu: { ...formData.whatsappMenu, footer: e.target.value } })}
+                          className="h-11 rounded-xl border-none bg-muted/30"
+                          placeholder="مثلاً: نحن هنا لخدمتك"
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label className="text-sm font-bold">نص الزر</Label>
+                        <Input
+                          value={formData.whatsappMenu.buttonText}
+                          onChange={e => setFormData({ ...formData, whatsappMenu: { ...formData.whatsappMenu, buttonText: e.target.value } })}
+                          className="h-11 rounded-xl border-none bg-muted/30"
+                          placeholder="مثلاً: عرض الخيارات"
+                        />
+                      </div>
+
+                      <div className="mt-4 flex flex-col gap-4">
+                        <Label className="text-lg font-bold">خيارات القائمة</Label>
+                        {formData.whatsappMenu.sections[0].rows.map((row: any, idx: number) => (
+                          <div key={row.id} className="group relative grid grid-cols-1 items-end gap-4 rounded-2xl border bg-muted/5 p-4 md:grid-cols-12">
+                            <div className="md:col-span-3">
+                              <Label className="mb-1 block text-xs">العنوان</Label>
+                              <Input
+                                value={row.title}
+                                onChange={(e) => {
+                                  const newRows = [...formData.whatsappMenu.sections[0].rows];
+                                  newRows[idx].title = e.target.value;
+                                  setFormData({ ...formData, whatsappMenu: { ...formData.whatsappMenu, sections: [{ ...formData.whatsappMenu.sections[0], rows: newRows }] } });
+                                }}
+                                className="h-10 text-sm"
+                              />
+                            </div>
+                            <div className="md:col-span-7">
+                              <Label className="mb-1 block text-xs">الوصف (اختياري)</Label>
+                              <Input
+                                value={row.description}
+                                onChange={(e) => {
+                                  const newRows = [...formData.whatsappMenu.sections[0].rows];
+                                  newRows[idx].description = e.target.value;
+                                  setFormData({ ...formData, whatsappMenu: { ...formData.whatsappMenu, sections: [{ ...formData.whatsappMenu.sections[0], rows: newRows }] } });
+                                }}
+                                className="h-10 text-sm"
+                              />
+                            </div>
+                            <div className="flex justify-end md:col-span-2">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  const newRows = [...formData.whatsappMenu.sections[0].rows];
+                                  newRows.splice(idx, 1);
+                                  setFormData({ ...formData, whatsappMenu: { ...formData.whatsappMenu, sections: [{ ...formData.whatsappMenu.sections[0], rows: newRows }] } });
+                                }}
+                                className="text-red-500 hover:bg-red-50"
+                              >
+                                <Trash2 className="size-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            const newRows = [...formData.whatsappMenu.sections[0].rows, { id: `item_${Date.now()}`, title: '', description: '' }];
+                            setFormData({ ...formData, whatsappMenu: { ...formData.whatsappMenu, sections: [{ ...formData.whatsappMenu.sections[0], rows: newRows }] } });
+                          }}
+                          className="rounded-xl border-2 border-dashed py-6"
+                        >
+                          <Plus className="ml-2 size-4" />
+                          إضافة خيار جديد
+                        </Button>
                       </div>
                     </div>
                   )}
