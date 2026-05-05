@@ -28,7 +28,7 @@ function getGoogleAuth() {
     key: privateKey,
     scopes: [
       'https://www.googleapis.com/auth/spreadsheets',
-      'https://www.googleapis.com/auth/drive.file', // Required to create and share files
+      'https://www.googleapis.com/auth/drive', // Full drive scope to avoid permission errors
     ],
   });
 }
@@ -64,7 +64,7 @@ export async function createAndShareSheet(customerEmail: string, title: string) 
     // 2. Share it with the customer's email as an Editor (writer)
     await drive.permissions.create({
       fileId: spreadsheetId,
-      sendNotificationEmail: true,
+      sendNotificationEmail: false, // Disabling this often solves 'caller does not have permission'
       requestBody: {
         type: 'user',
         role: 'writer',
