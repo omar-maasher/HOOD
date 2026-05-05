@@ -8,6 +8,9 @@ import { conversationSchema, integrationSchema, messageSchema, organizationSchem
 import { PLAN_ID } from '@/utils/AppConfig';
 
 export const POST = async (request: Request) => {
+  let requestPlatform: string | undefined;
+  let requestOrgId: string | undefined;
+
   try {
     // 1. Authenticate the request from n8n
     const authHeader = request.headers.get('Authorization');
@@ -20,6 +23,8 @@ export const POST = async (request: Request) => {
 
     const body = await request.json();
     const { platform, orgId, recipientId, message, commentId } = body;
+    requestPlatform = platform;
+    requestOrgId = orgId;
 
     // recipientId is optional if commentId is provided for Instagram
     if (!platform || !orgId || (!recipientId && !commentId) || !message) {
@@ -174,6 +179,26 @@ export const POST = async (request: Request) => {
     return NextResponse.json({ success: true, data: responseData });
   } catch (error: any) {
     console.error('API Send Error:', error);
+
+    // Check if the error is a token expiration error
+    if (error.message && error.message.includes('META_TOKEN_EXPIRED')) {
+      try {
+        if (requestPlatform && requestOrgId) {
+          await db.update(integrationSchema)
+            .set({ status: 'expired' })
+            .where(
+              and(
+                eq(integrationSchema.organizationId, requestOrgId),
+                eq(integrationSchema.type, requestPlatform),
+              ),
+            );
+          logger.info(`Integration status updated to 'expired' for org ${requestOrgId} platform ${requestPlatform}`);
+        }
+      } catch (updateError) {
+        console.error('Failed to update integration status:', updateError);
+      }
+    }
+
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },
       { status: 500 },
