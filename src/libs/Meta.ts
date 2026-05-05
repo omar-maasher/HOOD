@@ -310,6 +310,115 @@ export const sendWhatsAppMessage = async (
 
   return response.json();
 };
+
+/**
+ * Send an interactive List Message via WhatsApp.
+ */
+export const sendWhatsAppListMessage = async (
+  phoneNumberId: string,
+  recipientId: string,
+  accessToken: string,
+  config: {
+    header?: string;
+    body: string;
+    footer?: string;
+    buttonText: string;
+    sections: Array<{
+      title: string;
+      rows: Array<{
+        id: string;
+        title: string;
+        description?: string;
+      }>;
+    }>;
+  },
+) => {
+  const url = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${phoneNumberId}/messages`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to: recipientId,
+      type: 'interactive',
+      interactive: {
+        type: 'list',
+        header: config.header ? { type: 'text', text: config.header } : undefined,
+        body: { text: config.body },
+        footer: config.footer ? { text: config.footer } : undefined,
+        action: {
+          button: config.buttonText,
+          sections: config.sections,
+        },
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    logger.error({ errorData }, 'Failed to send WhatsApp List message');
+    handleMetaError(errorData);
+  }
+
+  return response.json();
+};
+
+/**
+ * Send interactive Reply Buttons via WhatsApp (Max 3 buttons).
+ */
+export const sendWhatsAppButtonsMessage = async (
+  phoneNumberId: string,
+  recipientId: string,
+  accessToken: string,
+  config: {
+    body: string;
+    footer?: string;
+    buttons: Array<{
+      id: string;
+      title: string;
+    }>;
+  },
+) => {
+  const url = `https://graph.facebook.com/${META_CONFIG.graphVersion}/${phoneNumberId}/messages`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({
+      messaging_product: 'whatsapp',
+      recipient_type: 'individual',
+      to: recipientId,
+      type: 'interactive',
+      interactive: {
+        type: 'button',
+        body: { text: config.body },
+        footer: config.footer ? { text: config.footer } : undefined,
+        action: {
+          buttons: config.buttons.map(b => ({
+            type: 'reply',
+            reply: { id: b.id, title: b.title },
+          })),
+        },
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    logger.error({ errorData }, 'Failed to send WhatsApp Buttons message');
+    handleMetaError(errorData);
+  }
+
+  return response.json();
+};
 /**
  * Fetch WhatsApp Business Accounts (WABA) for the current user.
  */
