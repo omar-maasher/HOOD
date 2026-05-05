@@ -1,5 +1,6 @@
 import { google } from 'googleapis';
 
+import { db } from './DB';
 import { logger } from './Logger';
 
 /**
@@ -108,5 +109,45 @@ export async function appendBookingToSheet(
   } catch (error: any) {
     logger.error({ error: error.message, spreadsheetId }, 'Failed to append row to Google Sheet');
     throw error;
+  }
+}
+
+/**
+ * Automatically syncs a new booking to the connected Google Sheet for the organization.
+ */
+export async function syncBookingToGoogleSheet(orgId: string, booking: any) {
+  try {
+    const integration = await db.query.integrationSchema.findFirst({
+      where: (i, { and, eq }) => and(eq(i.organizationId, orgId), eq(i.type, 'google_sheets'), eq(i.status, 'active')),
+    });
+
+    if (!integration || !integration.providerId) {
+      return;
+    }
+
+    // Format the row data
+    const row = [
+      booking.id?.toString() || '',
+      booking.customerName || '',
+      booking.contactInfo || '',
+      booking.serviceType || '',
+      booking.bookingDate ? new Date(booking.bookingDate).toLocaleString('ar-SA') : '',
+      booking.status || '',
+      booking.source || '',
+      booking.notes || '',
+    ];
+
+    try {
+      await appendBookingToSheet(integration.providerId, row, 'Sheet1');
+    } catch (err: any) {
+      // If default "Sheet1" fails, try Arabic default "ورقة 1"
+      if (err.message && err.message.includes('Unable to parse range')) {
+        await appendBookingToSheet(integration.providerId, row, 'ورقة 1');
+      } else {
+        throw err;
+      }
+    }
+  } catch (error) {
+    logger.error('Failed to sync booking to Google Sheets', error);
   }
 }

@@ -4,8 +4,9 @@ import { auth } from '@clerk/nextjs/server';
 import { and, desc, eq, inArray } from 'drizzle-orm';
 
 import { db } from '@/libs/DB';
-import { bookingSchema, organizationSchema } from '@/models/Schema';
+import { syncBookingToGoogleSheet } from '@/libs/GoogleSheets';
 import { notifyOrg } from '@/libs/Notifications';
+import { bookingSchema, organizationSchema } from '@/models/Schema';
 
 export async function getBookings() {
   const { orgId } = await auth();
@@ -55,6 +56,11 @@ export async function createBooking(data: any) {
   await notifyOrg(orgId, 'حجز جديد 📅', `تم إضافة حجز يدوي للعميل: ${data.customerName}`, {
     bookingId: newBooking?.id,
   });
+
+  // Sync to Google Sheets
+  if (newBooking) {
+    await syncBookingToGoogleSheet(orgId, newBooking);
+  }
 
   return {
     ...newBooking,

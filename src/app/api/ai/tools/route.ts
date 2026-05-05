@@ -2,6 +2,7 @@ import { and, eq, ilike, or, sql } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/DB';
+import { syncBookingToGoogleSheet } from '@/libs/GoogleSheets';
 import { notifyOrg } from '@/libs/Notifications';
 import { aiSettingsSchema, bookingSchema, businessProfileSchema, conversationSchema, organizationSchema, productSchema } from '@/models/Schema';
 
@@ -159,6 +160,11 @@ export const POST = async (request: Request) => {
             bookingId: newBooking?.id,
             customerName,
           });
+
+          // --- SYNC TO GOOGLE SHEETS ---
+          if (newBooking) {
+            await syncBookingToGoogleSheet(organizationId, newBooking);
+          }
 
           return NextResponse.json({
             success: true,

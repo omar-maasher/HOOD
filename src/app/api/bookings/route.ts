@@ -3,8 +3,9 @@ import { eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 
 import { db } from '@/libs/DB';
-import { bookingSchema, organizationSchema } from '@/models/Schema';
+import { syncBookingToGoogleSheet } from '@/libs/GoogleSheets';
 import { notifyOrg } from '@/libs/Notifications';
+import { bookingSchema, organizationSchema } from '@/models/Schema';
 
 export async function POST(req: Request) {
   try {
@@ -78,6 +79,11 @@ export async function POST(req: Request) {
       customerName,
     });
 
+    // Sync to Google Sheets
+    if (newBooking[0]) {
+      await syncBookingToGoogleSheet(targetOrgId, newBooking[0]);
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Booking created successfully',
@@ -94,6 +100,7 @@ export async function GET() {
     const { userId, orgId } = await auth();
 
     if (!userId) {
+      // eslint-disable-next-line no-console
       console.log('Unauthorized fetch attempt (no userId).');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -119,12 +126,16 @@ export async function GET() {
 export async function PUT(req: Request) {
   try {
     const { orgId } = await auth();
-    if (!orgId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!orgId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     const body = await req.json();
     const { id, status, bookingDate, customerName, contactInfo, notes } = body;
 
-    if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+    if (!id) {
+      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+    }
 
     const updated = await db.update(bookingSchema)
       .set({
