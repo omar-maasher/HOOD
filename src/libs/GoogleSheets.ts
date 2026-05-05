@@ -128,13 +128,21 @@ export async function syncBookingToGoogleSheet(orgId: string, booking: any) {
       return;
     }
 
+    // Translate status to Arabic
+    const statusMap: Record<string, string> = {
+      upcoming: 'قادم',
+      completed: 'مكتمل',
+      cancelled: 'ملغي',
+    };
+    const arabicStatus = statusMap[booking.status] || booking.status || '';
+
     // Format the row data
     const row = [
       booking.customerName || '',
       booking.contactInfo || '',
       booking.serviceType || '',
       booking.bookingDate ? new Date(booking.bookingDate).toLocaleString('ar-SA') : '',
-      booking.status || '',
+      arabicStatus,
       booking.source || '',
       booking.notes || '',
     ];
@@ -178,12 +186,18 @@ export async function syncAllBookingsToGoogleSheet(orgId: string) {
       'ملاحظات',
     ];
 
+    const statusMap: Record<string, string> = {
+      upcoming: 'قادم',
+      completed: 'مكتمل',
+      cancelled: 'ملغي',
+    };
+
     const rows = bookings.map(booking => [
       booking.customerName || '',
       booking.contactInfo || '',
       booking.serviceType || '',
       booking.bookingDate ? new Date(booking.bookingDate).toLocaleString('ar-SA') : '',
-      booking.status || '',
+      statusMap[booking.status] || booking.status || '',
       booking.source || '',
       booking.notes || '',
     ]);
