@@ -92,7 +92,7 @@ export async function createAndShareSheet(customerEmail: string, title: string) 
 export async function appendBookingToSheet(
   spreadsheetId: string,
   values: any[],
-  sheetName: string = 'Sheet1',
+  range: string = 'A:A',
 ) {
   try {
     const auth = getGoogleAuth();
@@ -101,7 +101,7 @@ export async function appendBookingToSheet(
     // Assuming the sheet exists. 'USER_ENTERED' ensures dates/numbers are formatted correctly.
     const response = await sheets.spreadsheets.values.append({
       spreadsheetId,
-      range: `${sheetName}!A:A`,
+      range,
       valueInputOption: 'USER_ENTERED',
       requestBody: {
         values: [values],
@@ -140,16 +140,7 @@ export async function syncBookingToGoogleSheet(orgId: string, booking: any) {
       booking.notes || '',
     ];
 
-    try {
-      await appendBookingToSheet(integration.providerId, row, 'Sheet1');
-    } catch (err: any) {
-      // If default "Sheet1" fails, try Arabic default "ورقة 1"
-      if (err.message && err.message.includes('Unable to parse range')) {
-        await appendBookingToSheet(integration.providerId, row, 'ورقة 1');
-      } else {
-        throw err;
-      }
-    }
+    await appendBookingToSheet(integration.providerId, row, 'A:A');
   } catch (error) {
     logger.error('Failed to sync booking to Google Sheets', error);
   }
@@ -191,30 +182,15 @@ export async function syncAllBookingsToGoogleSheet(orgId: string) {
     // Reverse to chronological order for inserting from top to bottom
     rows.reverse();
 
-    try {
-      const auth = getGoogleAuth();
-      const sheets = google.sheets({ version: 'v4', auth });
+    const auth = getGoogleAuth();
+    const sheets = google.sheets({ version: 'v4', auth });
 
-      await sheets.spreadsheets.values.append({
-        spreadsheetId: integration.providerId,
-        range: 'Sheet1!A:A',
-        valueInputOption: 'USER_ENTERED',
-        requestBody: { values: rows },
-      });
-    } catch (err: any) {
-      if (err.message && err.message.includes('Unable to parse range')) {
-        const auth = getGoogleAuth();
-        const sheets = google.sheets({ version: 'v4', auth });
-        await sheets.spreadsheets.values.append({
-          spreadsheetId: integration.providerId,
-          range: 'ورقة 1!A:A',
-          valueInputOption: 'USER_ENTERED',
-          requestBody: { values: rows },
-        });
-      } else {
-        throw err;
-      }
-    }
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: integration.providerId,
+      range: 'A:A', // Omitting sheet name defaults to the first visible sheet
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values: rows },
+    });
 
     return { success: true, count: bookings.length };
   } catch (error: any) {
