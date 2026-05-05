@@ -437,59 +437,64 @@ export async function processMetaWebhookPayload(body: any) {
                 externalId: senderId,
               });
 
-              // --- AUTO-SEND WHATSAPP INTERACTIVE MENU ---
+              // --- AUTO-SEND WHATSAPP INTERACTIVE MENU & BUTTONS ---
               const aiSettings = aiSettingsResults[0] as any;
               const menu = aiSettings?.whatsappMenu;
-              const isGreeting = /^(?:سلام|مرحبا|هلا|hi|hello|start|menu|القائمة)$/i.test(text.trim());
-
-              logger.info({ menuEnabled: menu?.enabled, isGreeting, text, hasIntegration: !!integration, providerId: integration?.providerId }, '[WEBHOOK DEBUG] Checking WhatsApp Menu Trigger');
-
-              if (menu?.enabled && isGreeting && integration?.providerId && integration?.accessToken) {
-                try {
-                  const config = JSON.parse(integration.config || '{}');
-                  const whatsappId = config.phoneNumberId || integration.providerId;
-                  logger.info({ senderId, whatsappId }, '[WEBHOOK DEBUG] Sending WhatsApp Interactive Menu...');
-                  await sendWhatsAppListMessage(
-                    whatsappId,
-                    senderId,
-                    integration.accessToken,
-                    {
-                      header: menu.header,
-                      body: menu.body,
-                      footer: menu.footer,
-                      buttonText: menu.buttonText,
-                      sections: menu.sections,
-                    },
-                  );
-                  logger.info({ orgId, senderId }, '[WEBHOOK] Auto-sent WhatsApp Interactive Menu');
-                } catch (e) {
-                  logger.error(e, '[WEBHOOK] Failed to auto-send WhatsApp Menu');
-                }
-              }
-
-              // --- AUTO-SEND WHATSAPP QUICK BUTTONS ---
               const buttonsConfig = aiSettings?.whatsappButtons;
+              const isGreeting = /^(?:سلام|مرحبا|هلا|hi|hello|start|menu|القائمة)$/i.test(text.trim());
               const isButtonsTrigger = /^(?:أزرار|buttons|help|مساعدة|خيارات)$/i.test(text.trim());
 
-              if (buttonsConfig?.enabled && isButtonsTrigger && integration?.providerId && integration?.accessToken) {
-                try {
-                  const config = JSON.parse(integration.config || '{}');
-                  const whatsappId = config.phoneNumberId || integration.providerId;
-                  logger.info({ senderId, whatsappId }, '[WEBHOOK DEBUG] Sending WhatsApp Quick Buttons...');
-                  await sendWhatsAppButtonsMessage(
-                    whatsappId,
-                    senderId,
-                    integration.accessToken,
-                    {
+              // Only trigger for incoming text messages (ignore media, reactions, or echoes if any)
+              const isIncomingText = msg.type === 'text' && text.length > 0;
+
+              if (isIncomingText && integration?.providerId && integration?.accessToken) {
+                const config = JSON.parse(integration.config || '{}');
+                const whatsappId = config.phoneNumberId || integration.providerId;
+
+                // 1. Check for Greeting -> List Menu
+                if (menu?.enabled && isGreeting && conversation[0]) {
+                  try {
+                    // Check for cooldown (don't send if we sent an interactive message to this user in the last 15 minutes)
+                    const fifteenMinsAgo = new Date(Date.now() - 15 * 60 * 1000);
+                    const recentMenu = await db.query.messageSchema.findFirst({
+                      where: and(
+                        eq(messageSchema.conversationId, conversation[0].id),
+                        eq(messageSchema.direction, 'outgoing'),
+                        eq(messageSchema.type, 'interactive'),
+                        sql`${messageSchema.createdAt} > ${fifteenMinsAgo}`,
+                      ),
+                    });
+
+                    if (!recentMenu) {
+                      logger.info({ senderId, whatsappId }, '[WEBHOOK DEBUG] Sending WhatsApp Interactive Menu...');
+                      await sendWhatsAppListMessage(whatsappId, senderId, integration.accessToken, {
+                        header: menu.header,
+                        body: menu.body,
+                        footer: menu.footer,
+                        buttonText: menu.buttonText,
+                        sections: menu.sections,
+                      });
+                    } else {
+                      logger.info({ senderId }, '[WEBHOOK DEBUG] Skipping WhatsApp Menu due to cooldown');
+                    }
+                  } catch (e) {
+                    logger.error(e, '[WEBHOOK] Failed to auto-send WhatsApp Menu');
+                  }
+                }
+
+                // 2. Check for Help -> Buttons
+                if (buttonsConfig?.enabled && isButtonsTrigger) {
+                  try {
+                    logger.info({ senderId, whatsappId }, '[WEBHOOK DEBUG] Sending WhatsApp Quick Buttons...');
+                    await sendWhatsAppButtonsMessage(whatsappId, senderId, integration.accessToken, {
                       header: buttonsConfig.header,
                       body: buttonsConfig.body,
                       footer: buttonsConfig.footer,
                       buttons: buttonsConfig.buttons,
-                    },
-                  );
-                  logger.info({ orgId, senderId }, '[WEBHOOK] Auto-sent WhatsApp Quick Buttons');
-                } catch (e) {
-                  logger.error(e, '[WEBHOOK] Failed to auto-send WhatsApp Buttons');
+                    });
+                  } catch (e) {
+                    logger.error(e, '[WEBHOOK] Failed to auto-send WhatsApp Buttons');
+                  }
                 }
               }
 
