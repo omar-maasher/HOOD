@@ -7,6 +7,7 @@ import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 
 import { db } from '@/libs/DB';
+import { createAndShareSheet } from '@/libs/GoogleSheets';
 import { logger } from '@/libs/Logger';
 import { integrationSchema, productSchema } from '@/models/Schema';
 
@@ -271,16 +272,16 @@ export async function syncAllIntegrationsAction() {
           const accessToken = integration.accessToken;
 
           if (pageId && accessToken) {
-             const fields = integration.type === 'instagram' 
-                ? 'messages,messaging_postbacks,comments,mentions'
-                : 'messages,messaging_postbacks';
+            const fields = integration.type === 'instagram'
+              ? 'messages,messaging_postbacks,comments,mentions'
+              : 'messages,messaging_postbacks';
 
-             await fetch(`https://graph.facebook.com/v21.0/${pageId}/subscribed_apps?access_token=${accessToken}`, {
-               method: 'POST',
-               headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify({ subscribed_fields: fields.split(',') }),
-             });
-             results.push({ type: integration.type, success: true });
+            await fetch(`https://graph.facebook.com/v21.0/${pageId}/subscribed_apps?access_token=${accessToken}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ subscribed_fields: fields.split(',') }),
+            });
+            results.push({ type: integration.type, success: true });
           }
         } catch (error) {
           console.error(`${integration.type} sync error:`, error);
@@ -294,7 +295,7 @@ export async function syncAllIntegrationsAction() {
           const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/integrations/whatsapp/resubscribe`, {
             method: 'POST',
             headers: {
-              'Cookie': (await import('next/headers')).cookies().toString(),
+              Cookie: (await import('next/headers')).cookies().toString(),
             },
           });
           results.push({ type: 'whatsapp', success: res.ok });
@@ -361,10 +362,46 @@ export async function refreshInstagramIntegration(integrationId: number) {
       results.push({ target: 'ig_account_subscription', success: res.ok, data });
     }
 
-    revalidatePath('/dashboard/integrations');
     return { success: true, results };
   } catch (error: any) {
     logger.error('Full Refresh Error', error);
     return { success: false, error: error.message };
+  }
+}
+
+export async function createGoogleSheetIntegration(email: string) {
+  const { orgId } = await auth();
+  if (!orgId) {
+    throw new Error('Unauthorized');
+  }
+
+  try {
+    // Check if integration already exists
+    const existing = await db.query.integrationSchema.findFirst({
+      where: (i, { and, eq }) => and(eq(i.organizationId, orgId), eq(i.type, 'google_sheets')),
+    });
+
+    if (existing) {
+      return { success: false, error: 'Google Sheets integration already exists.' };
+    }
+
+    // Create and share sheet
+    const { spreadsheetId, spreadsheetUrl } = await createAndShareSheet(email, 'جدول الحجوزات الذكي');
+
+    // Save to database
+    await db.insert(integrationSchema).values({
+      organizationId: orgId,
+      type: 'google_sheets',
+      providerId: spreadsheetId, // Store the ID here
+      config: JSON.stringify({ email, url: spreadsheetUrl }),
+      status: 'active',
+    });
+
+    revalidatePath('/dashboard/integrations');
+
+    return { success: true, url: spreadsheetUrl };
+  } catch (error: any) {
+    logger.error('Google Sheets Creation Error', error);
+    return { success: false, error: error.message || 'فشل إنشاء الجدول. تأكد من صحة الإيميل ومن تفعيل Google Drive API.' };
   }
 }

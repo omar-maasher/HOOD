@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import { DatabaseZap, Facebook, Info, Instagram, Link as LinkIcon, MessageSquare, Phone, ScanEye, ShoppingCart } from 'lucide-react';
 import { getLocale } from 'next-intl/server';
 
+import { GoogleSheetsConnect } from '@/features/integrations/GoogleSheetsConnect';
 import { StoreConnect } from '@/features/integrations/StoreConnect';
 import { WhatsAppConnect } from '@/features/integrations/WhatsAppConnect';
 import { db } from '@/libs/DB';
@@ -335,6 +336,76 @@ export default async function IntegrationsPage(props: { searchParams: Promise<an
                     )
                   : (
                       <StoreConnect platform={store.key} isAr={isAr} />
+                    )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Productivity & Export Section */}
+      <div className={`mt-8 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center ${isAr ? 'text-start' : 'text-left'}`}>
+        <div>
+          <h2 className="bg-gradient-to-r from-emerald-500 to-emerald-700 bg-clip-text text-2xl font-extrabold tracking-tight text-transparent">
+            {isAr ? 'الإنتاجية وتصدير البيانات' : 'Productivity & Data Export'}
+          </h2>
+          <p className="mt-1 font-medium text-muted-foreground">
+            {isAr ? 'اربط جداول البيانات لتخزين الحجوزات أو العملاء المحتملين تلقائياً.' : 'Connect spreadsheets to automatically store bookings or leads.'}
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+        {[
+          { key: 'google_sheets', name: 'جداول جوجل (Google Sheets)', desc: 'قم بإنشاء جدول تلقائياً لمزامنة كافة الحجوزات الجديدة مباشرة.', icon: DatabaseZap, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+        ].map((tool) => {
+          const isConnected = integrations.some(i => i.type === tool.key && i.status === 'active');
+          const integration = integrations.find(i => i.type === tool.key && i.status === 'active');
+          let config: any = {};
+          try {
+            config = JSON.parse(integration?.config || '{}');
+          } catch {}
+
+          const ToolIcon = tool.icon;
+
+          return (
+            <div key={tool.key} className={`group relative flex flex-col rounded-[2rem] border bg-card p-8 shadow-xl shadow-gray-100/50 transition-all duration-300 ${isConnected ? 'border-emerald-200 ring-4 ring-emerald-500/5' : 'hover:border-primary/40'}`}>
+              <div className="mb-6 flex items-center justify-between">
+                <div className={`flex size-14 items-center justify-center rounded-2xl ${tool.bg} ${tool.color} shadow-inner`}>
+                  <ToolIcon className="size-7" />
+                </div>
+                {isConnected
+                  ? (
+                      <span className="flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-emerald-700">
+                        <span className="size-1.5 animate-pulse rounded-full bg-emerald-500" />
+                        {isAr ? 'متصل' : 'CONNECTED'}
+                      </span>
+                    )
+                  : (
+                      <span className="rounded-full bg-muted px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-muted-foreground">
+                        {isAr ? 'غير مرتبط' : 'NOT CONNECTED'}
+                      </span>
+                    )}
+              </div>
+
+              <div className={`flex-1 ${isAr ? 'text-start' : 'text-left'}`}>
+                <h3 className="mb-2 flex items-center gap-2 text-xl font-bold">{tool.name}</h3>
+                <p className="text-sm leading-relaxed text-muted-foreground">{tool.desc}</p>
+
+                {isConnected && config.url && (
+                  <a href={config.url} target="_blank" rel="noreferrer" className="mt-3 block text-sm font-bold text-emerald-600 hover:underline">
+                    {isAr ? '🔗 فتح الجدول' : '🔗 Open Spreadsheet'}
+                  </a>
+                )}
+              </div>
+
+              <div className="mt-8 border-t border-dashed pt-6">
+                {isConnected
+                  ? (
+                      <DisconnectButton channelKey={tool.key} integrationId={integration?.id} />
+                    )
+                  : (
+                      <GoogleSheetsConnect isAr={isAr} />
                     )}
               </div>
             </div>
