@@ -130,7 +130,6 @@ export async function syncBookingToGoogleSheet(orgId: string, booking: any) {
 
     // Format the row data
     const row = [
-      booking.id?.toString() || '',
       booking.customerName || '',
       booking.contactInfo || '',
       booking.serviceType || '',
@@ -152,7 +151,7 @@ export async function syncBookingToGoogleSheet(orgId: string, booking: any) {
 export async function syncAllBookingsToGoogleSheet(orgId: string) {
   try {
     const integration = await db.query.integrationSchema.findFirst({
-      where: (i, { and, eq }) => and(eq(i.organizationId, orgId), eq(i.type, 'google_sheets'), eq(i.status, 'active')),
+      where: (i, { and, eq: drizzleEq }) => and(drizzleEq(i.organizationId, orgId), drizzleEq(i.type, 'google_sheets'), drizzleEq(i.status, 'active')),
     });
 
     if (!integration || !integration.providerId) {
@@ -168,8 +167,18 @@ export async function syncAllBookingsToGoogleSheet(orgId: string) {
       return { success: true, count: 0, message: 'لا توجد حجوزات لمزامنتها.' };
     }
 
+    // Add Header Row
+    const headerRow = [
+      'اسم العميل',
+      'معلومات التواصل',
+      'نوع الخدمة',
+      'موعد الحجز',
+      'الحالة',
+      'المصدر',
+      'ملاحظات',
+    ];
+
     const rows = bookings.map(booking => [
-      booking.id?.toString() || '',
       booking.customerName || '',
       booking.contactInfo || '',
       booking.serviceType || '',
@@ -179,17 +188,21 @@ export async function syncAllBookingsToGoogleSheet(orgId: string) {
       booking.notes || '',
     ]);
 
-    // Reverse to chronological order for inserting from top to bottom
+    // Reverse to chronological order
     rows.reverse();
+
+    // Combine header and rows
+    const allData = [headerRow, ...rows];
 
     const auth = getGoogleAuth();
     const sheets = google.sheets({ version: 'v4', auth });
 
-    await sheets.spreadsheets.values.append({
+    // Use update/overwrite instead of append for "Sync All" to keep it clean
+    await sheets.spreadsheets.values.update({
       spreadsheetId: integration.providerId,
-      range: 'A:A', // Omitting sheet name defaults to the first visible sheet
+      range: 'A1',
       valueInputOption: 'USER_ENTERED',
-      requestBody: { values: rows },
+      requestBody: { values: allData },
     });
 
     return { success: true, count: bookings.length };
